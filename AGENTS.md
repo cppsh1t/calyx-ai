@@ -169,6 +169,48 @@ bun add --filter=calyx-cli <package>
 
 ## Notes for Agents
 
+### Skill Discovery (MANDATORY)
+
+**ALWAYS use `skill-lookup` before starting ANY task:**
+
+1. **First Step**: Run `/skill-lookup` to discover available skills
+2. **Match Requirements**: Find skills that match your task domain
+3. **Load Relevant Skills**: Include ALL relevant skills via `load_skills=[]`
+4. **Justify Omissions**: If a potentially relevant skill is omitted, explain why
+
+**Workflow Pattern:**
+
+```bash
+# Before delegating any task
+/skill-lookup  # Discover available skills
+
+# Then use found skills in delegation
+delegate_task(
+  category="[appropriate-category]",
+  load_skills=["skill-1", "skill-2"],  # From skill-lookup results
+  prompt="..."
+)
+```
+
+**Common Skills to Look For:**
+
+- `playwright` - Browser automation, scraping, testing
+- `frontend-ui-ux` - UI/UX design and implementation
+- `git-master` - Git operations (commits, rebase, history)
+- `dev-browser` - Browser automation with persistent state
+- `opentui` - Terminal UI development
+- `skill-creator` - Creating/updating skills
+- `skill-lookup` - Finding skills (meta-skill)
+
+**Why This Matters:**
+
+- Skills inject domain expertise into agents
+- Subagents are stateless - they only know what you tell them
+- Missing relevant skills = suboptimal output
+- Proper skill selection = 10x better results
+
+### Development Guidelines
+
 - Always use Bun, never npm/yarn/pnpm
 - Respect Turborepo task dependencies (defined in turbo.json)
 - Follow existing TypeScript strict patterns
