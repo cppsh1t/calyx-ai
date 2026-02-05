@@ -7,6 +7,7 @@ import type {
   AskOptions,
 } from "./types/cli.ts";
 import { DEFAULT_GLOBAL_OPTIONS } from "./types/cli.ts";
+import packageJson from "../package.json" with { type: "json" };
 
 // ============================================================================
 // Module State Management
@@ -62,7 +63,7 @@ const program = new Command();
 program
   .name("calyx")
   .description("AI-driven command-line interaction tool")
-  .version("1.0.0");
+  .version(packageJson.version);
 
 // ============================================================================
 // 全局选项定义
