@@ -1,6 +1,6 @@
 {
   "name": "calyx-cli",
-  "module": "src/cli.ts",
+  "module": "src/index.tsx",
   "type": "module",
   "private": true,
   "bin": {

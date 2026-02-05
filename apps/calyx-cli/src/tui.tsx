@@ -1,7 +1,8 @@
 import { TextAttributes } from "@opentui/core";
 import { render } from "@opentui/solid";
+import type { CLIConfig } from "./types/cli.ts";
 
-export function renderTUI(initialConfig?: any) {
+export function renderTUI(initialConfig?: CLIConfig) {
   const config = initialConfig || {
     command: "chat",
     model: "auto",
