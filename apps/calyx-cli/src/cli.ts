@@ -6,6 +6,49 @@ import type {
   ChatOptions,
   AskOptions,
 } from "./types/cli.ts";
+import { DEFAULT_GLOBAL_OPTIONS } from "./types/cli.ts";
+
+// ============================================================================
+// Module State Management
+// ============================================================================
+//
+// Store parsed configuration from the most recent CLI invocation.
+// This allows the entry point (main.ts or index.tsx) to retrieve
+// the config after commander.js has parsed the command line.
+//
+// Pattern: Action handlers store config → Entry point retrieves config
+
+let parsedConfig: CLIConfig | null = null;
+
+/**
+ * Get the parsed configuration from the most recent CLI invocation.
+ * Used by entry points (main.ts/index.tsx) to retrieve config after parsing.
+ *
+ * @returns The parsed config, or null if no command was executed yet
+ *
+ * @example
+ * // In index.tsx after parse():
+ * const config = getParsedConfig();
+ * if (config) {
+ *   renderTUI(config);
+ * }
+ */
+export function getParsedConfig(): CLIConfig | null {
+  return parsedConfig;
+}
+
+/**
+ * Reset the parsed configuration state.
+ * Used by tests to ensure clean state between test runs.
+ *
+ * @example
+ * resetConfigForTesting();
+ * const config = getParsedConfig();
+ * console.log(config === null); // true
+ */
+export function resetConfigForTesting(): void {
+  parsedConfig = null;
+}
 
 const program = new Command();
 
@@ -140,10 +183,8 @@ program
       chatOptions: options as ChatOptions,
     };
 
-    // 动态导入 TUI 渲染器并启动
-    // 使用 await import() 是为了延迟加载，只在需要时加载 tui.tsx
-    const { renderTUI } = await import("./tui.tsx");
-    renderTUI(config);
+    // Store config for entry point to retrieve
+    parsedConfig = config;
   });
 
 // ============================================================================
@@ -179,10 +220,43 @@ program
       askOptions: options as AskOptions,
     };
 
-    // Launch TUI with config
-    const { renderTUI } = await import("./tui.tsx");
-    renderTUI(config);
+    // Store config for entry point to retrieve
+    parsedConfig = config;
   });
+
+// ============================================================================
+// Default Action (No Command Provided)
+// ============================================================================
+//
+// When no subcommand is provided, launch TUI with default configuration
+// This allows users to run `bun run src/index.tsx` without arguments
+// to start the interactive chat interface
+
+program.action(() => {
+  const globalOpts = program.opts<GlobalOptions>();
+
+  // Validate global options if provided
+  if (globalOpts.model) {
+    validateModel(globalOpts.model);
+  }
+  if (globalOpts.agent) {
+    validateAgent(globalOpts.agent);
+  }
+
+  // Build default config for TUI launch
+  const config: CLIConfig = {
+    ...DEFAULT_GLOBAL_OPTIONS,
+    ...globalOpts,
+    temperature: globalOpts.temperature
+      ? parseTemperature(globalOpts.temperature.toString())
+      : DEFAULT_GLOBAL_OPTIONS.temperature,
+    command: "chat",
+    chatOptions: {},
+  };
+
+  // Store config for entry point to retrieve
+  parsedConfig = config;
+});
 
 // ============================================================================
 // 解析命令行参数

@@ -43,3 +43,5 @@ export function renderTUI(initialConfig?: CLIConfig) {
     </box>
   ));
 }
+
+export default renderTUI;

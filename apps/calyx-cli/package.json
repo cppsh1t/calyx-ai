@@ -1,13 +1,13 @@
 {
   "name": "calyx-cli",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "type": "module",
-  "private": true,
+  "private": false,
   "bin": {
-    "calyx": "./dist/cli.js"
+    "calyx": "./dist/index.js"
   },
   "scripts": {
-    "dev": "bun run --watch src/main.ts",
+    "dev": "bun run --watch src/index.tsx",
     "build": "bun run build.ts",
     "test": "bun test",
     "check": "tsc --noEmit"
