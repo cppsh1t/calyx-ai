@@ -1,9 +1,7 @@
 #!/usr/bin/env bun
-import "./cli.ts"; // This imports and sets up the program
 import { program } from "./cli.ts";
 
-// Entry point for bundled CLI
-// Parse and execute
+// Parse and execute CLI commands
 try {
   await program.parseAsync(process.argv);
 } catch (error) {

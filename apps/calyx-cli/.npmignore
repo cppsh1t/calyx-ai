@@ -1,0 +1,12 @@
+# Exclude binary and WASM files (only bundle cli.js)
+dist/calyx.exe
+dist/*.wasm
+dist/*.scm
+
+# Exclude source maps
+dist/*.map
+
+# Exclude development files
+src/
+tsconfig.json
+build*.ts

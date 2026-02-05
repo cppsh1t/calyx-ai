@@ -43,7 +43,3 @@ export function renderTUI(initialConfig?: CLIConfig) {
     </box>
   ));
 }
-
-if (import.meta.main) {
-  renderTUI();
-}

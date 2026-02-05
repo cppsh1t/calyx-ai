@@ -1,16 +1,21 @@
 {
   "name": "calyx-cli",
-  "module": "src/index.tsx",
+  "version": "1.0.0",
   "type": "module",
   "private": true,
   "bin": {
-    "calyx": "bin/calyx"
+    "calyx": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "bun run --watch src/tui.tsx",
+    "dev": "bun run --watch src/main.ts",
+    "build": "bun run build.ts",
     "test": "bun test",
     "check": "tsc --noEmit"
   },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -18,11 +23,8 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@babel/core": "^7.28.5",
-    "@babel/preset-typescript": "^7.28.5",
     "@opentui/core": "^0.1.75",
     "@opentui/solid": "^0.1.75",
-    "babel-preset-solid": "1.9.9",
     "commander": "^14.0.3",
     "solid-js": "1.9.9"
   }
