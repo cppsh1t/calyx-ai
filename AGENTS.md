@@ -241,6 +241,41 @@ delegate_task(
 - Missing relevant skills = suboptimal output
 - Proper skill selection = 10x better results
 
+### Sub-Project Skills
+
+**IMPORTANT: Each sub-project has its own specialized skill.**
+
+When working on a specific app or package, load its skill:
+
+```bash
+# Use skill-lookup to find sub-project skills
+/skill-lookup
+
+# Then load the relevant skill when working on that sub-project
+```
+
+**Available Sub-Project Skills:**
+
+| Sub-Project            | Skill Name          | Use When                                        |
+| ---------------------- | ------------------- | ----------------------------------------------- |
+| `apps/calyx-cli`       | `calyx-cli`         | Working on CLI app structure, components, views |
+| `packages/calyx-agent` | _(not yet created)_ | Working on agent package                        |
+
+**Example:**
+
+```
+User task: "Add a new view to calyx-cli"
+→ Load skill: calyx-cli
+→ Follow the skill's directory structure guidelines
+```
+
+**Why Sub-Project Skills?**
+
+- Each app/package has unique structure and conventions
+- Skills provide detailed file placement guidelines
+- Prevents mixing patterns across different projects
+- Keeps root AGENTS.md focused on monorepo-level standards
+
 ### Development Guidelines
 
 - Always use Bun, never npm/yarn/pnpm
