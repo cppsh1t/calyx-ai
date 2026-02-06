@@ -16,13 +16,19 @@ import {
 import packageJson from "../../package.json" with { type: "json" };
 
 let parsedConfig: CliConfigParsed | null = null;
+let subcommandExecuted = false;
 
 export function getParsedConfig(): CliConfigParsed | null {
   return parsedConfig;
 }
 
+export function getSubcommandExecuted(): boolean {
+  return subcommandExecuted;
+}
+
 export function resetConfigForTesting(): void {
   parsedConfig = null;
+  subcommandExecuted = false;
 }
 
 const program = new Command();
@@ -43,6 +49,7 @@ program
   .description("Initialize Calyx configuration in current project")
   .option("-c, --copy", "Copy user configuration to project")
   .action(async (options: { copy?: boolean }) => {
+    subcommandExecuted = true;
     try {
       const projectConfigPath = getProjectConfigPath();
 
