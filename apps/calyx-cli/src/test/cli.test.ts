@@ -1,10 +1,14 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { program, resetConfigForTesting, getParsedConfig } from "./cli.ts";
+import {
+  program,
+  resetConfigForTesting,
+  getParsedConfig,
+} from "@/utils/cli.ts";
 import {
   VALID_MODELS,
   VALID_AGENTS,
   DEFAULT_GLOBAL_OPTIONS,
-} from "./types/cli.ts";
+} from "@/types/cli.ts";
 
 /**
  * CLI Parsing Logic Tests

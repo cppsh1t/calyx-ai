@@ -75,6 +75,38 @@ bun run --filter=calyx-cli dev      # Watch mode
 
 ### Import Style
 
+**MANDATORY: Use `@/` path alias for all src imports**
+
+- All internal imports MUST use `@/` alias pointing to `src/` directory
+- Relative imports (e.g., `../`, `./`) are PROHIBITED for src files
+- External packages and workspace dependencies use normal imports
+
+```typescript
+// ✅ CORRECT - Use @/ alias for src files
+import { foo } from "@/utils/bar.ts";
+import { MyComponent } from "@/components/Button.tsx";
+import type { Config } from "@/types/config.ts";
+
+// ✅ CORRECT - External packages
+import { Command } from "commander";
+import { render } from "@opentui/solid";
+
+// ✅ CORRECT - Workspace dependencies
+import { Agent } from "calyx-agent/...";
+
+// ❌ WRONG - Relative imports
+import { foo } from "../utils/bar.ts";
+import { MyComponent } from "./components/Button.tsx";
+```
+
+**Configuration:**
+
+- `tsconfig.json` has `baseUrl: "."` and `paths: { "@/*": ["./src/*"] }`
+- Bun automatically recognizes these aliases at runtime
+- TypeScript provides type checking via the paths config
+
+**Other Rules:**
+
 - Use TypeScript extension imports: `import { x } from "./file.ts"`
 - Verbatim module syntax enabled (imports preserved as-is)
 - Prefer named exports over default exports

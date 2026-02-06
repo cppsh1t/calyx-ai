@@ -5,9 +5,9 @@ import type {
   CLIConfig,
   ChatOptions,
   AskOptions,
-} from "./types/cli.ts";
-import { DEFAULT_GLOBAL_OPTIONS } from "./types/cli.ts";
-import packageJson from "../package.json" with { type: "json" };
+} from "@/types/cli.ts";
+import { DEFAULT_GLOBAL_OPTIONS } from "@/types/cli.ts";
+import packageJson from "../../package.json" with { type: "json" };
 
 // ============================================================================
 // Module State Management
