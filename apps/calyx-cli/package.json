@@ -1,6 +1,6 @@
 {
   "name": "calyx-cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "private": false,
   "bin": {
@@ -10,8 +10,7 @@
     "dev": "bun run --watch src/index.tsx",
     "build": "bun run build.ts",
     "test": "bun test",
-    "check": "tsc --noEmit",
-    "postinstall": "bun run scripts/init-user-config.ts"
+    "check": "tsc --noEmit"
   },
   "files": [
     "dist/",

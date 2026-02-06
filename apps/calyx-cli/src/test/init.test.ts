@@ -106,6 +106,18 @@ describe("Init Command Integration Tests", () => {
       const configPath = join(configDir, "models.json");
       await writeFile(configPath, '{"existing": true}', "utf-8");
 
+      // Track if process.exit was called
+      let exitCalled = false;
+      let exitCode = 0;
+
+      // Mock process.exit to prevent actual process termination
+      const originalExit = process.exit;
+      process.exit = ((code: number = 0) => {
+        exitCalled = true;
+        exitCode = code;
+        // Don't actually exit in tests
+      }) as never;
+
       // Capture console.error
       const errorLogs: string[] = [];
       const originalError = console.error;
@@ -117,11 +129,15 @@ describe("Init Command Integration Tests", () => {
         // Execute: calyx init (should fail)
         await program.parseAsync(["bun", "cli", "init"]);
       } catch (error) {
-        // Expected - process.exit(1) terminates the process
-        // In test environment, this may throw an error
+        // Command errors are caught internally
       } finally {
         console.error = originalError;
+        process.exit = originalExit;
       }
+
+      // Verify: process.exit(1) was called
+      expect(exitCalled).toBe(true);
+      expect(exitCode).toBe(1);
 
       // Verify: error message contains "already exists"
       const errorOutput = errorLogs.join(" ");
@@ -135,6 +151,18 @@ describe("Init Command Integration Tests", () => {
       const configPath = join(configDir, "models.json");
       await writeFile(configPath, '{"existing": true}', "utf-8");
 
+      // Track if process.exit was called
+      let exitCalled = false;
+      let exitCode = 0;
+
+      // Mock process.exit to prevent actual process termination
+      const originalExit = process.exit;
+      process.exit = ((code: number = 0) => {
+        exitCalled = true;
+        exitCode = code;
+        // Don't actually exit in tests
+      }) as never;
+
       // Capture console.error
       const errorLogs: string[] = [];
       const originalError = console.error;
@@ -146,9 +174,10 @@ describe("Init Command Integration Tests", () => {
         // Execute: calyx init (should fail)
         await program.parseAsync(["bun", "cli", "init"]);
       } catch (error) {
-        // Expected - process.exit(1) terminates the process
+        // Command errors are caught internally
       } finally {
         console.error = originalError;
+        process.exit = originalExit;
       }
 
       // Verify: error message contains "already exists"
@@ -157,6 +186,10 @@ describe("Init Command Integration Tests", () => {
 
       // Verify: error message contains "calyx config"
       expect(errorOutput).toContain("calyx config");
+
+      // Verify: process.exit(1) was called
+      expect(exitCalled).toBe(true);
+      expect(exitCode).toBe(1);
     });
 
     test("does not overwrite existing config", async () => {
@@ -167,11 +200,19 @@ describe("Init Command Integration Tests", () => {
       const originalContent = '{"original": "data", "value": 123}';
       await writeFile(configPath, originalContent, "utf-8");
 
-      // Execute: calyx init (should fail without overwriting)
+      // Mock process.exit to prevent actual process termination
+      const originalExit = process.exit;
+      process.exit = ((code: number = 0) => {
+        // Don't actually exit in tests
+      }) as never;
+
       try {
+        // Execute: calyx init (should fail without overwriting)
         await program.parseAsync(["bun", "cli", "init"]);
       } catch (error) {
-        // Expected - process.exit(1) terminates the process
+        // Command errors are caught internally
+      } finally {
+        process.exit = originalExit;
       }
 
       // Verify: original config content is unchanged
