@@ -12,10 +12,10 @@ AI-driven command-line interaction tool.
 ## Installation
 
 ```bash
-bun install
+bun install -g calyx-cli
 ```
 
-This will automatically create a user-level configuration file at `~/.calyx/models.json` (skipped in CI environments).
+The CLI will automatically create a user-level configuration file at `~/.calyx/models.json` on first run (skipped in CI environments).
 
 ## Quick Start
 
@@ -42,7 +42,7 @@ calyx init -c
 ### Configuration Locations
 
 - **User-level**: `~/.calyx/models.json`
-  - Created automatically on installation
+  - Created automatically on first run
   - Shared across all projects
   - Used as template for `--copy` option
 
