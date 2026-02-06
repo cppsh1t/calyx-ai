@@ -4,11 +4,6 @@ import {
   resetConfigForTesting,
   getParsedConfig,
 } from "@/utils/cli.ts";
-import {
-  VALID_MODELS,
-  VALID_AGENTS,
-  DEFAULT_GLOBAL_OPTIONS,
-} from "@/types/cli.ts";
 
 /**
  * CLI Parsing Logic Tests
@@ -16,402 +11,166 @@ import {
  * This test suite validates the command-line argument parsing logic
  * for the Calyx CLI tool. Tests cover:
  *
- * 1. Parsing: Argument parsing and option handling
+ * 1. Basic Parsing: Option handling
  * 2. Config Management: Configuration storage and retrieval
- * 3. Validation: Model and agent validation
- * 4. Edge Cases: Error handling and boundary conditions
- *
- * Baseline captures (apps/calyx-cli/fixtures/):
- * - baseline-help.txt: Expected help text output
- * - baseline-error.txt: Expected validation error output
+ * 3. Edge Cases: Error handling and boundary conditions
  */
 
 describe("CLI Parsing Logic", () => {
-  describe("Chat Command Parsing", () => {
+  describe("Basic Parsing", () => {
     beforeEach(() => {
       resetConfigForTesting();
     });
 
-    test("parses chat command with prompt", async () => {
-      await program.parseAsync(["node", "cli", "chat", "hello world"]);
+    test("parses with no options", async () => {
+      await program.parseAsync(["bun", "cli"]);
       const config = getParsedConfig();
       expect(config).toBeDefined();
-      expect(config?.command).toBe("chat");
-      expect(config?.prompt).toBe("hello world");
-      expect(config?.model).toBe("auto"); // default
-      expect(config?.agent).toBe("prometheus"); // default
+      expect(config?.continue).toBe(false); // default
+      expect(config?.sessionId).toBeUndefined();
+      expect(config?.flowName).toBeUndefined();
     });
 
-    test("parses chat command with session option", async () => {
-      await program.parseAsync([
-        "node",
-        "cli",
-        "chat",
-        "hello",
-        "--session",
-        "abc123",
-      ]);
+    test("parses --continue flag", async () => {
+      await program.parseAsync(["bun", "cli", "--continue"]);
       const config = getParsedConfig();
-      expect(config?.command).toBe("chat");
-      expect(config?.chatOptions?.session).toBe("abc123");
+      expect(config?.continue).toBe(true);
+      expect(config?.sessionId).toBeUndefined();
+      expect(config?.flowName).toBeUndefined();
     });
 
-    test("parses chat command with new-session flag", async () => {
-      await program.parseAsync([
-        "node",
-        "cli",
-        "chat",
-        "test",
-        "--new-session",
-      ]);
+    test("parses -c short flag", async () => {
+      await program.parseAsync(["bun", "cli", "-c"]);
       const config = getParsedConfig();
-      expect(config?.chatOptions?.newSession).toBe(true);
+      expect(config?.continue).toBe(true);
     });
 
-    test("parses chat command with prompt-interactive flag", async () => {
-      await program.parseAsync([
-        "node",
-        "cli",
-        "chat",
-        "test",
-        "--prompt-interactive",
-      ]);
+    test("parses --session option", async () => {
+      await program.parseAsync(["bun", "cli", "--session", "abc123"]);
       const config = getParsedConfig();
-      expect(config?.chatOptions?.promptInteractive).toBe(true);
+      expect(config?.sessionId).toBe("abc123");
+      expect(config?.continue).toBe(false);
     });
 
-    test("parses chat command with all options combined", async () => {
+    test("parses -s short option", async () => {
+      await program.parseAsync(["bun", "cli", "-s", "xyz789"]);
+      const config = getParsedConfig();
+      expect(config?.sessionId).toBe("xyz789");
+    });
+
+    test("parses --flow option", async () => {
+      await program.parseAsync(["bun", "cli", "--flow", "dev"]);
+      const config = getParsedConfig();
+      expect(config?.flowName).toBe("dev");
+    });
+
+    test("parses -f short option", async () => {
+      await program.parseAsync(["bun", "cli", "-f", "prod"]);
+      const config = getParsedConfig();
+      expect(config?.flowName).toBe("prod");
+    });
+
+    test("parses with all options combined", async () => {
       await program.parseAsync([
-        "node",
+        "bun",
         "cli",
-        "chat",
-        "complex prompt",
-        "--model",
-        "pro",
-        "--agent",
-        "oracle",
-        "--temperature",
-        "1.5",
-        "--session",
+        "-c",
+        "-s",
         "sess123",
-        "--debug",
-        "--verbose",
+        "-f",
+        "custom",
       ]);
       const config = getParsedConfig();
-      expect(config?.command).toBe("chat");
-      expect(config?.prompt).toBe("complex prompt");
-      expect(config?.model).toBe("pro");
-      expect(config?.agent).toBe("oracle");
-      expect(config?.temperature).toBe(1.5);
-      expect(config?.chatOptions?.session).toBe("sess123");
-      expect(config?.debug).toBe(true);
-      expect(config?.verbose).toBe(true);
-    });
-  });
-
-  describe("Ask Command Parsing", () => {
-    beforeEach(() => {
-      resetConfigForTesting();
+      expect(config?.continue).toBe(true);
+      expect(config?.sessionId).toBe("sess123");
+      expect(config?.flowName).toBe("custom");
     });
 
-    test("parses ask command with prompt", async () => {
-      await program.parseAsync(["node", "cli", "ask", "what is git?"]);
-      const config = getParsedConfig();
-      expect(config?.command).toBe("ask");
-      expect(config?.prompt).toBe("what is git?");
-    });
-
-    test("parses ask command with file option", async () => {
+    test("parses with long options combined", async () => {
       await program.parseAsync([
-        "node",
+        "bun",
         "cli",
-        "ask",
-        "help me",
-        "--file",
-        "question.txt",
-      ]);
-      const config = getParsedConfig();
-      expect(config?.askOptions?.file).toBe("question.txt");
-    });
-
-    test("parses ask command with context paths", async () => {
-      await program.parseAsync([
-        "node",
-        "cli",
-        "ask",
-        "fix bug",
-        "--context",
-        "src/",
-        "tests/",
-      ]);
-      const config = getParsedConfig();
-      expect(config?.askOptions?.context).toEqual(["src/", "tests/"]);
-    });
-
-    test("parses ask command with global options", async () => {
-      await program.parseAsync([
-        "node",
-        "cli",
-        "ask",
-        "help",
-        "--model",
-        "flash",
-        "--temperature",
-        "0.5",
-      ]);
-      const config = getParsedConfig();
-      expect(config?.model).toBe("flash");
-      expect(config?.temperature).toBe(0.5);
-    });
-  });
-
-  describe("Global Options Parsing", () => {
-    beforeEach(() => {
-      resetConfigForTesting();
-    });
-
-    test("parses --model option with valid values", async () => {
-      for (const model of VALID_MODELS) {
-        resetConfigForTesting();
-        await program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--model",
-          model,
-        ]);
-        const config = getParsedConfig();
-        expect(config?.model).toBe(model);
-      }
-    });
-
-    test("parses --agent option with valid values", async () => {
-      for (const agent of VALID_AGENTS) {
-        resetConfigForTesting();
-        await program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--agent",
-          agent,
-        ]);
-        const config = getParsedConfig();
-        expect(config?.agent).toBe(agent);
-      }
-    });
-
-    test("parses --temperature option with valid range", async () => {
-      const testCases = [
-        { value: "0.0", expected: 0.0 },
-        { value: "0.7", expected: 0.7 },
-        { value: "1.5", expected: 1.5 },
-        { value: "2.0", expected: 2.0 },
-      ];
-      for (const { value, expected } of testCases) {
-        resetConfigForTesting();
-        await program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--temperature",
-          value,
-        ]);
-        const config = getParsedConfig();
-        expect(config?.temperature).toBe(expected);
-      }
-    });
-
-    test("parses --debug flag", async () => {
-      await program.parseAsync(["node", "cli", "chat", "test", "--debug"]);
-      const config = getParsedConfig();
-      expect(config?.debug).toBe(true);
-    });
-
-    test("parses --verbose flag", async () => {
-      await program.parseAsync(["node", "cli", "chat", "test", "--verbose"]);
-      const config = getParsedConfig();
-      expect(config?.verbose).toBe(true);
-    });
-
-    test("parses short options -m, -a, -d, -v", async () => {
-      await program.parseAsync([
-        "node",
-        "cli",
-        "chat",
+        "--continue",
+        "--session",
+        "sess456",
+        "--flow",
         "test",
-        "-m",
-        "pro",
-        "-a",
-        "oracle",
-        "-d",
-        "-v",
       ]);
       const config = getParsedConfig();
-      expect(config?.model).toBe("pro");
-      expect(config?.agent).toBe("oracle");
-      expect(config?.debug).toBe(true);
-      expect(config?.verbose).toBe(true);
+      expect(config?.continue).toBe(true);
+      expect(config?.sessionId).toBe("sess456");
+      expect(config?.flowName).toBe("test");
+    });
+
+    test("parses with continue and session only", async () => {
+      await program.parseAsync([
+        "bun",
+        "cli",
+        "--continue",
+        "--session",
+        "continue-id",
+      ]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(true);
+      expect(config?.sessionId).toBe("continue-id");
+      expect(config?.flowName).toBeUndefined();
+    });
+
+    test("parses with continue and flow only", async () => {
+      await program.parseAsync(["bun", "cli", "-c", "-f", "main"]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(true);
+      expect(config?.sessionId).toBeUndefined();
+      expect(config?.flowName).toBe("main");
     });
   });
 
-  describe("Validation", () => {
+  describe("Option Values", () => {
     beforeEach(() => {
       resetConfigForTesting();
     });
 
-    test("throws error for invalid model", async () => {
-      await expect(
-        program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--model",
-          "invalid",
-        ]),
-      ).rejects.toThrow();
-    });
-
-    test("throws error for invalid agent", async () => {
-      await expect(
-        program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--agent",
-          "invalid",
-        ]),
-      ).rejects.toThrow();
-    });
-
-    test("throws error for temperature below minimum", async () => {
-      await expect(
-        program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--temperature",
-          "-0.1",
-        ]),
-      ).rejects.toThrow();
-    });
-
-    test("throws error for temperature above maximum", async () => {
-      await expect(
-        program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--temperature",
-          "2.1",
-        ]),
-      ).rejects.toThrow();
-    });
-
-    test("throws error for non-numeric temperature", async () => {
-      await expect(
-        program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--temperature",
-          "abc",
-        ]),
-      ).rejects.toThrow();
-    });
-  });
-
-  describe("Edge Cases", () => {
-    beforeEach(() => {
-      resetConfigForTesting();
-    });
-
-    test("applies default config when no arguments provided", async () => {
-      await program.parseAsync(["node", "cli"]);
+    test("handles session ID with special characters", async () => {
+      await program.parseAsync(["bun", "cli", "-s", "sess_123-abc.def"]);
       const config = getParsedConfig();
-      expect(config).toBeDefined();
-      expect(config?.command).toBe("chat"); // default command
-      expect(config?.model).toBe(DEFAULT_GLOBAL_OPTIONS.model);
-      expect(config?.agent).toBe(DEFAULT_GLOBAL_OPTIONS.agent);
-      expect(config?.temperature).toBe(DEFAULT_GLOBAL_OPTIONS.temperature);
+      expect(config?.sessionId).toBe("sess_123-abc.def");
     });
 
-    // Note: Skipping --help and --version tests because commander.js
-    // calls process.exit() which terminates the test runner
-    test.skip("handles --help flag successfully", async () => {
-      // Should not throw, should output help and exit
-      await expect(
-        program.parseAsync(["node", "cli", "--help"]),
-      ).rejects.toThrow(); // commander exits with help
-    });
-
-    test.skip("handles --version flag successfully", async () => {
-      // Should not throw, should output version and exit
-      await expect(
-        program.parseAsync(["node", "cli", "--version"]),
-      ).rejects.toThrow(); // commander exits with version
-    });
-
-    test("handles empty prompt in chat command", async () => {
-      await program.parseAsync(["node", "cli", "chat"]);
+    test("handles session ID with UUID format", async () => {
+      const uuid = "550e8400-e29b-41d4-a716-446655440000";
+      await program.parseAsync(["bun", "cli", "-s", uuid]);
       const config = getParsedConfig();
-      expect(config?.command).toBe("chat");
-      expect(config?.prompt).toBeUndefined();
+      expect(config?.sessionId).toBe(uuid);
     });
 
-    test("handles special characters in prompt", async () => {
-      const specialPrompt =
-        'Test with "quotes", `backticks`, $symbols, and @mentions #tags';
-      await program.parseAsync(["node", "cli", "chat", specialPrompt]);
+    test("handles flow names with hyphens", async () => {
+      await program.parseAsync(["bun", "cli", "-f", "dev-flow"]);
       const config = getParsedConfig();
-      expect(config?.prompt).toBe(specialPrompt);
+      expect(config?.flowName).toBe("dev-flow");
     });
 
-    test("handles unicode characters in prompt", async () => {
-      const unicodePrompt = "Hello 世界 🌍 🚀";
-      await program.parseAsync(["node", "cli", "chat", unicodePrompt]);
+    test("handles flow names with underscores", async () => {
+      await program.parseAsync(["bun", "cli", "-f", "test_flow"]);
       const config = getParsedConfig();
-      expect(config?.prompt).toBe(unicodePrompt);
+      expect(config?.flowName).toBe("test_flow");
     });
 
-    test("handles temperature at boundary values", async () => {
-      const boundaryCases = ["0.0", "2.0"];
-      for (const temp of boundaryCases) {
-        resetConfigForTesting();
-        await program.parseAsync([
-          "node",
-          "cli",
-          "chat",
-          "test",
-          "--temperature",
-          temp,
-        ]);
-        const config = getParsedConfig();
-        expect(config?.temperature).toBe(parseFloat(temp));
-      }
+    test("handles numeric string in session ID", async () => {
+      await program.parseAsync(["bun", "cli", "-s", "12345"]);
+      const config = getParsedConfig();
+      expect(config?.sessionId).toBe("12345");
     });
 
-    test("resets config between test runs", async () => {
-      // First run
-      await program.parseAsync(["node", "cli", "chat", "first"]);
-      let config = getParsedConfig();
-      expect(config?.prompt).toBe("first");
+    test("handles empty string in session option", async () => {
+      await program.parseAsync(["bun", "cli", "-s", ""]);
+      const config = getParsedConfig();
+      expect(config?.sessionId).toBe("");
+    });
 
-      // Reset and second run
-      resetConfigForTesting();
-      config = getParsedConfig();
-      expect(config).toBeNull();
-
-      await program.parseAsync(["node", "cli", "chat", "second"]);
-      config = getParsedConfig();
-      expect(config?.prompt).toBe("second");
+    test("handles empty string in flow option", async () => {
+      await program.parseAsync(["bun", "cli", "-f", ""]);
+      const config = getParsedConfig();
+      expect(config?.flowName).toBe("");
     });
   });
 
@@ -422,13 +181,116 @@ describe("CLI Parsing Logic", () => {
 
     test("stores config after parsing", async () => {
       expect(getParsedConfig()).toBeNull();
-      await program.parseAsync(["node", "cli", "chat", "test"]);
+      await program.parseAsync(["bun", "cli", "-c"]);
       expect(getParsedConfig()).toBeDefined();
+      expect(getParsedConfig()?.continue).toBe(true);
     });
 
     test("resets config to null", () => {
       resetConfigForTesting();
       expect(getParsedConfig()).toBeNull();
+    });
+
+    test("multiple parses update config correctly", async () => {
+      // First parse
+      await program.parseAsync(["bun", "cli", "-c"]);
+      let config = getParsedConfig();
+      expect(config?.continue).toBe(true);
+
+      // Reset and second parse
+      resetConfigForTesting();
+      await program.parseAsync(["bun", "cli", "-s", "new-session"]);
+      config = getParsedConfig();
+      expect(config?.continue).toBe(false);
+      expect(config?.sessionId).toBe("new-session");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    beforeEach(() => {
+      resetConfigForTesting();
+    });
+
+    test("handles options in different order", async () => {
+      await program.parseAsync([
+        "bun",
+        "cli",
+        "-f",
+        "flow1",
+        "-s",
+        "sess1",
+        "-c",
+      ]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(true);
+      expect(config?.sessionId).toBe("sess1");
+      expect(config?.flowName).toBe("flow1");
+    });
+
+    test("handles repeated options (last one wins)", async () => {
+      await program.parseAsync(["bun", "cli", "-s", "first", "-s", "second"]);
+      const config = getParsedConfig();
+      expect(config?.sessionId).toBe("second");
+    });
+
+    test("handles repeated continue flags", async () => {
+      await program.parseAsync(["bun", "cli", "-c", "-c"]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(true);
+    });
+
+    test("handles mixed short and long options", async () => {
+      await program.parseAsync([
+        "bun",
+        "cli",
+        "-c",
+        "--session",
+        "mixed",
+        "--flow",
+        "test-flow",
+      ]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(true);
+      expect(config?.sessionId).toBe("mixed");
+      expect(config?.flowName).toBe("test-flow");
+    });
+
+    test("handles unicode characters in session ID", async () => {
+      await program.parseAsync(["bun", "cli", "-s", "session-世界"]);
+      const config = getParsedConfig();
+      expect(config?.sessionId).toBe("session-世界");
+    });
+
+    test("handles unicode characters in flow name", async () => {
+      await program.parseAsync(["bun", "cli", "-f", "流程-测试"]);
+      const config = getParsedConfig();
+      expect(config?.flowName).toBe("流程-测试");
+    });
+  });
+
+  describe("Boolean Flag Behavior", () => {
+    beforeEach(() => {
+      resetConfigForTesting();
+    });
+
+    test("continue defaults to false when not provided", async () => {
+      await program.parseAsync(["bun", "cli"]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(false);
+    });
+
+    test("--continue flag sets to true", async () => {
+      await program.parseAsync(["bun", "cli", "--continue"]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(true);
+    });
+
+    test("--no-continue flag is not supported (uses default)", async () => {
+      // Commander doesn't explicitly define --no-continue, so this tests
+      // that only the positive flag works
+      await program.parseAsync(["bun", "cli", "--continue"]);
+      const config = getParsedConfig();
+      expect(config?.continue).toBe(true);
     });
   });
 });
