@@ -1,19 +1,11 @@
 import { TextAttributes, createCliRenderer } from "@opentui/core";
 import { render } from "@opentui/solid";
-import type { CLIConfig } from "@/types/cli.ts";
+import type { CliConfigRaw, CliConfigParsed } from "@/types/cli.ts";
 import type { CliRenderer } from "@opentui/core";
 
 export async function renderTUI(
-  initialConfig?: CLIConfig,
+  config: CliConfigParsed,
 ): Promise<CliRenderer> {
-  const config = initialConfig || {
-    command: "chat",
-    model: "auto",
-    agent: "prometheus",
-    temperature: 0.7,
-    debug: false,
-    verbose: false,
-  };
 
   // Create renderer with proper error handling
   const renderer = await createCliRenderer({
@@ -42,13 +34,9 @@ export async function renderTUI(
 
         <box marginTop={2} flexDirection="column" alignItems="flex-start">
           <text attributes={TextAttributes.BOLD}>Configuration:</text>
-          <text>Command: {config.command}</text>
-          {config.prompt && <text>Prompt: {config.prompt}</text>}
-          <text>Model: {config.model}</text>
-          <text>Agent: {config.agent}</text>
-          <text>Temperature: {config.temperature}</text>
-          <text>Debug: {config.debug.toString()}</text>
-          <text>Verbose: {config.verbose.toString()}</text>
+          <text>continue: {String(config.continue)}</text>
+          <text>sessionId: {config.sessionId}</text>
+          <text>flow: {config.flowName}</text>
         </box>
 
         <text attributes={TextAttributes.DIM} marginTop={2}>
