@@ -265,6 +265,85 @@ import { MyComponent } from "../components/MyComponent";
 
 ---
 
+## Critical OpenTUI Rules
+
+### ⚠️ NOT ALL SOLIDJS FEATURES ARE SUPPORTED
+
+**CRITICAL**: OpenTUI is a TUI framework, not a web framework. It does NOT support all SolidJS features.
+
+**Common unsupported features:**
+
+- ❌ **ErrorBoundary** - Web-only, not available in TUI environment
+- ❌ **Suspense** - Async component loading not supported
+- ❌ **Portal** - No concept of multiple rendering targets
+- ❌ **Transition/Animation components** - Web-specific
+- ❌ **Hydration** - No server-side rendering in TUI
+
+**ALWAYS check OpenTUI documentation before using any SolidJS feature:**
+
+```bash
+# View OpenTUI documentation
+cat .opencode/skills/opentui/references/solid/REFERENCE.md
+cat .opencode/skills/opentui/references/solid/gotchas.md
+```
+
+**What IS supported:**
+
+- ✅ Core reactivity (`createSignal`, `createEffect`, `createMemo`)
+- ✅ Components (`Switch`, `Match`, `Show`, `For`, `Index`)
+- ✅ Hooks (`useKeyboard`, `useRenderer`, `onMount`, `onCleanup`)
+- ✅ Stores (`createStore` from `solid-js/store`)
+- ✅ JSX with OpenTUI components (`box`, `text`, `input`, etc.)
+
+**If a feature is not documented in OpenTUI references, assume it's NOT supported.**
+
+### Required Configuration Files
+
+**bunfig.toml** (MANDATORY):
+
+```toml
+preload = ["@opentui/solid/preload"]
+```
+
+This file is **required** for JSX to work correctly with OpenTUI. Without it, the application will fail to initialize with cryptic errors.
+
+### Component Naming
+
+OpenTUI uses **underscores** for multi-word components (SolidJS convention):
+
+```tsx
+// ✅ CORRECT - Underscores
+<ascii_font text="TITLE" font="tiny" />
+<tab_select />
+<line_number />
+
+// ❌ WRONG - Hyphens (React style)
+<ascii-font text="TITLE" font="tiny" />
+<tab-select />
+<line-number />
+```
+
+### Error Handling
+
+Since ErrorBoundary is not available, use Router-based error handling:
+
+```tsx
+// ✅ CORRECT - Router manages error state
+const { setError } = useRouter();
+try {
+  // risky operation
+} catch (error) {
+  setError(error); // Navigates to error view
+}
+
+// ❌ WRONG - ErrorBoundary won't work
+<ErrorBoundary fallback={...}>
+  <MyComponent />
+</ErrorBoundary>
+```
+
+---
+
 ## Development Commands
 
 ```bash
