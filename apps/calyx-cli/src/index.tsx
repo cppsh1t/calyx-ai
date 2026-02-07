@@ -3,34 +3,27 @@ import { parseCli } from "@/utils/cli.ts";
 import { initUserConfig } from "@/utils/config.ts";
 import { Router } from "@/views/router.tsx";
 import { render } from "@opentui/solid";
-import { ErrorBoundary } from "solid-js";
 
 try {
   await initUserConfig();
   const result = await parseCli(process.argv);
 
+  // Check if running in a TTY environment
+  // OpenTUI requires a terminal to function properly
+  if (!process.stdout.isTTY) {
+    console.error("Error: Calyx CLI requires a TTY environment to run.");
+    console.error("Please run in a proper terminal (not CI/non-interactive).");
+    process.exit(1);
+  }
+
   // Only render TUI if no subcommand was executed (e.g., init, help, etc.)
   if (result.shouldRenderTUI && result.parsedConfig) {
-    // Render Router with ErrorBoundary for global error handling
+    // Render Router directly (ErrorBoundary not supported in OpenTUI)
+    // Error handling is managed by the Router's error view
     // OpenTUI handles cleanup via exitOnCtrlC option
-    await render(
-      () => (
-        <ErrorBoundary
-          fallback={(err: Error, reset: () => void) => {
-            // Create simple error display
-            return (
-              <box padding={2}>
-                <text fg="red">Fatal Error: {err.message}</text>
-                <text>Press Ctrl+C to exit</text>
-              </box>
-            );
-          }}
-        >
-          <Router config={result.parsedConfig!} />
-        </ErrorBoundary>
-      ),
-      { exitOnCtrlC: true },
-    );
+    await render(() => <Router config={result.parsedConfig!} />, {
+      exitOnCtrlC: true,
+    });
   }
 } catch (error) {
   // Catch async errors that happen before render
