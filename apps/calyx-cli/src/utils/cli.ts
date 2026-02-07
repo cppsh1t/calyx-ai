@@ -99,7 +99,8 @@ export async function parseCli(
   });
 
   try {
-    await program.parseAsync(argv, { from: "user" });
+    // Don't specify from: "user" - let Commander.js auto-detect
+    await program.parseAsync(argv);
   } catch (err) {
     // exitOverride already captured the exit code
   }
