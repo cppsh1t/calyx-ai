@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { Command, InvalidArgumentError } from "commander";
+import { Command, InvalidArgumentError, CommanderError } from "commander";
 import {
   convertCliConfig,
   type CliConfigParsed,
@@ -15,80 +15,145 @@ import {
 } from "@/utils/config.ts";
 import packageJson from "../../package.json" with { type: "json" };
 
-let parsedConfig: CliConfigParsed | null = null;
-let subcommandExecuted = false;
-
-export function getParsedConfig(): CliConfigParsed | null {
-  return parsedConfig;
+export interface CliParseResult {
+  subcommandExecuted: boolean;
+  parsedConfig: CliConfigParsed | null;
+  exitCode: number;
+  shouldRenderTUI: boolean;
 }
 
-export function getSubcommandExecuted(): boolean {
-  return subcommandExecuted;
-}
+// Legacy module-level state for backward compatibility with deprecated getters
+let legacyParsedConfig: CliConfigParsed | null = null;
+let legacySubcommandExecuted = false;
 
-export function resetConfigForTesting(): void {
-  parsedConfig = null;
-  subcommandExecuted = false;
-}
+export async function parseCli(
+  argv: string[] = process.argv,
+): Promise<CliParseResult> {
+  const program = new Command();
 
-const program = new Command();
+  program
+    .name("calyx")
+    .description("AI-driven command-line interaction tool")
+    .version(packageJson.version);
 
-program
-  .name("calyx")
-  .description("AI-driven command-line interaction tool")
-  .version(packageJson.version);
+  program
+    .option("-c, --continue", "Continue previous session", false)
+    .option("-s, --session <id>", "Session ID to continue")
+    .option("-f, --flow <name>", "Flow to use");
 
-program
-  .option("-c, --continue", "Continue previous session", false)
-  .option("-s, --session <id>", "Session ID to continue")
-  .option("-f, --flow <name>", "Flow to use");
+  let subcommandExecuted = false;
+  let parsedConfig: CliConfigParsed | null = null;
+  let exitCode = 0;
 
-// Init subcommand
-program
-  .command("init")
-  .description("Initialize Calyx configuration in current project")
-  .option("-c, --copy", "Copy user configuration to project")
-  .action(async (options: { copy?: boolean }) => {
-    subcommandExecuted = true;
-    try {
-      const projectConfigPath = getProjectConfigPath();
+  program.exitOverride((err: CommanderError) => {
+    exitCode = err.exitCode;
+    throw err;
+  });
 
-      // Check if configuration already exists
-      if (await configExists(projectConfigPath)) {
-        console.error(`Configuration already exists: ${projectConfigPath}`);
+  // Init subcommand
+  program
+    .command("init")
+    .description("Initialize Calyx configuration in current project")
+    .option("-c, --copy", "Copy user configuration to project")
+    .action(async (options: { copy?: boolean }) => {
+      subcommandExecuted = true;
+      try {
+        const projectConfigPath = getProjectConfigPath();
+
+        // Check if configuration already exists
+        if (await configExists(projectConfigPath)) {
+          console.error(`Configuration already exists: ${projectConfigPath}`);
+          console.error(
+            "Use 'calyx config' commands to manage existing configuration.",
+          );
+          process.exit(1);
+        }
+
+        // Initialize configuration
+        if (options.copy) {
+          await copyUserToProjectConfig();
+        } else {
+          await initProjectConfig();
+        }
+
+        console.log("✓ Configuration initialized successfully");
+      } catch (error) {
+        if (error instanceof ConfigError) {
+          console.error(`Configuration error: ${error.message}`);
+          if (error.path) {
+            console.error(`Path: ${error.path}`);
+          }
+          process.exit(1);
+        }
         console.error(
-          "Use 'calyx config' commands to manage existing configuration.",
+          `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
         );
         process.exit(1);
       }
+    });
 
-      // Initialize configuration
-      if (options.copy) {
-        await copyUserToProjectConfig();
-      } else {
-        await initProjectConfig();
-      }
-
-      console.log("✓ Configuration initialized successfully");
-    } catch (error) {
-      if (error instanceof ConfigError) {
-        console.error(`Configuration error: ${error.message}`);
-        if (error.path) {
-          console.error(`Path: ${error.path}`);
-        }
-        process.exit(1);
-      }
-      console.error(
-        `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      process.exit(1);
-    }
+  program.action(async () => {
+    const opts = program.opts<CliConfigRaw>();
+    const config = convertCliConfig(opts);
+    parsedConfig = config;
   });
 
-program.action(async () => {
-  const opts = program.opts<CliConfigRaw>();
-  const config = convertCliConfig(opts);
-  parsedConfig = config;
-});
+  try {
+    await program.parseAsync(argv, { from: "user" });
+  } catch (err) {
+    // exitOverride already captured the exit code
+  }
 
-export { program };
+  // Update legacy state for backward compatibility
+  legacySubcommandExecuted = subcommandExecuted;
+  legacyParsedConfig = parsedConfig;
+
+  return {
+    subcommandExecuted,
+    parsedConfig,
+    exitCode,
+    shouldRenderTUI: !subcommandExecuted && parsedConfig !== null,
+  };
+}
+
+/**
+ * @deprecated Use parseCli() instead. This function exists for backward compatibility.
+ */
+export function getParsedConfig(): CliConfigParsed | null {
+  return legacyParsedConfig;
+}
+
+/**
+ * @deprecated Use parseCli() instead. This function exists for backward compatibility.
+ */
+export function getSubcommandExecuted(): boolean {
+  return legacySubcommandExecuted;
+}
+
+/**
+ * @deprecated Use parseCli() instead. This function exists for backward compatibility.
+ */
+export function resetConfigForTesting(): void {
+  legacyParsedConfig = null;
+  legacySubcommandExecuted = false;
+}
+
+/**
+ * Test helper function that parses CLI arguments for testing.
+ * This is intended for use in test files that need to verify CLI behavior.
+ *
+ * @param argv - Arguments to parse (defaults to ["bun", "cli"])
+ * @returns Promise that resolves when parsing is complete
+ *
+ * @example
+ * ```ts
+ * await testParse(["bun", "cli", "--continue"]);
+ * const config = getParsedConfig();
+ * expect(config?.continue).toBe(true);
+ * ```
+ */
+export async function testParse(
+  argv: string[] = ["bun", "cli"],
+): Promise<void> {
+  await parseCli(argv);
+}

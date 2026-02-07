@@ -1,9 +1,5 @@
 #!/usr/bin/env bun
-import {
-  program,
-  getParsedConfig,
-  getSubcommandExecuted,
-} from "@/utils/cli.ts";
+import { parseCli } from "@/utils/cli.ts";
 import { renderTUI } from "@/views/tui.tsx";
 import { initUserConfig } from "@/utils/config.ts";
 import type { CliRenderer } from "@opentui/core";
@@ -12,12 +8,11 @@ let renderer: CliRenderer | null = null;
 
 try {
   await initUserConfig();
-  await program.parseAsync(process.argv);
+  const result = await parseCli(process.argv);
 
   // Only render TUI if no subcommand was executed (e.g., init, help, etc.)
-  if (!getSubcommandExecuted()) {
-    const config = getParsedConfig()!;
-    renderer = await renderTUI(config);
+  if (result.shouldRenderTUI) {
+    renderer = await renderTUI(result.parsedConfig!);
   }
 } catch (error) {
   console.error("Fatal error:", error);

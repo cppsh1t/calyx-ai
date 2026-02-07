@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { program } from "@/utils/cli.ts";
+import { testParse } from "@/utils/cli.ts";
 import { existsSync, readFileSync, rmSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -42,7 +42,7 @@ describe("Init Command Integration Tests", () => {
   describe("Empty Config Creation", () => {
     test("creates .calyx/models.json with empty object", async () => {
       // Execute: calyx init
-      await program.parseAsync(["bun", "cli", "init"]);
+      await testParse(["bun", "cli", "init"]);
 
       // Verify: config file exists
       const configPath = join(tempDir, ".calyx", "models.json");
@@ -55,7 +55,7 @@ describe("Init Command Integration Tests", () => {
 
     test("creates .calyx directory structure", async () => {
       // Execute: calyx init
-      await program.parseAsync(["bun", "cli", "init"]);
+      await testParse(["bun", "cli", "init"]);
 
       // Verify: .calyx directory exists
       const calyxDir = join(tempDir, ".calyx");
@@ -73,7 +73,7 @@ describe("Init Command Integration Tests", () => {
       // If it doesn't exist, the test will fail with process.exit(1)
 
       // Execute: calyx init --copy
-      await program.parseAsync(["bun", "cli", "init", "--copy"]);
+      await testParse(["bun", "cli", "init", "--copy"]);
 
       // Verify: config file exists
       const configPath = join(tempDir, ".calyx", "models.json");
@@ -86,7 +86,7 @@ describe("Init Command Integration Tests", () => {
 
     test("accepts -c as shorthand for --copy", async () => {
       // Execute: calyx init -c
-      await program.parseAsync(["bun", "cli", "init", "-c"]);
+      await testParse(["bun", "cli", "init", "-c"]);
 
       // Verify: config file exists
       const configPath = join(tempDir, ".calyx", "models.json");
@@ -127,7 +127,7 @@ describe("Init Command Integration Tests", () => {
 
       try {
         // Execute: calyx init (should fail)
-        await program.parseAsync(["bun", "cli", "init"]);
+        await testParse(["bun", "cli", "init"]);
       } catch (error) {
         // Command errors are caught internally
       } finally {
@@ -172,7 +172,7 @@ describe("Init Command Integration Tests", () => {
 
       try {
         // Execute: calyx init (should fail)
-        await program.parseAsync(["bun", "cli", "init"]);
+        await testParse(["bun", "cli", "init"]);
       } catch (error) {
         // Command errors are caught internally
       } finally {
@@ -208,7 +208,7 @@ describe("Init Command Integration Tests", () => {
 
       try {
         // Execute: calyx init (should fail without overwriting)
-        await program.parseAsync(["bun", "cli", "init"]);
+        await testParse(["bun", "cli", "init"]);
       } catch (error) {
         // Command errors are caught internally
       } finally {
@@ -236,7 +236,7 @@ describe("Init Command Integration Tests", () => {
         process.chdir(testDir);
 
         // Execute the command
-        await program.parseAsync(testCase.args);
+        await testParse(testCase.args);
 
         // Verify: config file exists
         const configPath = join(testDir, ".calyx", "models.json");
