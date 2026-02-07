@@ -88,6 +88,34 @@ bun run check
 bun run build
 ```
 
+### Local Testing Installation Scripts
+
+For quick local testing during development, use the provided installation scripts in the `apps/calyx-cli` directory:
+
+**Windows (PowerShell):**
+
+```powershell
+cd apps/calyx-cli
+.\install-local.ps1
+```
+
+**macOS/Linux:**
+
+```bash
+cd apps/calyx-cli
+./install-local.sh
+```
+
+These scripts automate the following workflow:
+
+1. Remove existing `.tgz` packages
+2. Uninstall global `calyx-cli`
+3. Build the project
+4. Pack into `.tgz` file
+5. Install globally from the local package
+
+This allows for rapid iteration and testing of changes without publishing to npm.
+
 ## Project Structure
 
 ```
