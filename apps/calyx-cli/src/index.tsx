@@ -3,6 +3,7 @@ import { parseCli } from "@/utils/cli.ts";
 import { initUserConfig } from "@/utils/config.ts";
 import { Router } from "@/views/router.tsx";
 import { render } from "@opentui/solid";
+import { handleError } from "@/utils/error-handler.ts";
 
 try {
   await initUserConfig();
@@ -27,6 +28,5 @@ try {
   }
 } catch (error) {
   // Catch async errors that happen before render
-  console.error("Initialization error:", error);
-  process.exit(1);
+  await handleError(error, { context: "initialization" });
 }
