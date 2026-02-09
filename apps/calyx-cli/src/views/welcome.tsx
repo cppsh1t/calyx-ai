@@ -1,30 +1,23 @@
-import type { JSX } from "solid-js";
-import { TextAttributes } from "@opentui/core";
-import { useKeyboard } from "@opentui/solid";
-import { useRouter } from "@/views/router.tsx";
+import { useRouter } from '@/views/router.tsx'
+import { TextAttributes } from '@opentui/core'
+import { useKeyboard } from '@opentui/solid'
+import type { JSX } from 'solid-js'
 
 export function WelcomeView(): JSX.Element {
-  const { navigate, state } = useRouter();
+  const { navigate, state } = useRouter()
 
   // Keyboard shortcut: 'c' to go to chat
   useKeyboard((key) => {
-    if (key.name === "c") {
-      navigate("chat");
+    if (key.name === 'c') {
+      navigate('chat')
     }
-  });
+  })
 
   return (
-    <box
-      alignItems="center"
-      justifyContent="center"
-      flexGrow={1}
-      flexDirection="column"
-    >
+    <box alignItems="center" justifyContent="center" flexGrow={1} flexDirection="column">
       <box justifyContent="center" alignItems="flex-end">
         <ascii_font font="tiny" text="Calyx CLI" />
-        <text attributes={TextAttributes.DIM}>
-          AI-Powered Command Line Tool
-        </text>
+        <text attributes={TextAttributes.DIM}>AI-Powered Command Line Tool</text>
       </box>
 
       <box marginTop={2} flexDirection="column" alignItems="flex-start">
@@ -35,7 +28,7 @@ export function WelcomeView(): JSX.Element {
       </box>
 
       {/* Navigation to chat */}
-      <box marginTop={2} border onMouseDown={() => navigate("chat")}>
+      <box marginTop={2} border onMouseDown={() => navigate('chat')}>
         <text>[C]hat</text>
       </box>
 
@@ -43,7 +36,7 @@ export function WelcomeView(): JSX.Element {
         Press Ctrl+C to exit
       </text>
     </box>
-  );
+  )
 }
 
-export default WelcomeView;
+export default WelcomeView

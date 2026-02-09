@@ -1,5 +1,5 @@
-import { Show } from "solid-js";
-import type { JSX } from "solid-js";
+import type { JSX } from 'solid-js'
+import { Show } from 'solid-js'
 
 /**
  * ErrorView component for displaying error messages in the TUI.
@@ -13,19 +13,11 @@ import type { JSX } from "solid-js";
  * @param props.error - The error object (may be null)
  * @param props.message - Human-readable error message
  */
-export function ErrorView(props: {
-  error: Error | null;
-  message: string;
-}): JSX.Element {
+export function ErrorView(props: { error: Error | null; message: string }): JSX.Element {
   return (
     <box flexDirection="column" flexGrow={1} padding={2}>
       {/* Central error display */}
-      <box
-        flexDirection="column"
-        flexGrow={1}
-        justifyContent="center"
-        alignItems="center"
-      >
+      <box flexDirection="column" flexGrow={1} justifyContent="center" alignItems="center">
         {/* Error icon and title */}
         <text fg="red">
           <strong>⚠ Error</strong>
@@ -49,7 +41,7 @@ export function ErrorView(props: {
         <text fg="#666">Press Ctrl+C to exit</text>
       </box>
     </box>
-  );
+  )
 }
 
-export default ErrorView;
+export default ErrorView

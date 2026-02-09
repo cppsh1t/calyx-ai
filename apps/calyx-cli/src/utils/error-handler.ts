@@ -1,9 +1,9 @@
-import { logger } from "@/utils/logger";
+import { logger } from '@/utils/logger'
 
 interface HandleErrorOptions {
-  router?: { setError: (e: Error) => void };
-  exitCode?: number;
-  context?: string;
+  router?: { setError: (e: Error) => void }
+  exitCode?: number
+  context?: string
 }
 
 /**
@@ -15,14 +15,11 @@ interface HandleErrorOptions {
  * @param error - The error to handle (can be any type)
  * @param options - Optional configuration for error handling
  */
-export async function handleError(
-  error: unknown,
-  options: HandleErrorOptions = {},
-): Promise<void> {
-  const { router, exitCode = 1, context } = options;
+export async function handleError(error: unknown, options: HandleErrorOptions = {}): Promise<void> {
+  const { router, exitCode = 1, context } = options
 
   // Convert unknown to Error object
-  const errorObj = error instanceof Error ? error : new Error(String(error));
+  const errorObj = error instanceof Error ? error : new Error(String(error))
 
   // Log the error
   logger.error(
@@ -31,19 +28,19 @@ export async function handleError(
       context,
       stack: errorObj.stack,
     },
-    errorObj.message,
-  );
+    errorObj.message
+  )
 
   // Handle based on whether UI is rendered
   if (router) {
     // UI is rendered, navigate to error view
-    router.setError(errorObj);
+    router.setError(errorObj)
   } else {
     // UI is not rendered, exit
-    console.error(errorObj.message);
+    console.error(errorObj.message)
     if (context) {
-      console.error(`Context: ${context}`);
+      console.error(`Context: ${context}`)
     }
-    process.exit(exitCode);
+    process.exit(exitCode)
   }
 }
