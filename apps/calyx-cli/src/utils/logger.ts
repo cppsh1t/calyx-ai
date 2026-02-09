@@ -1,6 +1,7 @@
 import pino from "pino";
 import envPaths from "env-paths";
 import { join } from "node:path";
+import { cleanupOldLogs } from "./log-cleanup.ts";
 
 const paths = envPaths("calyx-cli", { suffix: "" });
 const logDir = join(paths.config, "logs");
@@ -24,3 +25,10 @@ export const logger = pino(
 );
 
 export default logger;
+
+// Clean up old log files on logger initialization
+// This runs automatically when the logger module is imported
+cleanupOldLogs(logDir).catch((err) => {
+  // Silently ignore cleanup errors to not disrupt application startup
+  logger.warn({ err }, "Failed to clean up old log files");
+});
