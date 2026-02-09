@@ -80,7 +80,7 @@ export async function parseCli(argv: string[] = process.argv): Promise<CliParseR
   try {
     // Don't specify from: "user" - let Commander.js auto-detect
     await program.parseAsync(argv)
-  } catch (err) {
+  } catch (_err) {
     // exitOverride already captured the exit code
   }
 

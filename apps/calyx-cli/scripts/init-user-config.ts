@@ -20,7 +20,7 @@ async function main(): Promise<void> {
     }
 
     // Initialize user config (idempotent - safe to run multiple times)
-    const configPath = await initUserConfig()
+    const _configPath = await initUserConfig()
 
     // Success message (initUserConfig already logs when config is created)
     // If we reach here without seeing the "Created" message, config already existed

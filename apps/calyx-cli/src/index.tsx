@@ -19,10 +19,11 @@ try {
 
   // Only render TUI if no subcommand was executed (e.g., init, help, etc.)
   if (result.shouldRenderTUI && result.parsedConfig) {
+    const config = result.parsedConfig
     // Render Router directly (ErrorBoundary not supported in OpenTUI)
     // Error handling is managed by the Router's error view
     // OpenTUI handles cleanup via exitOnCtrlC option
-    await render(() => <Router config={result.parsedConfig!} />, {
+    await render(() => <Router config={config} />, {
       exitOnCtrlC: true,
     })
   }

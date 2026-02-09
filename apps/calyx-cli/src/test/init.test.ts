@@ -128,7 +128,7 @@ describe('Init Command Integration Tests', () => {
       try {
         // Execute: calyx init (should fail)
         await testParse(['bun', 'cli', 'init'])
-      } catch (error) {
+      } catch (_error) {
         // Command errors are caught internally
       } finally {
         console.error = originalError
@@ -173,7 +173,7 @@ describe('Init Command Integration Tests', () => {
       try {
         // Execute: calyx init (should fail)
         await testParse(['bun', 'cli', 'init'])
-      } catch (error) {
+      } catch (_error) {
         // Command errors are caught internally
       } finally {
         console.error = originalError
@@ -202,14 +202,14 @@ describe('Init Command Integration Tests', () => {
 
       // Mock process.exit to prevent actual process termination
       const originalExit = process.exit
-      process.exit = ((code: number = 0) => {
+      process.exit = ((_code: number = 0) => {
         // Don't actually exit in tests
       }) as never
 
       try {
         // Execute: calyx init (should fail without overwriting)
         await testParse(['bun', 'cli', 'init'])
-      } catch (error) {
+      } catch (_error) {
         // Command errors are caught internally
       } finally {
         process.exit = originalExit

@@ -420,8 +420,11 @@ describe('Configuration Management', () => {
 
       // Final state should be the last write
       const final = await readConfig(testPath)
+      expect(versions).toHaveLength(3)
       const lastVersion = versions[versions.length - 1]
-      expect(final).toEqual(lastVersion!)
+      if (lastVersion) {
+        expect(final).toEqual(lastVersion)
+      }
     })
   })
 
@@ -456,8 +459,11 @@ describe('Configuration Management', () => {
 
       // Final write should be the one that persists
       const result = await readConfig(testPath)
+      expect(writes).toHaveLength(3)
       const lastWrite = writes[writes.length - 1]
-      expect(result).toEqual(lastWrite!)
+      if (lastWrite) {
+        expect(result).toEqual(lastWrite)
+      }
     })
 
     test('atomic write creates parent directories atomically', async () => {
