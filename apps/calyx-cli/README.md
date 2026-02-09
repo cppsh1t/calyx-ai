@@ -137,7 +137,3 @@ apps/calyx-cli/
 │   └── init-user-config.ts  # Postinstall script
 └── package.json
 ```
-
-## License
-
-MIT
