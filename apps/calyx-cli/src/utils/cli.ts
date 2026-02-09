@@ -13,6 +13,7 @@ import {
   ConfigError,
   ConfigErrorType,
 } from "@/utils/config.ts";
+import { handleError } from "@/utils/error-handler";
 import packageJson from "../../package.json" with { type: "json" };
 
 export interface CliParseResult {
@@ -79,16 +80,12 @@ export async function parseCli(
         console.log("✓ Configuration initialized successfully");
       } catch (error) {
         if (error instanceof ConfigError) {
-          console.error(`Configuration error: ${error.message}`);
-          if (error.path) {
-            console.error(`Path: ${error.path}`);
-          }
-          process.exit(1);
+          await handleError(error, {
+            context: `config-${error.type.toLowerCase()}`,
+          });
+        } else {
+          await handleError(error, { context: "init-command" });
         }
-        console.error(
-          `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
       }
     });
 
