@@ -325,15 +325,32 @@ OpenTUI uses **underscores** for multi-word components (SolidJS convention):
 
 ### Error Handling
 
-Since ErrorBoundary is not available, use Router-based error handling:
+Since ErrorBoundary is not available, use the unified `handleError()` utility:
 
 ```tsx
-// ✅ CORRECT - Router manages error state
+// ✅ CORRECT - Use unified error handler
+import { handleError } from "@/utils/error-handler";
+
+// In UI context (with router)
 const { setError } = useRouter();
 try {
   // risky operation
 } catch (error) {
-  setError(error); // Navigates to error view
+  await handleError(error, {
+    router: { setError },
+    context: "operation-name"
+  });
+}
+
+// In CLI context (no router/UI)
+try {
+  // risky operation
+} catch (error) {
+  await handleError(error, {
+    context: "cli-operation",
+    exitCode: 1
+  });
+  // process.exit(1) is called automatically
 }
 
 // ❌ WRONG - ErrorBoundary won't work
@@ -341,6 +358,19 @@ try {
   <MyComponent />
 </ErrorBoundary>
 ```
+
+**Logging**:
+
+- Errors are automatically logged via **pino** with structured metadata
+- Log files stored in: `~/.calyx/logs/YYYY-MM-DD.log`
+- Log retention: 30 days (automatic cleanup)
+- Log levels: `info`, `warn`, `error` (no debug level)
+
+**Utility Files**:
+
+- `/src/utils/logger.ts` - pino logger configuration with daily rotation
+- `/src/utils/error-handler.ts` - unified error handling with dual-mode support
+- `/src/utils/log-cleanup.ts` - automatic cleanup of logs older than 30 days
 
 ---
 
