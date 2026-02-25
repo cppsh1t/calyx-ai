@@ -27,12 +27,6 @@ export function ChatView(): JSX.Element {
   // Router navigation
   const { navigate } = useRouter()
 
-  // Handle Escape key to navigate back to welcome view
-  useKeyboard((key) => {
-    if (key.name === 'escape') {
-      navigate('welcome')
-    }
-  })
 
   return (
     <box flexDirection="column" flexGrow={1} justifyContent="center" alignItems="center">
