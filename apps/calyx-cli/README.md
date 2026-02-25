@@ -15,7 +15,7 @@ AI-driven command-line interaction tool.
 bun install -g calyx-cli
 ```
 
-The CLI will automatically create a user-level configuration file at `~/.calyx/models.json` on first run (skipped in CI environments).
+The CLI will automatically create a user-level configuration file at `~/.calyx/config.json` on first run (skipped in CI environments).
 
 ## Quick Start
 
@@ -27,7 +27,7 @@ Create a new project configuration:
 calyx init
 ```
 
-This creates `.calyx/models.json` in your project directory with an empty configuration object.
+This creates `.calyx/config.json` in your project directory with an empty configuration object.
 
 ### Copy User Configuration
 
@@ -41,22 +41,23 @@ calyx init -c
 
 ### Configuration Locations
 
-- **User-level**: `~/.calyx/models.json`
+- **User-level**: `~/.calyx/config.json`
   - Created automatically on first run
   - Shared across all projects
   - Used as template for `--copy` option
 
-- **Project-level**: `./.calyx/models.json`
+- **Project-level**: `./.calyx/config.json`
   - Created with `calyx init`
   - Project-specific configuration
   - Overrides user-level settings
 
 ## Configuration File Format
 
-The `models.json` file uses JSON format:
+The `config.json` file uses JSON format:
 
 ```json
 {
+  "configVersion": "0.1",
   "models": {
     "gpt-4": "your-api-endpoint",
     "claude": "another-endpoint"
@@ -133,7 +134,5 @@ apps/calyx-cli/
 │       ├── cli.test.ts    # CLI tests
 │       ├── config.test.ts # Config tests
 │       └── init.test.ts   # Init command tests
-├── scripts/
-│   └── init-user-config.ts  # Postinstall script
 └── package.json
 ```

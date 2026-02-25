@@ -50,13 +50,13 @@ describe('Configuration Management', () => {
   describe('Path Resolution', () => {
     test('getProjectConfigPath returns correct path', () => {
       const path = getProjectConfigPath()
-      expect(path).toBe(join(process.cwd(), '.calyx', 'models.json'))
+      expect(path).toBe(join(process.cwd(), '.calyx', 'config.json'))
     })
 
     test('getProjectConfigPath includes .calyx directory', () => {
       const path = getProjectConfigPath()
       expect(path).toContain('.calyx')
-      expect(path).toContain('models.json')
+      expect(path).toContain('config.json')
     })
   })
 
@@ -264,7 +264,7 @@ describe('Configuration Management', () => {
       expect(exists).toBe(true)
 
       const config = await readConfig(projectPath)
-      expect(config).toEqual({})
+      expect(config).toEqual({ configVersion: '0.1' })
     })
 
     test('initProjectConfig skips when config already exists', async () => {
@@ -486,14 +486,14 @@ describe('Configuration Management', () => {
       // when the user config doesn't exist
       // Note: We can't fully test this without mocking os.homedir()
       // but we can verify the error type is correct
-      const userConfigPath = join(tempDir, 'user', 'models.json')
+      const userConfigPath = join(tempDir, 'user', 'config.json')
 
       // Create a mock user config scenario
       await writeConfig(userConfigPath, { test: true })
 
       // Since we can't mock getUserConfigPath(), we test the underlying
       // read/write operations that copyUserToProjectConfig uses
-      const projectPath = join(tempDir, 'project', 'models.json')
+      const projectPath = join(tempDir, 'project', 'config.json')
       const testData: Config = { copied: true }
 
       await writeConfig(userConfigPath, testData)

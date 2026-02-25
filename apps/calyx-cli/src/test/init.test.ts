@@ -11,7 +11,7 @@ import { join } from 'node:path'
  * This test suite validates the `calyx init` command functionality.
  * Tests cover:
  *
- * 1. Empty Config Creation: `calyx init` creates .calyx/models.json with {}
+ * 1. Empty Config Creation: `calyx init` creates .calyx/config.json with configVersion
  * 2. User Config Copy: `calyx init --copy` copies user config
  * 3. Shorthand Options: `calyx init -c` works
  * 4. Error Handling: Config exists → exit code 1, error message
@@ -40,17 +40,20 @@ describe('Init Command Integration Tests', () => {
   })
 
   describe('Empty Config Creation', () => {
-    test('creates .calyx/models.json with empty object', async () => {
+    test('creates .calyx/config.json with configVersion', async () => {
       // Execute: calyx init
       await testParse(['bun', 'cli', 'init'])
 
       // Verify: config file exists
-      const configPath = join(tempDir, '.calyx', 'models.json')
+      const configPath = join(tempDir, '.calyx', 'config.json')
       expect(existsSync(configPath)).toBe(true)
 
-      // Verify: content is empty JSON object
+      // Verify: content is default config with configVersion
       const content = readFileSync(configPath, 'utf-8')
-      expect(content).toBe('{}')
+      const config = JSON.parse(content)
+      expect(config).toEqual({
+        configVersion: '0.1',
+      })
     })
 
     test('creates .calyx directory structure', async () => {
@@ -61,22 +64,22 @@ describe('Init Command Integration Tests', () => {
       const calyxDir = join(tempDir, '.calyx')
       expect(existsSync(calyxDir)).toBe(true)
 
-      // Verify: models.json file exists
-      const configPath = join(calyxDir, 'models.json')
+      // Verify: config.json file exists
+      const configPath = join(calyxDir, 'config.json')
       expect(existsSync(configPath)).toBe(true)
     })
   })
 
   describe('User Config Copy', () => {
     test('copies user config with --copy option', async () => {
-      // This test assumes user config exists at ~/.calyx/models.json
+      // This test assumes user config exists at ~/.calyx/config.json
       // If it doesn't exist, the test will fail with process.exit(1)
 
       // Execute: calyx init --copy
       await testParse(['bun', 'cli', 'init', '--copy'])
 
       // Verify: config file exists
-      const configPath = join(tempDir, '.calyx', 'models.json')
+      const configPath = join(tempDir, '.calyx', 'config.json')
       expect(existsSync(configPath)).toBe(true)
 
       // Verify: content is valid JSON (not empty object since it was copied)
@@ -89,7 +92,7 @@ describe('Init Command Integration Tests', () => {
       await testParse(['bun', 'cli', 'init', '-c'])
 
       // Verify: config file exists
-      const configPath = join(tempDir, '.calyx', 'models.json')
+      const configPath = join(tempDir, '.calyx', 'config.json')
       expect(existsSync(configPath)).toBe(true)
 
       // Verify: content is valid JSON
@@ -103,7 +106,7 @@ describe('Init Command Integration Tests', () => {
       // Setup: Create existing config
       const configDir = join(tempDir, '.calyx')
       mkdirSync(configDir, { recursive: true })
-      const configPath = join(configDir, 'models.json')
+      const configPath = join(configDir, 'config.json')
       await writeFile(configPath, '{"existing": true}', 'utf-8')
 
       // Track if process.exit was called
@@ -148,7 +151,7 @@ describe('Init Command Integration Tests', () => {
       // Setup: Create existing config
       const configDir = join(tempDir, '.calyx')
       mkdirSync(configDir, { recursive: true })
-      const configPath = join(configDir, 'models.json')
+      const configPath = join(configDir, 'config.json')
       await writeFile(configPath, '{"existing": true}', 'utf-8')
 
       // Track if process.exit was called
@@ -196,7 +199,7 @@ describe('Init Command Integration Tests', () => {
       // Setup: Create existing config with specific content
       const configDir = join(tempDir, '.calyx')
       mkdirSync(configDir, { recursive: true })
-      const configPath = join(configDir, 'models.json')
+      const configPath = join(configDir, 'config.json')
       const originalContent = '{"original": "data", "value": 123}'
       await writeFile(configPath, originalContent, 'utf-8')
 
@@ -239,7 +242,7 @@ describe('Init Command Integration Tests', () => {
         await testParse(testCase.args)
 
         // Verify: config file exists
-        const configPath = join(testDir, '.calyx', 'models.json')
+        const configPath = join(testDir, '.calyx', 'config.json')
         expect(existsSync(configPath)).toBe(true)
 
         // Verify: content is valid JSON

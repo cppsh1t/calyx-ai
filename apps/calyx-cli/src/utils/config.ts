@@ -32,18 +32,18 @@ export class ConfigError extends Error {
 
 /**
  * Get user-level configuration path
- * @returns Absolute path to ~/.calyx/models.json
+ * @returns Absolute path to ~/.calyx/config.json
  */
 export function getUserConfigPath(): string {
-  return join(homedir(), '.calyx', 'models.json')
+  return join(homedir(), '.calyx', 'config.json')
 }
 
 /**
  * Get project-level configuration path
- * @returns Absolute path to ./.calyx/models.json (relative to process.cwd())
+ * @returns Absolute path to ./.calyx/config.json (relative to process.cwd())
  */
 export function getProjectConfigPath(): string {
-  return join(process.cwd(), '.calyx', 'models.json')
+  return join(process.cwd(), '.calyx', 'config.json')
 }
 
 /**
@@ -118,7 +118,7 @@ function isCIEnvironment(): boolean {
 
 /**
  * Initialize user-level configuration
- * Creates empty config file at ~/.calyx/models.json if it doesn't exist
+ * Creates empty config file at ~/.calyx/config.json if it doesn't exist
  * Skips initialization in CI/non-interactive environments
  * @returns Path to user config file
  */
@@ -137,8 +137,8 @@ export async function initUserConfig(): Promise<string> {
     return userConfigPath
   }
 
-  // Create empty config
-  await writeConfig(userConfigPath, {})
+  // Create config with version
+  await writeConfig(userConfigPath, { configVersion: '0.1' })
   console.log(`Created user configuration at: ${userConfigPath}`)
 
   return userConfigPath
@@ -146,7 +146,7 @@ export async function initUserConfig(): Promise<string> {
 
 /**
  * Initialize project-level configuration
- * Creates empty config file at ./.calyx/models.json if it doesn't exist
+ * Creates empty config file at ./.calyx/config.json if it doesn't exist
  * @returns Path to project config file
  */
 export async function initProjectConfig(): Promise<string> {
@@ -158,8 +158,8 @@ export async function initProjectConfig(): Promise<string> {
     return projectConfigPath
   }
 
-  // Create empty config
-  await writeConfig(projectConfigPath, {})
+  // Create config with version
+  await writeConfig(projectConfigPath, { configVersion: '0.1' })
   console.log(`Created project configuration at: ${projectConfigPath}`)
 
   return projectConfigPath
@@ -167,7 +167,7 @@ export async function initProjectConfig(): Promise<string> {
 
 /**
  * Copy user configuration to project configuration
- * Reads ~/.calyx/models.json and writes to ./.calyx/models.json
+ * Reads ~/.calyx/config.json and writes to ./.calyx/config.json
  * @throws {ConfigError} If user config doesn't exist or write fails
  */
 export async function copyUserToProjectConfig(): Promise<void> {
