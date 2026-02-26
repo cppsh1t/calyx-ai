@@ -26,6 +26,7 @@ const result = await Bun.build({
   compile: {
     target: platformMap[key] as Bun.Build.CompileTarget,
     outfile: outfile,
+    autoloadBunfig: false,
   },
 })
 
