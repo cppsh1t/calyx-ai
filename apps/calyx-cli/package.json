@@ -4,7 +4,7 @@
   "type": "module",
   "private": false,
   "bin": {
-    "calyx": "./dist/index.js"
+    "calyx": "./bin/calyx.js"
   },
   "scripts": {
     "dev": "bun run --watch src/index.tsx",
@@ -13,22 +13,20 @@
     "check": "tsc --noEmit"
   },
   "files": [
-    "dist/",
+    "bin/",
     "README.md"
   ],
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
+    "@types/bun": "latest",
     "typescript": "^5"
-  },
-  "dependencies": {
-    "@opentui/core": "^0.1.75",
-    "@opentui/solid": "^0.1.75",
-    "commander": "^14.0.3",
-    "env-paths": "^4.0.0",
-    "pino": "^10.3.0",
-    "pino-roll": "^4.0.0",
-    "solid-js": "1.9.9"
   }
 }
