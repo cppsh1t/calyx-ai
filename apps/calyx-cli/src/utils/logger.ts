@@ -1,42 +1,215 @@
 import envPaths from 'env-paths'
+import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import pino from 'pino'
 import { cleanupOldLogs } from './log-cleanup.ts'
 
-const paths = envPaths('calyx-cli', { suffix: '' })
-const logDir = join(paths.config, 'logs')
+// ANSI color codes
+const COLORS = {
+  DEBUG: '\x1b[90m', // Gray
+  INFO: '\x1b[36m', // Cyan
+  WARN: '\x1b[33m', // Yellow
+  ERROR: '\x1b[31m', // Red
+  RESET: '\x1b[0m',
+} as const
 
-// Check if running in compiled mode (Bun compile doesn't support pino.transport)
-const isCompiled = process.execPath !== process.argv[0]
+// Log levels with priority
+const LEVELS = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+} as const
 
-// Only use file transport in development mode
-// Compiled executables use stdout/stderr only
-const transport = isCompiled
-  ? undefined
-  : pino.transport({
-      target: 'pino-roll',
-      options: {
-        file: join(logDir, 'calyx.log'),
-        frequency: 'daily',
-        dateFormat: 'yyyy-MM-dd',
-        mkdir: true,
-        size: '10m',
-      },
-    })
+const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
 
-export const logger = pino(
-  {
-    level: 'info',
-  },
-  transport
-)
+// Determine if running in compiled mode
+const isCompiled = Bun.embeddedFiles.length > 0
 
-export default logger
+// Determine if console supports colors
+const useColors = process.stdout.hasColors?.() ?? false
 
-// Clean up old log files on logger initialization (only in dev mode)
-if (!isCompiled) {
-  cleanupOldLogs(logDir).catch((err) => {
-    // Silently ignore cleanup errors to not disrupt application startup
-    logger.warn({ err }, 'Failed to clean up old log files')
-  })
+// Get log directory with fallback
+let logDir: string
+try {
+  logDir = join(envPaths('calyx-cli', { suffix: '' }).config, 'logs')
+} catch {
+  logDir = join(process.cwd(), '.calyx-logs')
 }
+
+// Current log file name (based on date)
+const today = new Date().toISOString().slice(0, 10)
+const logFileName = `calyx-${today}.log`
+const logPath = join(logDir, logFileName)
+
+class Logger {
+  private logFile: string = logPath
+
+  constructor() {
+    // Clean up old log files on logger initialization (only in dev mode)
+    if (!isCompiled) {
+      cleanupOldLogs(logDir).catch(() => {
+        // Silently ignore cleanup errors to not disrupt application startup
+      })
+    }
+  }
+
+  /**
+   * Format an object for logging (handles Error objects specially)
+   */
+  private formatObject(obj: Record<string, unknown>): string {
+    const lines: string[] = []
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === 'err' && value instanceof Error) {
+        lines.push(`  Error: ${value.message}`)
+        if (value.stack) {
+          lines.push(
+            value.stack
+              .split('\n')
+              .map((l) => '    ' + l)
+              .join('\n')
+          )
+        }
+      } else if (key === 'context') {
+        lines.push(`  Context: ${String(value)}`)
+      } else {
+        lines.push(`  ${key}: ${String(value)}`)
+      }
+    }
+    return lines.join('\n')
+  }
+
+  /**
+   * Get current timestamp in format: YYYY-MM-DD HH:MM:SS
+   */
+  private getTimestamp(): string {
+    return new Date().toISOString().replace('T', ' ').slice(0, 19)
+  }
+
+  /**
+   * Format log message for console (with colors if supported)
+   */
+  private formatConsole(level: keyof typeof LEVELS, message: string): string {
+    const timestamp = this.getTimestamp()
+    const levelStr = level.padEnd(5)
+    const color = COLORS[level]
+    const reset = useColors ? COLORS.RESET : ''
+    const colorStart = useColors ? color : ''
+
+    return `${colorStart}[${levelStr}] [${timestamp}] ${message}${reset}`
+  }
+
+  /**
+   * Format log message for file (plain text, no colors)
+   */
+  private formatFile(level: keyof typeof LEVELS, message: string): string {
+    const timestamp = this.getTimestamp()
+    const levelStr = level.padEnd(5)
+    return `[${levelStr}] [${timestamp}] ${message}`
+  }
+
+  /**
+   * Check if log file needs rotation (size > 10MB or date changed)
+   */
+  private async checkRotation(): Promise<void> {
+    const today = new Date().toISOString().slice(0, 10)
+    const currentFileName = `calyx-${today}.log`
+    const currentPath = join(logDir, currentFileName)
+
+    // If date changed, update log file
+    if (currentFileName !== this.logFile.split(/[\\/]/).pop()) {
+      this.logFile = currentPath
+      return
+    }
+
+    // Check file size
+    try {
+      const stats = await stat(this.logFile)
+      if (stats.size > MAX_LOG_SIZE) {
+        // Rotate by adding timestamp to filename
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        const rotatedPath = join(logDir, `calyx-${today}-${timestamp}.log`)
+        await Bun.write(rotatedPath, Bun.file(this.logFile))
+        this.logFile = currentPath
+      }
+    } catch {
+      // File doesn't exist yet, will be created on first write
+    }
+  }
+
+  /**
+   * Write log to file (asynchronously, non-blocking)
+   */
+  private async writeToFile(message: string): Promise<void> {
+    try {
+      await this.checkRotation()
+      const writer = Bun.file(this.logFile).writer()
+      writer.write(message + '\n')
+      writer.end()
+    } catch {
+      // Silently fail if file writing fails
+    }
+  }
+
+  /**
+   * Core logging method
+   */
+  private async log(level: keyof typeof LEVELS, message: string, obj?: Record<string, unknown>): Promise<void> {
+    // Format console output
+    const consoleMessage = this.formatConsole(level, message)
+
+    // Use console.log() for DEBUG/INFO, console.error() for WARN/ERROR
+    if (level === 'WARN' || level === 'ERROR') {
+      console.error(consoleMessage)
+    } else {
+      console.log(consoleMessage)
+    }
+
+    // Format and write to file
+    const fileMessage = this.formatFile(level, message)
+    if (obj) {
+      const objStr = this.formatObject(obj)
+      await this.writeToFile(`${fileMessage}\n${objStr}`)
+    } else {
+      await this.writeToFile(fileMessage)
+    }
+  }
+
+  /**
+   * Log debug message
+   */
+  async debug(message: string, obj?: Record<string, unknown>): Promise<void> {
+    await this.log('DEBUG', message, obj)
+  }
+
+  /**
+   * Log info message
+   */
+  async info(message: string, obj?: Record<string, unknown>): Promise<void> {
+    await this.log('INFO', message, obj)
+  }
+
+  /**
+   * Log warning message
+   */
+  async warn(message: string, obj?: Record<string, unknown>): Promise<void> {
+    await this.log('WARN', message, obj)
+  }
+
+  /**
+   * Log error message
+   */
+  async error(objOrMessage: Record<string, unknown> | string, message?: string): Promise<void> {
+    // Support both patterns:
+    // - error({ err, context }, message)
+    // - error(message)
+    if (typeof objOrMessage === 'string') {
+      await this.log('ERROR', objOrMessage)
+    } else {
+      await this.log('ERROR', message || 'Error occurred', objOrMessage)
+    }
+  }
+}
+
+// Create singleton instance
+export const logger = new Logger()
+export default logger
