@@ -1,5 +1,5 @@
 import envPaths from 'env-paths'
-import { stat } from 'node:fs/promises'
+import { appendFile, mkdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { cleanupOldLogs } from './log-cleanup.ts'
 
@@ -31,7 +31,11 @@ const useColors = process.stdout.hasColors?.() ?? false
 // Get log directory with fallback
 let logDir: string
 try {
-  logDir = join(envPaths('calyx-cli', { suffix: '' }).config, 'logs')
+  // envPaths returns config path with extra 'Config' subdirectory on Windows
+  // We want logs in ~/.calyx-cli/logs directly, not ~/.calyx-cli/Config/logs
+  const basePath = envPaths('calyx-cli', { suffix: '' }).config
+  // Remove trailing 'Config' if it exists (Windows-specific issue)
+  logDir = join(basePath.replace(/[/\\]Config$/, ''), 'logs')
 } catch {
   logDir = join(process.cwd(), '.calyx-logs')
 }
@@ -137,14 +141,25 @@ class Logger {
   }
 
   /**
+   * Ensure log directory exists
+   */
+  private async ensureLogDir(): Promise<void> {
+    try {
+      await mkdir(logDir, { recursive: true })
+    } catch {
+      // Silently fail if directory creation fails
+    }
+  }
+
+  /**
    * Write log to file (asynchronously, non-blocking)
    */
   private async writeToFile(message: string): Promise<void> {
     try {
       await this.checkRotation()
-      const writer = Bun.file(this.logFile).writer()
-      writer.write(message + '\n')
-      writer.end()
+      await this.ensureLogDir()
+      // Use appendFile to append to the log file
+      await appendFile(this.logFile, message + '\n', 'utf-8')
     } catch {
       // Silently fail if file writing fails
     }
