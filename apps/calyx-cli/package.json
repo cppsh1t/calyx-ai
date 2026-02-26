@@ -26,7 +26,18 @@
     "arm64"
   ],
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@opentui/core": "^0.1.75",
+    "@opentui/solid": "^0.1.75",
+    "commander": "^14.0.3",
+    "env-paths": "^4.0.0",
+    "pino": "^10.3.0",
+    "pino-roll": "^4.0.0",
+    "solid-js": "1.9.9"
   }
 }
