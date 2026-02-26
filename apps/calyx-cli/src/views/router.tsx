@@ -76,7 +76,6 @@ export function Router(props: { config: CliConfigParsed }): JSX.Element {
   return (
     <box flexDirection="column" flexGrow={1} padding={1}>
       <RouterContext.Provider value={routerValue}>
-        <text>{currentView()}</text>
         <Switch>
           <Match when={currentView() === 'welcome'}>
             <WelcomeView />

@@ -1,18 +1,19 @@
 import logger from '@/utils/logger'
 import { useRouter } from '@/views/router.tsx'
 import { TextAttributes } from '@opentui/core'
-import { useRenderer } from '@opentui/solid'
+import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
 import type { JSX } from 'solid-js'
 
 export function WelcomeView(): JSX.Element {
   const { navigate, state } = useRouter()
 
-  const renderer = useRenderer()
-  renderer.keyInput.on('keypress', (key) => {
-    logger.info(`Key pressed in main renderer: ${key.name}`)
-    if (key.name === 'c') {
+  useKeyBind(KeyBindPriorityEnum.WELCOME, (event) => {
+    logger.info(`Key event in WelcomeView: ${event.name} (type: ${event.eventType})`)
+    if (event.name === 'c') {
       navigate('chat')
+      return { continue: false } // Stop propagation after handling
     }
+    return { continue: true } // Allow other handlers to process
   })
 
   return (

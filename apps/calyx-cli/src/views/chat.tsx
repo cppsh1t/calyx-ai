@@ -1,3 +1,4 @@
+import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
 import { useRouter } from '@/views/router.tsx'
 import { useKeyboard } from '@opentui/solid'
 import type { JSX } from 'solid-js'
@@ -24,8 +25,16 @@ export function ChatView(): JSX.Element {
   // Input value signal for reactive state
   const [message, setMessage] = createSignal('')
 
+  const { navigate, state } = useRouter()
   // Router navigation
-  const { navigate } = useRouter()
+  useKeyBind(KeyBindPriorityEnum.CHAT, (event) => {
+    if (event.name === 'escape') {
+      navigate('welcome')
+      return { continue: false } // Stop propagation after handling
+    } else {
+      return { continue: true } // Allow other handlers to process
+    }
+  })
 
 
   return (
