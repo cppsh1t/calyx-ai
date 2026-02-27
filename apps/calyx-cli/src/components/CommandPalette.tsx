@@ -28,17 +28,7 @@ export function CommandPalette(): JSX.Element {
   return (
     <Show when={isOpen()}>
       {/* Modal overlay - full screen with centered content */}
-      <box
-        position="absolute"
-        left={0}
-        top={0}
-        width="100%"
-        height="100%"
-        justifyContent="center"
-        alignItems="center"
-        backgroundColor="#1a1a1a54"
-        zIndex={100}
-      >
+      <box position="absolute" left={0} top={0} width="100%" height="100%" justifyContent="center" alignItems="center" backgroundColor="#1a1a1a54" zIndex={100}>
         {/* Modal content container */}
         <box width={60} backgroundColor="#1a1a1a" flexDirection="column">
           {/* Header */}
@@ -74,8 +64,11 @@ export function CommandPalette(): JSX.Element {
               itemSpacing={0.5}
               onSelect={(index, option) => {
                 if (option) {
-                  // TODO: Execute command later
-                  console.log('Execute command:', option.value)
+                  // Find and execute the command handler
+                  const command = flatCommands[index]
+                  if (command?.handler) {
+                    command.handler()
+                  }
                   setIsOpen(false)
                 }
               }}

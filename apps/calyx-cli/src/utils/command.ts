@@ -1,3 +1,6 @@
+import { TestDialog } from '@/components/dialog/TestDialog.tsx'
+import { showDialog } from '@/utils/dialog.tsx'
+
 export interface CommandGroup {
   name: string
   commands: Command[]
@@ -8,7 +11,6 @@ export interface Command {
   name: string
   description?: string
   group?: string // Add group reference for flattened view
-  // TODO: Add command execution logic later
   handler?: () => void | Promise<void>
 }
 
@@ -27,6 +29,24 @@ export const commandGroups: CommandGroup[] = [
         name: 'Back to Welcome',
         description: 'Return to welcome screen',
         group: 'Navigation',
+      },
+    ],
+  },
+  {
+    name: 'Test',
+    commands: [
+      {
+        id: 'test-command',
+        name: 'Test Command',
+        description: 'A command for testing purposes',
+        group: 'Test',
+        handler: () => {
+          showDialog(
+            TestDialog,
+            (result) => console.log('Confirmed with:', result),
+            () => console.log('Cancelled')
+          )
+        },
       },
     ],
   },

@@ -1,11 +1,10 @@
 import CommandPalette from '@/components/CommandPalette'
 import type { CliConfigParsed } from '@/types/cli.ts'
 import type { ErrorState, View } from '@/types/views.ts'
-import logger from '@/utils/logger'
+import { DialogProvider } from '@/utils/dialog.tsx'
 import { ChatView } from '@/views/chat.tsx'
 import { ErrorView } from '@/views/error.tsx'
 import { WelcomeView } from '@/views/welcome.tsx'
-import { useKeyboard } from '@opentui/solid'
 import type { Accessor, JSX } from 'solid-js'
 import { createContext, createSignal, Match, Switch, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
@@ -75,22 +74,24 @@ export function Router(props: { config: CliConfigParsed }): JSX.Element {
   }
 
   return (
-    <box flexDirection="column" flexGrow={1} padding={1}>
-      <RouterContext.Provider value={routerValue}>
-        <Switch>
-          <Match when={currentView() === 'welcome'}>
-            <WelcomeView />
-          </Match>
-          <Match when={currentView() === 'chat'}>
-            <ChatView />
-          </Match>
-          <Match when={currentView() === 'error'}>
-            <ErrorView error={state.error} message={state.message} />
-          </Match>
-        </Switch>
-      </RouterContext.Provider>
-      <CommandPalette />
-    </box>
+    <DialogProvider>
+      <box flexDirection="column" flexGrow={1} padding={1}>
+        <RouterContext.Provider value={routerValue}>
+          <Switch>
+            <Match when={currentView() === 'welcome'}>
+              <WelcomeView />
+            </Match>
+            <Match when={currentView() === 'chat'}>
+              <ChatView />
+            </Match>
+            <Match when={currentView() === 'error'}>
+              <ErrorView error={state.error} message={state.message} />
+            </Match>
+          </Switch>
+        </RouterContext.Provider>
+        <CommandPalette />
+      </box>
+    </DialogProvider>
   )
 }
 
