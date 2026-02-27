@@ -1,6 +1,5 @@
 import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
 import { useRouter } from '@/views/router.tsx'
-import { useKeyboard } from '@opentui/solid'
 import type { JSX } from 'solid-js'
 import { createSignal } from 'solid-js'
 
@@ -35,7 +34,6 @@ export function ChatView(): JSX.Element {
       return { continue: true } // Allow other handlers to process
     }
   })
-
 
   return (
     <box flexDirection="column" flexGrow={1} justifyContent="center" alignItems="center">

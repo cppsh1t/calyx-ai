@@ -1,12 +1,13 @@
-import { TestDialog } from '@/components/dialog/TestDialog.tsx'
+import ModelKeyInput from '@/components/dialog/ModelKeyInput'
 import { showDialog } from '@/utils/dialog.tsx'
+import { exitApp, reloadApp } from './application'
 
-export interface CommandGroup {
+export type CommandGroup = {
   name: string
-  commands: Command[]
+  commands: CommandRaw[]
 }
 
-export interface Command {
+export type Command = {
   id: string
   name: string
   description?: string
@@ -14,24 +15,31 @@ export interface Command {
   handler?: () => void | Promise<void>
 }
 
-export const commandGroups: CommandGroup[] = [
+export type CommandRaw = Omit<Command, 'group'>
+
+const isDev = process.env.NODE_ENV !== 'production'
+
+const normalCommandsGroup: CommandGroup[] = [
   {
-    name: 'Navigation',
+    name: 'Application',
     commands: [
       {
-        id: 'nav-chat',
-        name: 'Open Chat',
-        description: 'Navigate to chat view',
-        group: 'Navigation',
+        id: 'app-reload',
+        name: 'Reload App',
+        description: 'Reload application configuration',
+        handler: reloadApp,
       },
       {
-        id: 'nav-welcome',
-        name: 'Back to Welcome',
-        description: 'Return to welcome screen',
-        group: 'Navigation',
+        id: 'app-exit',
+        name: 'Exit App',
+        description: 'Exit the application',
+        handler: exitApp,
       },
     ],
   },
+]
+
+const devCommandsGroup: CommandGroup[] = [
   {
     name: 'Test',
     commands: [
@@ -39,10 +47,9 @@ export const commandGroups: CommandGroup[] = [
         id: 'test-command',
         name: 'Test Command',
         description: 'A command for testing purposes',
-        group: 'Test',
         handler: () => {
           showDialog(
-            TestDialog,
+            ModelKeyInput,
             (result) => console.log('Confirmed with:', result),
             () => console.log('Cancelled')
           )
@@ -50,58 +57,8 @@ export const commandGroups: CommandGroup[] = [
       },
     ],
   },
-  {
-    name: 'Actions',
-    commands: [
-      {
-        id: 'action-clear',
-        name: 'Clear Screen',
-        description: 'Clear terminal output',
-        group: 'Actions',
-      },
-      {
-        id: 'action-exit',
-        name: 'Exit',
-        description: 'Quit application',
-        group: 'Actions',
-      },
-    ],
-  },
-  {
-    name: 'Configuration',
-    commands: [
-      {
-        id: 'config-open',
-        name: 'Open Config',
-        description: 'Open configuration panel',
-        group: 'Configuration',
-      },
-      {
-        id: 'config-reload',
-        name: 'Reload Config',
-        description: 'Reload configuration file',
-        group: 'Configuration',
-      },
-    ],
-  },
-  {
-    name: 'Help',
-    commands: [
-      {
-        id: 'help-shortcuts',
-        name: 'Keyboard Shortcuts',
-        description: 'Show keyboard shortcuts',
-        group: 'Help',
-      },
-      {
-        id: 'help-about',
-        name: 'About',
-        description: 'Show application information',
-        group: 'Help',
-      },
-    ],
-  },
 ]
+const commandGroups = isDev ? [...normalCommandsGroup, ...devCommandsGroup] : normalCommandsGroup
 
 // Flattened commands for select component
 export const flatCommands: Command[] = commandGroups.flatMap((group) =>

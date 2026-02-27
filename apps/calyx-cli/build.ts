@@ -1,6 +1,9 @@
 #!/usr/bin/env bun
 import solidPlugin from '@opentui/solid/bun-plugin'
 
+// Set production environment for build
+process.env.NODE_ENV = 'production'
+
 const platformMap: Record<string, string> = {
   'darwin-x64': 'bun-darwin-x64',
   'darwin-arm64': 'bun-darwin-arm64',

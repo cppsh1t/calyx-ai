@@ -5,7 +5,7 @@ import { handleError } from '@/utils/error-handler.ts'
 import { Router } from '@/views/router.tsx'
 import { createCliRenderer } from '@opentui/core'
 import { render } from '@opentui/solid'
-import logger from './utils/logger'
+import { useRenderer } from 'node_modules/@opentui/solid/dist'
 
 try {
   await initUserConfig()
@@ -25,10 +25,10 @@ try {
     // Render Router directly (ErrorBoundary not supported in OpenTUI)
     // Error handling is managed by the Router's error view
     // OpenTUI handles cleanup via exitOnCtrlC option
-    const renderer = await createCliRenderer({
+
+    render(() => <Router config={config} />, {
       exitOnCtrlC: true,
     })
-    render(() => <Router config={config} />, renderer)
   }
 } catch (error) {
   // Catch async errors that happen before render

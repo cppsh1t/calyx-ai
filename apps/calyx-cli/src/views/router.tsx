@@ -1,12 +1,14 @@
 import CommandPalette from '@/components/CommandPalette'
 import type { CliConfigParsed } from '@/types/cli.ts'
 import type { ErrorState, View } from '@/types/views.ts'
+import { setRendererRef } from '@/utils/application'
 import { DialogProvider } from '@/utils/dialog.tsx'
 import { ChatView } from '@/views/chat.tsx'
 import { ErrorView } from '@/views/error.tsx'
 import { WelcomeView } from '@/views/welcome.tsx'
+import { useRenderer } from '@opentui/solid'
 import type { Accessor, JSX } from 'solid-js'
-import { createContext, createSignal, Match, Switch, useContext } from 'solid-js'
+import { createContext, createSignal, Match, onMount, Switch, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
 
 /**
@@ -40,6 +42,13 @@ const RouterContext = createContext<RouterContextValue>()
  * @param config - Parsed CLI configuration
  */
 export function Router(props: { config: CliConfigParsed }): JSX.Element {
+  const renderer = useRenderer()
+
+  // Set global renderer reference for application-wide access (e.g., exitApp)
+  onMount(() => {
+    setRendererRef(renderer)
+  })
+
   // View state managed with signal (simple value, changes frequently)
   const [currentView, setCurrentView] = createSignal<View>('welcome')
 

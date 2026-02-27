@@ -1,4 +1,3 @@
-import { CommandPalette } from '@/components/CommandPalette.tsx'
 import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
 import logger from '@/utils/logger'
 import { useRouter } from '@/views/router.tsx'
