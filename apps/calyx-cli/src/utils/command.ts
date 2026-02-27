@@ -1,4 +1,5 @@
-import ModelKeyInput from '@/components/dialog/ModelKeyInput'
+import APIKeyInput from '@/components/dialog/APIKeyInput'
+import ProviderConnector from '@/components/dialog/ProviderConnector'
 import { showDialog } from '@/utils/dialog.tsx'
 import { exitApp, reloadApp } from './application'
 
@@ -37,6 +38,23 @@ const normalCommandsGroup: CommandGroup[] = [
       },
     ],
   },
+  {
+    name: 'Model',
+    commands: [
+      {
+        id: 'connect-provider',
+        name: 'Connect Model Provider',
+        description: 'Connect to a model provider (e.g., OpenAI, Azure)',
+        handler: () => {
+          showDialog(
+            ProviderConnector,
+            (result) => console.log('Selected provider:', result),
+            () => console.log('Cancelled')
+          )
+        },
+      },
+    ],
+  },
 ]
 
 const devCommandsGroup: CommandGroup[] = [
@@ -49,7 +67,7 @@ const devCommandsGroup: CommandGroup[] = [
         description: 'A command for testing purposes',
         handler: () => {
           showDialog(
-            ModelKeyInput,
+            APIKeyInput,
             (result) => console.log('Confirmed with:', result),
             () => console.log('Cancelled')
           )

@@ -22,6 +22,8 @@ type DialogContextValue = {
   isOpen: () => boolean
   currentDialog: () => DialogState | undefined
   dialogStack: () => readonly DialogState[]
+  /** Get the keybind priority for the current dialog layer (ACTION + layerIndex) */
+  getKeyBindPriority: () => number
   internalConfirm: (result: unknown) => void
   internalCancel: () => void
 }
@@ -98,10 +100,19 @@ export const DialogProvider: ParentComponent = (props) => {
   // Expose pushDialog globally for showDialog function
   pushDialogGlobal = pushDialog
 
+  /**
+   * Get the keybind priority for the current dialog layer.
+   * Each layer gets ACTION + layerIndex, so top layer has highest priority.
+   */
+  const getKeyBindPriority = (): number => {
+    return KeyBindPriorityEnum.ACTION + dialogStack.length
+  }
+
   const contextValue: DialogContextValue = {
     isOpen,
     currentDialog,
     dialogStack: () => dialogStack,
+    getKeyBindPriority,
     internalConfirm,
     internalCancel,
   }
@@ -115,10 +126,10 @@ export const DialogProvider: ParentComponent = (props) => {
 }
 
 function DialogContainer(): JSX.Element {
-  const { dialogStack, internalCancel } = useDialog()
+  const { dialogStack, internalCancel, getKeyBindPriority } = useDialog()
 
   // ESC to cancel (default behavior, component can handle ESC itself)
-  useKeyBind(KeyBindPriorityEnum.ACTION, (event) => {
+  useKeyBind(getKeyBindPriority(), (event) => {
     if (event.name === 'escape' && dialogStack().length > 0) {
       internalCancel()
       return { continue: false }
@@ -142,7 +153,7 @@ function DialogOverlay(props: { dialog: DialogState; index: number }): JSX.Eleme
       height="100%"
       justifyContent="center"
       alignItems="center"
-      backgroundColor="1a1a1a54"
+      backgroundColor="#1a1a1a54"
       zIndex={100 + props.index}
     >
       {/* Render component - component handles content and buttons itself */}

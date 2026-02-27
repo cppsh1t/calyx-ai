@@ -3,11 +3,11 @@ import { TextAttributes } from '@opentui/core'
 import type { JSX } from 'solid-js'
 import { createSignal } from 'solid-js'
 
-export function TestDialog(props: DialogContentProps<string>): JSX.Element {
-  const [modelKey, setModelKey] = createSignal('')
+export function APIKeyInput(props: DialogContentProps<string>): JSX.Element {
+  const [apiKey, setAPIKey] = createSignal('')
 
   function submitAPIKey() {
-    props.confirm(modelKey())
+    props.confirm(apiKey())
   }
 
   return (
@@ -34,8 +34,8 @@ export function TestDialog(props: DialogContentProps<string>): JSX.Element {
       <box flexGrow={1} paddingLeft={3}
         paddingRight={3}>
         <input
-          value={modelKey()}
-          onInput={(e) => setModelKey(e)}
+          value={apiKey()}
+          onInput={(e) => setAPIKey(e)}
           onSubmit={submitAPIKey}
           placeholder="Enter your API key"
           width="100%"
@@ -50,4 +50,4 @@ export function TestDialog(props: DialogContentProps<string>): JSX.Element {
   )
 }
 
-export default TestDialog
+export default APIKeyInput
