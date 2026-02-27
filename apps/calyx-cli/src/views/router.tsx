@@ -1,3 +1,4 @@
+import CommandPalette from '@/components/CommandPalette'
 import type { CliConfigParsed } from '@/types/cli.ts'
 import type { ErrorState, View } from '@/types/views.ts'
 import logger from '@/utils/logger'
@@ -88,6 +89,7 @@ export function Router(props: { config: CliConfigParsed }): JSX.Element {
           </Match>
         </Switch>
       </RouterContext.Provider>
+      <CommandPalette />
     </box>
   )
 }

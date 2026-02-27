@@ -8,7 +8,7 @@ import type { JSX } from 'solid-js'
 export function WelcomeView(): JSX.Element {
   const { navigate, state } = useRouter()
 
-  useKeyBind(KeyBindPriorityEnum.WELCOME, (event) => {
+  useKeyBind(KeyBindPriorityEnum.PAGE, (event) => {
     logger.info(`Key event in WelcomeView: ${event.name} (type: ${event.eventType})`)
     if (event.name === 'c') {
       navigate('chat')
@@ -19,7 +19,6 @@ export function WelcomeView(): JSX.Element {
 
   return (
     <>
-      <CommandPalette />
       <box alignItems="center" justifyContent="center" flexGrow={1} flexDirection="column">
         <box justifyContent="center" alignItems="flex-end">
           <ascii_font font="tiny" text="Calyx CLI" />

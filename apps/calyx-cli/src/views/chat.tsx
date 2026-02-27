@@ -27,7 +27,7 @@ export function ChatView(): JSX.Element {
 
   const { navigate, state } = useRouter()
   // Router navigation
-  useKeyBind(KeyBindPriorityEnum.CHAT, (event) => {
+  useKeyBind(KeyBindPriorityEnum.PAGE, (event) => {
     if (event.name === 'escape') {
       navigate('welcome')
       return { continue: false } // Stop propagation after handling

@@ -8,10 +8,9 @@ import { onCleanup } from 'solid-js'
 export type KeyBindHandler = (event: KeyEvent) => { continue: boolean }
 
 export enum KeyBindPriorityEnum {
-  WELCOME = 0,
-  CHAT = 0,
-  ERROR = 0,
-  MODAL = 1,
+  PAGE = 0,
+  DIALOG = 1,
+  ACTION = 2,
 }
 
 export type KeyBindPriority = KeyBindPriorityEnum | number
