@@ -48,7 +48,10 @@ const normalCommandsGroup: CommandGroup[] = [
         handler: () => {
           showDialog(
             ProviderConnector,
-            (result) => console.log('Selected provider:', result),
+            (result) => {
+              // result is now { provider: string; apiKey: string }
+              console.log(`Connected to ${result.provider}`)
+            },
             () => console.log('Cancelled')
           )
         },

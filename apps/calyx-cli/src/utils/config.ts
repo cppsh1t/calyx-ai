@@ -3,6 +3,25 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 
 /**
+ * XDG Data directory for calyx
+ */
+export const DATA_DIR = join(homedir(), '.local', 'share', 'calyx')
+
+/**
+ * Cache directory for provider data
+ */
+export const CACHE_DIR = join(DATA_DIR, 'cache')
+
+/**
+ * Ensure cache directory exists
+ * Creates ~/.local/share/calyx/cache recursively
+ */
+export async function ensureCacheDir(): Promise<void> {
+  await mkdir(CACHE_DIR, { recursive: true })
+}
+
+
+/**
  * Configuration file data type
  */
 export type Config = Record<string, unknown>

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { parseCli } from '@/utils/cli.ts'
-import { initUserConfig } from '@/utils/config.ts'
+import { ensureCacheDir, initUserConfig } from '@/utils/config.ts'
 import { handleError } from '@/utils/error-handler.ts'
 import { Router } from '@/views/router.tsx'
 import { createCliRenderer } from '@opentui/core'
@@ -9,6 +9,7 @@ import { useRenderer } from 'node_modules/@opentui/solid/dist'
 
 try {
   await initUserConfig()
+  await ensureCacheDir()
   const result = await parseCli(process.argv)
 
   // Check if running in a TTY environment
