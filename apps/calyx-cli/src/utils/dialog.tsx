@@ -1,5 +1,6 @@
 import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
-import { Show, createContext, createSignal, useContext, type JSX, type ParentComponent } from 'solid-js'
+import { Show, createContext, useContext, type JSX, type ParentComponent } from 'solid-js'
+import { createStore } from 'solid-js/store'
 
 export interface DialogContentProps<T = unknown> {
   /** Confirm event - called internally by component, passes result data */
@@ -11,21 +12,27 @@ export interface DialogContentProps<T = unknown> {
 export type DialogComponent<T = unknown> = (props: DialogContentProps<T>) => JSX.Element
 
 type DialogState = {
+  id: string
   component: DialogComponent<unknown>
   onConfirm: (result: unknown) => void
   onCancel: () => void
-} | null
+}
 
 type DialogContextValue = {
   isOpen: () => boolean
-  currentState: () => DialogState
+  currentDialog: () => DialogState | undefined
+  dialogStack: () => readonly DialogState[]
   internalConfirm: (result: unknown) => void
   internalCancel: () => void
 }
 
 const DialogContext = createContext<DialogContextValue>()
 
-let setDialogStateGlobal: ((state: DialogState) => void) | null = null
+// Global setters for pushDialog (used by showDialog)
+let pushDialogGlobal: ((state: DialogState) => void) | null = null
+
+// Counter for generating unique dialog IDs
+let dialogIdCounter = 0
 
 export function useDialog(): DialogContextValue {
   const context = useContext(DialogContext)
@@ -36,31 +43,65 @@ export function useDialog(): DialogContextValue {
 }
 
 export const DialogProvider: ParentComponent = (props) => {
-  const [currentState, setCurrentState] = createSignal<DialogState>(null)
+  const [dialogStack, setDialogStack] = createStore<DialogState[]>([])
 
-  const isOpen = () => currentState() !== null
+  const isOpen = () => dialogStack.length > 0
+
+  const currentDialog = () => {
+    const stack = dialogStack
+    return stack.length > 0 ? stack[stack.length - 1] : undefined
+  }
+
+  /**
+   * Push a new dialog onto the stack
+   */
+  const pushDialog = (state: DialogState): void => {
+    setDialogStack(dialogStack.length, state)
+  }
+
+  /**
+   * Pop the top dialog from the stack and call its cancel callback
+   */
+  const popDialog = (): void => {
+    const stack = dialogStack
+    if (stack.length === 0) return
+    const topDialog = stack[stack.length - 1]
+    if (topDialog) {
+      topDialog.onCancel()
+    }
+    setDialogStack((stack) => stack.slice(0, -1))
+  }
+
+  /**
+   * Close the top dialog (alias for internal cancel behavior without callback)
+   */
+  const closeTopDialog = (): void => {
+    const stack = dialogStack
+    if (stack.length === 0) return
+    setDialogStack((stack) => stack.slice(0, -1))
+  }
 
   const internalConfirm = (result: unknown): void => {
-    const state = currentState()
-    if (state) {
-      state.onConfirm(result)
+    const stack = dialogStack
+    if (stack.length === 0) return
+    const topDialog = stack[stack.length - 1]
+    if (topDialog) {
+      topDialog.onConfirm(result)
     }
-    setCurrentState(null)
+    setDialogStack((stack) => stack.slice(0, -1))
   }
 
   const internalCancel = (): void => {
-    const state = currentState()
-    if (state) {
-      state.onCancel()
-    }
-    setCurrentState(null)
+    popDialog()
   }
 
-  setDialogStateGlobal = setCurrentState
+  // Expose pushDialog globally for showDialog function
+  pushDialogGlobal = pushDialog
 
   const contextValue: DialogContextValue = {
     isOpen,
-    currentState,
+    currentDialog,
+    dialogStack: () => dialogStack,
     internalConfirm,
     internalCancel,
   }
@@ -93,8 +134,8 @@ function DialogContainer(): JSX.Element {
 }
 
 function DialogOverlay(): JSX.Element {
-  const { currentState, internalConfirm, internalCancel } = useDialog()
-  const state = currentState()
+  const { currentDialog, internalConfirm, internalCancel } = useDialog()
+  const state = currentDialog()
 
   if (!state) return null
 
@@ -103,7 +144,7 @@ function DialogOverlay(): JSX.Element {
     <box position="absolute" left={0} top={0} width="100%" height="100%" justifyContent="center" alignItems="center" backgroundColor="1a1a1a54" zIndex={100}>
       {/* Render component - component handles content and buttons itself */}
       {state.component({
-        confirm: (result) => internalConfirm(result),
+        confirm: (result: unknown) => internalConfirm(result),
         cancel: () => internalCancel(),
       })}
     </box>
@@ -158,11 +199,12 @@ function DialogOverlay(): JSX.Element {
  * ```
  */
 export function showDialog<T>(component: DialogComponent<T>, onConfirm: (result: T) => void, onCancel: () => void): void {
-  if (!setDialogStateGlobal) {
+  if (!pushDialogGlobal) {
     throw new Error('showDialog requires DialogProvider')
   }
 
-  setDialogStateGlobal({
+  pushDialogGlobal({
+    id: `dialog-${dialogIdCounter++}`,
     component: component as DialogComponent<unknown>,
     onConfirm: onConfirm as (result: unknown) => void,
     onCancel,
