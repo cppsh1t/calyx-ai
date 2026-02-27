@@ -1,5 +1,5 @@
 import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
-import { Show, createContext, useContext, type JSX, type ParentComponent } from 'solid-js'
+import { For, createContext, useContext, type JSX, type ParentComponent } from 'solid-js'
 import { createStore } from 'solid-js/store'
 
 export interface DialogContentProps<T = unknown> {
@@ -115,35 +115,38 @@ export const DialogProvider: ParentComponent = (props) => {
 }
 
 function DialogContainer(): JSX.Element {
-  const { isOpen, internalCancel } = useDialog()
+  const { dialogStack, internalCancel } = useDialog()
 
   // ESC to cancel (default behavior, component can handle ESC itself)
   useKeyBind(KeyBindPriorityEnum.ACTION, (event) => {
-    if (event.name === 'escape' && isOpen()) {
+    if (event.name === 'escape' && dialogStack().length > 0) {
       internalCancel()
       return { continue: false }
     }
     return { continue: true }
   })
 
-  return (
-    <Show when={isOpen()}>
-      <DialogOverlay />
-    </Show>
-  )
+  return <For each={dialogStack()}>{(dialog, index) => <DialogOverlay dialog={dialog} index={index()} />}</For>
 }
 
-function DialogOverlay(): JSX.Element {
-  const { currentDialog, internalConfirm, internalCancel } = useDialog()
-  const state = currentDialog()
-
-  if (!state) return null
+function DialogOverlay(props: { dialog: DialogState; index: number }): JSX.Element {
+  const { internalConfirm, internalCancel } = useDialog()
 
   return (
     // Overlay layer - full screen centered
-    <box position="absolute" left={0} top={0} width="100%" height="100%" justifyContent="center" alignItems="center" backgroundColor="1a1a1a54" zIndex={100}>
+    <box
+      position="absolute"
+      left={0}
+      top={0}
+      width="100%"
+      height="100%"
+      justifyContent="center"
+      alignItems="center"
+      backgroundColor="1a1a1a54"
+      zIndex={100 + props.index}
+    >
       {/* Render component - component handles content and buttons itself */}
-      {state.component({
+      {props.dialog.component({
         confirm: (result: unknown) => internalConfirm(result),
         cancel: () => internalCancel(),
       })}
