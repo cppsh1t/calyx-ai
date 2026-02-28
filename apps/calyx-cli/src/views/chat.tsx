@@ -1,11 +1,11 @@
+import BotMessage from '@/components/BotMessage'
 import UserInput from '@/components/UserInput'
+import UserMessage from '@/components/UserMessage'
+import { messageHistory } from '@/utils/message'
 import type { JSX } from 'solid-js'
-import { createSignal } from 'solid-js'
+import { For } from 'solid-js'
 
 export function ChatView(): JSX.Element {
-  // Input value signal for reactive state
-  const [message, setMessage] = createSignal('')
-
   function handleUserInputSubmit(value: string) {}
 
   return (
@@ -23,7 +23,15 @@ export function ChatView(): JSX.Element {
         <text>这是测试标题</text>
       </box>
 
-      <scrollbox width="100%" flexGrow={1}></scrollbox>
+      <scrollbox width="100%" flexGrow={1} paddingTop={1}>
+        <For each={messageHistory()}>
+          {(message) => (
+            <box flexDirection="column" width="100%">
+              {message.role === 'user' ? <UserMessage content={message.content} /> : <BotMessage content={message.content} />}
+            </box>
+          )}
+        </For>
+      </scrollbox>
 
       <box width="100%" flexShrink={0} paddingLeft={2} paddingRight={2} marginTop={2}>
         <UserInput onSubmit={handleUserInputSubmit} />

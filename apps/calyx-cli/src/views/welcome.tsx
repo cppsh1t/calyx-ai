@@ -1,12 +1,10 @@
 import UserInput from '@/components/UserInput'
 import logger from '@/utils/logger'
 import { useRouter } from '@/views/router.tsx'
-import { sleep } from 'bun'
-import { onCleanup, type JSX } from 'solid-js'
+import { type JSX } from 'solid-js'
 
 export function WelcomeView(): JSX.Element {
   const { navigate, state } = useRouter()
-
 
   function handleUserInputSubmit(value: string) {
     logger.info(`User input submitted: ${value}`)
