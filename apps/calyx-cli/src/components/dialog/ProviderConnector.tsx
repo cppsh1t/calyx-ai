@@ -13,6 +13,7 @@ export function ProviderConnector(props: DialogContentProps<ProviderConnectionRe
   const [step, setStep] = createSignal<Step>('select-provider')
   const [selectedProvider, setSelectedProvider] = createSignal<string | null>(null)
   const [apiKey, setAPIKey] = createSignal('')
+  const [providerName, setProviderName] = createSignal<string>('')
 
   // State for providers from API
   const [providers, setProviders] = createSignal<ProvidersResponse>({})
@@ -71,15 +72,15 @@ export function ProviderConnector(props: DialogContentProps<ProviderConnectionRe
 
         <box flexGrow={1}>
           {isLoading() ? (
-            <box flexGrow={1} justifyContent="center" alignItems="center">
+            <box flexGrow={1} justifyContent="center" alignItems="center" paddingBottom={1}>
               <text fg="#888">Loading providers...</text>
             </box>
           ) : error() ? (
-            <box flexGrow={1} justifyContent="center" alignItems="center">
+            <box flexGrow={1} justifyContent="center" alignItems="center" paddingBottom={1}>
               <text fg="#f44">{error()}</text>
             </box>
           ) : providerList().length === 0 ? (
-            <box flexGrow={1} justifyContent="center" alignItems="center">
+            <box flexGrow={1} justifyContent="center" alignItems="center" paddingBottom={1}>
               <text fg="#888">No providers available</text>
             </box>
           ) : (
@@ -92,7 +93,6 @@ export function ProviderConnector(props: DialogContentProps<ProviderConnectionRe
               height={18}
               selectedIndex={selectedIndex()}
               flexGrow={1}
-              itemSpacing={0.5}
               onSelect={(index, option) => {
                 if (option) {
                   handleProviderSelect(option.value)

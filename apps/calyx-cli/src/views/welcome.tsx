@@ -1,3 +1,4 @@
+import UserInput from '@/components/UserInput'
 import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
 import logger from '@/utils/logger'
 import { useRouter } from '@/views/router.tsx'
@@ -16,29 +17,22 @@ export function WelcomeView(): JSX.Element {
     return { continue: true } // Allow other handlers to process
   })
 
+  function handleUserInputSubmit(value: string) {
+    logger.info(`User input submitted: ${value}`)
+    navigate('chat')
+  }
+
   return (
     <>
       <box alignItems="center" justifyContent="center" flexGrow={1} flexDirection="column">
         <box justifyContent="center" alignItems="flex-end">
-          <ascii_font font="tiny" text="Calyx CLI" />
-          <text attributes={TextAttributes.DIM}>AI-Powered Command Line Tool</text>
+          <ascii_font text="Calyx CLI" />
         </box>
 
-        <box marginTop={2} flexDirection="column" alignItems="flex-start">
-          <text attributes={TextAttributes.BOLD}>Configuration:</text>
-          <text>continue: {String(state.config.continue)}</text>
-          <text>sessionId: {state.config.sessionId}</text>
-          <text>flow: {state.config.flowName}</text>
+        <box width={70} marginTop={2}>
+          <UserInput onSubmit={handleUserInputSubmit} />
         </box>
 
-        {/* Navigation to chat */}
-        <box marginTop={2} border onMouseDown={() => navigate('chat')}>
-          <text>[C]hat</text>
-        </box>
-
-        <text attributes={TextAttributes.DIM} marginTop={2}>
-          Press Ctrl+C to exit
-        </text>
       </box>
     </>
   )
