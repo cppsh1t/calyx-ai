@@ -31,5 +31,7 @@
     "apps/*",
     "packages/*"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.37"
+  }
 }

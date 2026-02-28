@@ -34,6 +34,7 @@
   "dependencies": {
     "@opentui/core": "^0.1.75",
     "@opentui/solid": "^0.1.75",
+    "ai": "^6.0.105",
     "commander": "^14.0.3",
     "dayjs": "^1.11.19",
     "env-paths": "^4.0.0",
