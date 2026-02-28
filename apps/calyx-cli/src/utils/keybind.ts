@@ -1,5 +1,4 @@
 import type { KeyEvent } from '@opentui/core'
-import { useKeyboard } from '@opentui/solid'
 import { onCleanup } from 'solid-js'
 
 /**
@@ -24,7 +23,7 @@ export type KeyBindContext = {
 const keybindRegistry = new Map<KeyBindHandler, KeyBindContext>()
 
 // Process keyboard event through registered handlers in priority order
-function handleKeyboardEvent(event: KeyEvent): void {
+export function handleKeyboardEvent(event: KeyEvent): void {
   // Sort contexts by priority (higher priority first)
   const sortedContexts = Array.from(keybindRegistry.values()).sort((a, b) => b.priority - a.priority)
 
@@ -49,10 +48,7 @@ export function useKeyBind(priority: KeyBindPriority, handler: KeyBindHandler): 
   // Register in global registry using handler as key
   keybindRegistry.set(handler, context)
 
-  // Use OpenTUI's useKeyboard to listen for global keyboard events
-  useKeyboard(handleKeyboardEvent)
-
-  // Cleanup on component unmount (useKeyboard handles unsubscription automatically)
+  // Cleanup on component unmount
   onCleanup(() => {
     keybindRegistry.delete(handler)
   })

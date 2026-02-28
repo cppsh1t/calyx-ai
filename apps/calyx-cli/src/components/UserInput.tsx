@@ -17,18 +17,18 @@ export function UserInput(props: Props): JSX.Element {
     setInputValue('')
   }
 
-  onMount(() => {
+  function setInputFocus() {
     if (inputRef) {
       inputRef.focus()
     }
-  })
+  }
 
   return (
     <box flexDirection="column">
 
       {/* Main content area */}
       <box backgroundColor="#1a1a1a" border={['left']} marginBottom={1} borderStyle={'heavy'} borderColor="#3b82f6" flexGrow={1} paddingTop={1} paddingBottom={1} paddingLeft={2} paddingRight={2} flexDirection="column">
-        <input ref={inputRef} placeholder="Maybe you can ask something..." value={inputValue()} onInput={(e) => setInputValue(e)} marginBottom={1} onSubmit={handleSubmit} />
+        <input onMouseDown={setInputFocus} ref={inputRef} focused placeholder="Maybe you can ask something..." value={inputValue()} onInput={(e) => setInputValue(e)} marginBottom={1} onSubmit={handleSubmit} />
         <text>Flow: test</text>
       </box>
 

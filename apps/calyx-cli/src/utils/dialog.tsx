@@ -1,5 +1,6 @@
-import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
-import { For, createContext, useContext, type JSX, type ParentComponent } from 'solid-js'
+import { handleKeyboardEvent, KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
+import { useKeyboard } from '@opentui/solid'
+import { createContext, For, useContext, type JSX, type ParentComponent } from 'solid-js'
 import { createStore } from 'solid-js/store'
 
 export interface DialogContentProps<T = unknown> {
@@ -45,6 +46,9 @@ export function useDialog(): DialogContextValue {
 }
 
 export const DialogProvider: ParentComponent = (props) => {
+  // Initialize global keyboard listener (only once at app root)
+  useKeyboard(handleKeyboardEvent)
+
   const [dialogStack, setDialogStack] = createStore<DialogState[]>([])
 
   const isOpen = () => dialogStack.length > 0
