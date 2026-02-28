@@ -1,28 +1,37 @@
 import { flatCommands } from '@/utils/command'
-import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
+import { useKeyboard } from '@opentui/solid'
+import { registerLayer, ElementBindPriorityEnum } from '@/utils/layer'
 import { TextAttributes } from '@opentui/core'
-import { createSignal, Show, type JSX } from 'solid-js'
+import { createSignal, on, onCleanup, Show, type JSX } from 'solid-js'
 
 export function CommandPalette(): JSX.Element {
   const [isOpen, setIsOpen] = createSignal(false)
   const [selectedIndex, setSelectedIndex] = createSignal(0)
 
+  const openCommandHelper = registerLayer({
+    id: 'command-palette-open-command',
+    filter: { name: 'p', ctrl: true, shift: false, meta: false },
+    priority: ElementBindPriorityEnum.COMMAND,
+  })
+
+  onCleanup(() => {
+    openCommandHelper.unregister()
+  })
+
   // Ctrl+P to open command palette
-  useKeyBind(KeyBindPriorityEnum.DIALOG, (event) => {
+  useKeyboard((event) => {
+    if (!openCommandHelper.check()) return
     if (event.ctrl && event.name === 'p' && !isOpen()) {
       setIsOpen(true)
-      return { continue: false }
     }
-    return { continue: true }
   })
 
   // ESC to close
-  useKeyBind(KeyBindPriorityEnum.DIALOG, (event) => {
+  useKeyboard((event) => {
+    if (!openCommandHelper.check()) return
     if (event.name === 'escape' && isOpen()) {
       setIsOpen(false)
-      return { continue: false }
     }
-    return { continue: true }
   })
 
   return (

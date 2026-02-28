@@ -1,21 +1,12 @@
 import UserInput from '@/components/UserInput'
-import { KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
 import logger from '@/utils/logger'
 import { useRouter } from '@/views/router.tsx'
-import { TextAttributes } from '@opentui/core'
-import type { JSX } from 'solid-js'
+import { sleep } from 'bun'
+import { onCleanup, type JSX } from 'solid-js'
 
 export function WelcomeView(): JSX.Element {
   const { navigate, state } = useRouter()
 
-  useKeyBind(KeyBindPriorityEnum.PAGE, (event) => {
-    logger.info(`Key event in WelcomeView: ${event.name} (type: ${event.eventType})`)
-    if (event.name === 'c') {
-      navigate('chat')
-      return { continue: false } // Stop propagation after handling
-    }
-    return { continue: true } // Allow other handlers to process
-  })
 
   function handleUserInputSubmit(value: string) {
     logger.info(`User input submitted: ${value}`)
@@ -32,7 +23,6 @@ export function WelcomeView(): JSX.Element {
         <box width={70} marginTop={2}>
           <UserInput onSubmit={handleUserInputSubmit} />
         </box>
-
       </box>
     </>
   )

@@ -1,6 +1,6 @@
-import { handleKeyboardEvent, KeyBindPriorityEnum, useKeyBind } from '@/utils/keybind'
+import { ElementBindPriorityEnum, registerLayer } from '@/utils/layer'
 import { useKeyboard } from '@opentui/solid'
-import { createContext, For, useContext, type JSX, type ParentComponent } from 'solid-js'
+import { createContext, For, onCleanup, useContext, type JSX, type ParentComponent } from 'solid-js'
 import { createStore } from 'solid-js/store'
 
 export interface DialogContentProps<T = unknown> {
@@ -23,8 +23,8 @@ type DialogContextValue = {
   isOpen: () => boolean
   currentDialog: () => DialogState | undefined
   dialogStack: () => readonly DialogState[]
-  /** Get the keybind priority for the current dialog layer (ACTION + layerIndex) */
-  getKeyBindPriority: () => number
+  /** Get the dialog priority level */
+  getDialogPriority: () => number
   internalConfirm: (result: unknown) => void
   internalCancel: () => void
 }
@@ -46,9 +46,6 @@ export function useDialog(): DialogContextValue {
 }
 
 export const DialogProvider: ParentComponent = (props) => {
-  // Initialize global keyboard listener (only once at app root)
-  useKeyboard(handleKeyboardEvent)
-
   const [dialogStack, setDialogStack] = createStore<DialogState[]>([])
 
   const isOpen = () => dialogStack.length > 0
@@ -105,18 +102,18 @@ export const DialogProvider: ParentComponent = (props) => {
   pushDialogGlobal = pushDialog
 
   /**
-   * Get the keybind priority for the current dialog layer.
-   * Each layer gets ACTION + layerIndex, so top layer has highest priority.
+   * Get the dialog layer priority.
+   * Dialog uses DIALOG priority level.
    */
-  const getKeyBindPriority = (): number => {
-    return KeyBindPriorityEnum.ACTION + dialogStack.length
+  const getDialogPriority = (): number => {
+    return ElementBindPriorityEnum.DIALOG
   }
 
   const contextValue: DialogContextValue = {
     isOpen,
     currentDialog,
     dialogStack: () => dialogStack,
-    getKeyBindPriority,
+    getDialogPriority,
     internalConfirm,
     internalCancel,
   }
@@ -130,15 +127,25 @@ export const DialogProvider: ParentComponent = (props) => {
 }
 
 function DialogContainer(): JSX.Element {
-  const { dialogStack, internalCancel, getKeyBindPriority } = useDialog()
+  const { dialogStack, internalCancel } = useDialog()
 
-  // ESC to cancel (default behavior, component can handle ESC itself)
-  useKeyBind(getKeyBindPriority(), (event) => {
+  // Register dialog layer
+  const timestamp = Date.now()
+  const layerHelper = registerLayer({
+    id: `dialog-layer-${timestamp}`,
+    filter: { name: 'escape', ctrl: false, shift: false, meta: false },
+    priority: ElementBindPriorityEnum.DIALOG,
+  })
+  onCleanup(() => {
+    layerHelper.unregister()
+  })
+
+  // ESC to cancel (only when no higher priority layers exist)
+  useKeyboard((event) => {
+    if (!layerHelper.check()) return
     if (event.name === 'escape' && dialogStack().length > 0) {
       internalCancel()
-      return { continue: false }
     }
-    return { continue: true }
   })
 
   return <For each={dialogStack()}>{(dialog, index) => <DialogOverlay dialog={dialog} index={index()} />}</For>
@@ -169,53 +176,7 @@ function DialogOverlay(props: { dialog: DialogState; index: number }): JSX.Eleme
   )
 }
 
-/**
- * Show dialog
- *
- * @param component - Dialog component, responsible for rendering content and buttons, calls confirm/cancel
- * @param onConfirm - Confirm callback
- * @param onCancel - Cancel callback
- *
- * @example
- * ```tsx
- * // Define a confirm dialog
- * function ConfirmDialog({ confirm, cancel }: DialogContentProps<boolean>) {
- *   return (
- *     <box width={40} border padding={1} backgroundColor="#1a1a1a">
- *       <text>Are you sure you want to delete?</text>
- *       <box flexDirection="row" gap={2}>
- *         <box onMouseDown={() => confirm(true)}><text fg="green">[Yes]</text></box>
- *         <box onMouseDown={() => cancel()}><text fg="red">[No]</text></box>
- *       </box>
- *     </box>
- *   )
- * }
- *
- * // Usage
- * showDialog(ConfirmDialog,
- *   (result) => { if (result) deleteItem() },
- *   () => console.log('cancelled')
- * )
- * ```
- *
- * @example
- * ```tsx
- * // Define an input dialog (custom button text)
- * function InputDialog({ confirm, cancel }: DialogContentProps<string>) {
- *   const [value, setValue] = createSignal('')
- *   return (
- *     <box width={50} border padding={1} backgroundColor="#1a1a1a">
- *       <text>Enter name:</text>
- *       <input value={value()} onInput={setValue} focused />
- *       <box flexDirection="row" gap={2}>
- *         <box onMouseDown={() => confirm(value())}><text>[OK]</text></box>
- *         <box onMouseDown={() => cancel()}><text>[Cancel]</text></box>
- *       </box>
- *     </box>
- *   )
- * }
- * ```
- */
+
 export function showDialog<T>(component: DialogComponent<T>, onConfirm: (result: T) => void, onCancel: () => void): void {
   if (!pushDialogGlobal) {
     throw new Error('showDialog requires DialogProvider')
