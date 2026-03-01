@@ -1,6 +1,6 @@
-import { getProviderKey } from '@/utils/auth.ts'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createDeepSeek } from '@ai-sdk/deepseek'
 import { streamText } from 'ai'
+import { getProviderKey } from '@/utils/auth.ts'
 
 /**
  * Stream a chat message using DeepSeek's reasoner model
@@ -15,10 +15,7 @@ export async function streamChat(userMessage: string) {
     throw new Error('DeepSeek API key not found. Please run the CLI and configure your API key.')
   }
 
-  const deepseek = createOpenAI({
-    baseURL: 'https://api.deepseek.com/v1',
-    apiKey,
-  })
+  const deepseek = createDeepSeek({ apiKey })
 
   return streamText({
     model: deepseek('deepseek-reasoner'),

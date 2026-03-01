@@ -32,13 +32,12 @@ export function ChatView(): JSX.Element {
       addAssistantMessage()
 
       // 5. Iterate stream and update progressively
+      // Using textStream - @ai-sdk/deepseek handles deepseek-reasoner correctly
       let accumulatedContent = ''
       for await (const chunk of result.textStream) {
         accumulatedContent += chunk
         updateLastMessage(accumulatedContent)
       }
-
-      await logger.debug(`Stream completed, data length: ${accumulatedContent.length} characters`)
     } catch (error) {
       await logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Chat error')
       // 6. Handle error - add error message to history
@@ -47,6 +46,7 @@ export function ChatView(): JSX.Element {
         content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       })
     } finally {
+      logger.info(`LLm stream completed`)
       setIsLoading(false)
     }
   }
