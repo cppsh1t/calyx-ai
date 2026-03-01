@@ -1,6 +1,7 @@
 import envPaths from 'env-paths'
 import { appendFile, mkdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { createSignal } from 'solid-js'
 import { cleanupOldLogs } from './log-cleanup.ts'
 
 // ANSI color codes
@@ -21,9 +22,10 @@ const LEVELS = {
 } as const
 
 const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_LOG_HISTORY = 50
 
-// Determine if running in compiled mode
-const isCompiled = Bun.embeddedFiles.length > 0
+// Determine if running in development mode
+const isDev = process.env.NODE_ENV !== 'production'
 
 // Determine if console supports colors
 const useColors = process.stdout.hasColors?.() ?? false
@@ -45,12 +47,20 @@ const today = new Date().toISOString().slice(0, 10)
 const logFileName = `calyx-${today}.log`
 const logPath = join(logDir, logFileName)
 
+export interface LogEntry {
+  level: 'DEBUG' | 'INFO' | 'WARN'
+  timestamp: string
+  message: string
+}
+
 class Logger {
   private logFile: string = logPath
+  private _history = createSignal<LogEntry[]>([])
 
   constructor() {
     // Clean up old log files on logger initialization (only in dev mode)
-    if (!isCompiled) {
+    // Clean up old log files on logger initialization (only in dev mode)
+    if (isDev) {
       cleanupOldLogs(logDir).catch(() => {
         // Silently ignore cleanup errors to not disrupt application startup
       })
@@ -166,9 +176,31 @@ class Logger {
   }
 
   /**
+   * Add entry to log history (only for INFO and WARN levels)
+   */
+  private addToHistory(level: 'DEBUG' | 'INFO' | 'WARN', message: string): void {
+    const [, setHistory] = this._history
+    setHistory(prev => {
+      const newEntry: LogEntry = {
+        level,
+        timestamp: this.getTimestamp(),
+        message,
+      }
+      const newHistory = [newEntry, ...prev]
+      // Remove oldest entries if exceeds max capacity
+      return newHistory.slice(0, MAX_LOG_HISTORY)
+    })
+  }
+
+  /**
    * Core logging method
    */
   private async log(level: keyof typeof LEVELS, message: string, obj?: Record<string, unknown>): Promise<void> {
+    // Add to history for INFO and WARN (and DEBUG in dev mode)
+    if (level === 'INFO' || level === 'WARN' || (isDev && level === 'DEBUG')) {
+      this.addToHistory(level, message)
+    }
+
     // Format console output
     const consoleMessage = this.formatConsole(level, message)
 
@@ -222,6 +254,22 @@ class Logger {
     } else {
       await this.log('ERROR', message || 'Error occurred', objOrMessage)
     }
+  }
+
+  /**
+   * Get log history signal (most recent first)
+   */
+  get history(): () => LogEntry[] {
+    const [getHistory] = this._history
+    return getHistory
+  }
+
+  /**
+   * Clear log history
+   */
+  clearHistory(): void {
+    const [, setHistory] = this._history
+    setHistory([])
   }
 }
 

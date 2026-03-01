@@ -12,6 +12,7 @@ export function ChatView(): JSX.Element {
   const [isLoading, setIsLoading] = createSignal(false)
 
   async function handleUserInputSubmit(value: string) {
+    logger.info(`User input submitted: ${value}`)
     if (!value.trim()) return
 
     await logger.debug('handleUserInputSubmit started', { inputLength: value.length })
@@ -37,7 +38,7 @@ export function ChatView(): JSX.Element {
         updateLastMessage(accumulatedContent)
       }
 
-      await logger.debug('Stream completed', { responseLength: accumulatedContent.length })
+      await logger.debug(`Stream completed, data length: ${accumulatedContent.length} characters`)
     } catch (error) {
       await logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Chat error')
       // 6. Handle error - add error message to history

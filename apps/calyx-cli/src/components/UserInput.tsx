@@ -1,6 +1,7 @@
+import logger from '@/utils/logger'
 import type { InputRenderable, SubmitEvent } from '@opentui/core'
 import type { InputProps } from '@opentui/solid'
-import { createSignal, onMount, type JSX, type Ref } from 'solid-js'
+import { createMemo, createSignal, onMount, type JSX, type Ref } from 'solid-js'
 
 type Props = {
   onSubmit?: (value: string) => void
@@ -23,6 +24,17 @@ export function UserInput(props: Props): JSX.Element {
     }
   }
 
+  const lastLog = createMemo(() => {
+    const history = logger.history()
+    return history.length > 0 ? history[0] : null
+  })
+
+  const logColor = createMemo(() => {
+    const log = lastLog()
+    if (!log) return '#888'
+    return log.level === 'WARN' ? '#f59e0b' : '#22d3ee' // WARN: yellow, INFO: cyan
+  })
+
   return (
     <box flexDirection="column">
 
@@ -34,13 +46,20 @@ export function UserInput(props: Props): JSX.Element {
 
       {/* Footer */}
       <box gap={2} flexDirection="row-reverse">
-        <text>
+        <text flexShrink={0}>
           <span style={{ fg: 'white' }}>ctrl+p</span>
           <span style={{ fg: '#888' }}> commands</span>
         </text>
-        <text>
+        <text flexShrink={0}>
           <span style={{ fg: 'white' }}>tab</span>
           <span style={{ fg: '#888' }}> flows</span>
+        </text>
+        <text flexGrow={1} flexWrap='no-wrap' truncate wrapMode='none'>
+          {lastLog() && (
+            <span style={{ fg: logColor() }}>
+              [{lastLog()?.level}] {lastLog()?.message}
+            </span>
+          )}
         </text>
       </box>
     </box>
