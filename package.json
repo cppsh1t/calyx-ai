@@ -32,8 +32,5 @@
     "packages/*"
   ],
   "dependencies": {
-    "@ai-sdk/deepseek": "^2.0.21",
-    "@ai-sdk/google-vertex": "^4.0.71",
-    "@ai-sdk/openai": "^3.0.37"
   }
 }
