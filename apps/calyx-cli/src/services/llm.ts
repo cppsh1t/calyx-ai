@@ -1,4 +1,3 @@
-import { createDeepSeek } from '@ai-sdk/deepseek'
 import { streamText } from 'ai'
 import { getProviderKey } from '@/utils/auth.ts'
 
@@ -9,16 +8,9 @@ import { getProviderKey } from '@/utils/auth.ts'
  * @throws Error if DeepSeek API key is not configured
  */
 export async function streamChat(userMessage: string) {
-  const apiKey = await getProviderKey('deepseek')
-
-  if (!apiKey) {
-    throw new Error('DeepSeek API key not found. Please run the CLI and configure your API key.')
-  }
-
-  const deepseek = createDeepSeek({ apiKey })
 
   return streamText({
-    model: deepseek('deepseek-reasoner'),
+    model: 'deepseek/deepseek-reasoner',
     prompt: userMessage,
   })
 }

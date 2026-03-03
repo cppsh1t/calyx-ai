@@ -58,13 +58,9 @@ class Logger {
   private _history = createSignal<LogEntry[]>([])
 
   constructor() {
-    // Clean up old log files on logger initialization (only in dev mode)
-    // Clean up old log files on logger initialization (only in dev mode)
-    if (isDev) {
-      cleanupOldLogs(logDir).catch(() => {
-        // Silently ignore cleanup errors to not disrupt application startup
-      })
-    }
+    cleanupOldLogs(logDir).catch(() => {
+      // Silently ignore cleanup errors to not disrupt application startup
+    })
   }
 
   /**
@@ -180,7 +176,7 @@ class Logger {
    */
   private addToHistory(level: 'DEBUG' | 'INFO' | 'WARN', message: string): void {
     const [, setHistory] = this._history
-    setHistory(prev => {
+    setHistory((prev) => {
       const newEntry: LogEntry = {
         level,
         timestamp: this.getTimestamp(),

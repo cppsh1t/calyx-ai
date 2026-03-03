@@ -2,6 +2,7 @@ import APIKeyInput from '@/components/dialog/APIKeyInput'
 import ProviderConnector from '@/components/dialog/ProviderConnector'
 import { showDialog } from '@/utils/dialog.tsx'
 import { exitApp, reloadApp } from './application'
+import LogRecord from '@/components/dialog/LogRecord'
 
 export type CommandGroup = {
   name: string
@@ -58,6 +59,19 @@ const normalCommandsGroup: CommandGroup[] = [
       },
     ],
   },
+  {
+    name: 'Help',
+    commands: [
+      {
+        id: 'log-record',
+        name: 'LogRecord',
+        description: 'Show the record dialog of logs',
+        handler() {
+          showDialog(LogRecord, () => {}, () => {})
+        },
+      }
+    ]
+  }
 ]
 
 const devCommandsGroup: CommandGroup[] = [

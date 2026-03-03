@@ -70,7 +70,6 @@ export function CommandPalette(): JSX.Element {
               height={18}
               selectedIndex={selectedIndex()}
               flexGrow={1}
-              itemSpacing={0.5}
               onSelect={(index, option) => {
                 if (option) {
                   // Find and execute the command handler

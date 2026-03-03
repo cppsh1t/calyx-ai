@@ -1,15 +1,24 @@
 #!/usr/bin/env bun
 import { parseCli } from '@/utils/cli.ts'
 import { ensureCacheDir, initUserConfig } from '@/utils/config.ts'
+import { loadApiKeysToEnv } from '@/utils/env-loader.ts'
 import { handleError } from '@/utils/error-handler.ts'
+import { getProviders } from '@/utils/models-api.ts'
 import { Router } from '@/views/router.tsx'
-import { createCliRenderer } from '@opentui/core'
 import { render } from '@opentui/solid'
-import { useRenderer } from 'node_modules/@opentui/solid/dist'
 
 try {
   await initUserConfig()
   await ensureCacheDir()
+
+  // Pre-fetch providers from models.dev and cache locally
+  // This runs in the background and won't block startup
+  getProviders().catch(() => {
+    // Silently fail - cache will be retried on next startup
+    // loadApiKeysToEnv() will handle the case where cache doesn't exist yet
+  })
+
+  await loadApiKeysToEnv()
   const result = await parseCli(process.argv)
 
   // Check if running in a TTY environment
