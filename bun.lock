@@ -62,8 +62,36 @@
         "typescript": "^5",
       },
     },
-    "packages/calyx-agent": {
-      "name": "calyx-agent",
+    "packages/calyx-flow": {
+      "name": "calyx-flow",
+      "version": "0.1.0",
+      "dependencies": {
+        "@ai-sdk/amazon-bedrock": "^4.0.72",
+        "@ai-sdk/anthropic": "^3.0.53",
+        "@ai-sdk/azure": "^3.0.40",
+        "@ai-sdk/cerebras": "^2.0.37",
+        "@ai-sdk/cohere": "^3.0.23",
+        "@ai-sdk/deepinfra": "^2.0.37",
+        "@ai-sdk/deepseek": "^2.0.21",
+        "@ai-sdk/gateway": "^3.0.61",
+        "@ai-sdk/google": "^3.0.36",
+        "@ai-sdk/google-vertex": "^4.0.71",
+        "@ai-sdk/groq": "^3.0.27",
+        "@ai-sdk/mistral": "^3.0.22",
+        "@ai-sdk/openai": "^3.0.39",
+        "@ai-sdk/openai-compatible": "^2.0.33",
+        "@ai-sdk/perplexity": "^3.0.21",
+        "@ai-sdk/togetherai": "^2.0.37",
+        "@ai-sdk/vercel": "^2.0.35",
+        "@ai-sdk/xai": "^3.0.64",
+        "@gitlab/gitlab-ai-provider": "^4.1.0",
+        "@jerome-benoit/sap-ai-provider-v2": "^4.4.18",
+        "@openrouter/ai-sdk-provider": "^2.2.3",
+        "ai": "^6.0.105",
+        "ai-gateway-provider": "^3.1.1",
+        "radash": "^12.1.1",
+        "venice-ai-sdk-provider": "^1.1.18",
+      },
       "devDependencies": {
         "@types/bun": "latest",
       },
@@ -359,7 +387,7 @@
 
     "@tokenizer/token": ["@tokenizer/token@0.3.0", "https://registry.npmmirror.com/@tokenizer/token/-/token-0.3.0.tgz", {}, "sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A=="],
 
-    "@types/bun": ["@types/bun@1.3.7", "https://registry.npmmirror.com/@types/bun/-/bun-1.3.7.tgz", { "dependencies": { "bun-types": "1.3.7" } }, "sha512-lmNuMda+Z9b7tmhA0tohwy8ZWFSnmQm1UDWXtH5r9F7wZCfkeO3Jx7wKQ1EOiKq43yHts7ky6r8SDJQWRNupkA=="],
+    "@types/bun": ["@types/bun@1.3.10", "https://registry.npmmirror.com/@types/bun/-/bun-1.3.10.tgz", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
 
     "@types/esrecurse": ["@types/esrecurse@4.3.1", "https://registry.npmmirror.com/@types/esrecurse/-/esrecurse-4.3.1.tgz", {}, "sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw=="],
 
@@ -457,7 +485,7 @@
 
     "bun-ffi-structs": ["bun-ffi-structs@0.1.2", "https://registry.npmmirror.com/bun-ffi-structs/-/bun-ffi-structs-0.1.2.tgz", { "peerDependencies": { "typescript": "^5" } }, "sha512-Lh1oQAYHDcnesJauieA4UNkWGXY9hYck7OA5IaRwE3Bp6K2F2pJSNYqq+hIy7P3uOvo3km3oxS8304g5gDMl/w=="],
 
-    "bun-types": ["bun-types@1.3.7", "https://registry.npmmirror.com/bun-types/-/bun-types-1.3.7.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-qyschsA03Qz+gou+apt6HNl6HnI+sJJLL4wLDke4iugsE6584CMupOtTY1n+2YC9nGVrEKUlTs99jjRLKgWnjQ=="],
+    "bun-types": ["bun-types@1.3.10", "https://registry.npmmirror.com/bun-types/-/bun-types-1.3.10.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-tcpfCCl6XWo6nCVnpcVrxQ+9AYN1iqMIzgrSKYMB/fjLtV2eyAVEg7AxQJuCq/26R6HpKWykQXuSOq/21RYcbg=="],
 
     "bun-webgpu": ["bun-webgpu@0.1.4", "https://registry.npmmirror.com/bun-webgpu/-/bun-webgpu-0.1.4.tgz", { "dependencies": { "@webgpu/types": "^0.1.60" }, "optionalDependencies": { "bun-webgpu-darwin-arm64": "^0.1.4", "bun-webgpu-darwin-x64": "^0.1.4", "bun-webgpu-linux-x64": "^0.1.4", "bun-webgpu-win32-x64": "^0.1.4" } }, "sha512-Kw+HoXl1PMWJTh9wvh63SSRofTA8vYBFCw0XEP1V1fFdQEDhI8Sgf73sdndE/oDpN/7CMx0Yv/q8FCvO39ROMQ=="],
 
@@ -471,9 +499,9 @@
 
     "call-bind-apply-helpers": ["call-bind-apply-helpers@1.0.2", "https://registry.npmmirror.com/call-bind-apply-helpers/-/call-bind-apply-helpers-1.0.2.tgz", { "dependencies": { "es-errors": "^1.3.0", "function-bind": "^1.1.2" } }, "sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ=="],
 
-    "calyx-agent": ["calyx-agent@workspace:packages/calyx-agent"],
-
     "calyx-cli": ["calyx-cli@workspace:apps/calyx-cli"],
+
+    "calyx-flow": ["calyx-flow@workspace:packages/calyx-flow"],
 
     "caniuse-lite": ["caniuse-lite@1.0.30001766", "https://registry.npmmirror.com/caniuse-lite/-/caniuse-lite-1.0.30001766.tgz", {}, "sha512-4C0lfJ0/YPjJQHagaE9x2Elb69CIqEPZeG0anQt9SIvIoOH4a4uaRl73IavyO+0qZh6MDLH//DrXThEYKHkmYA=="],
 
@@ -1063,8 +1091,6 @@
 
     "babel-plugin-jsx-dom-expressions/@babel/helper-module-imports": ["@babel/helper-module-imports@7.18.6", "https://registry.npmmirror.com/@babel/helper-module-imports/-/helper-module-imports-7.18.6.tgz", { "dependencies": { "@babel/types": "^7.18.6" } }, "sha512-0NFvs3VkuSYbFi1x2Vd6tKrywq+z/cLeYC/RJNFrIX/30Bf5aiGYbtvGXolEktzJH8o5E5KJ3tT+nkxuuZFVlA=="],
 
-    "calyx-cli/@types/bun": ["@types/bun@1.3.10", "https://registry.npmmirror.com/@types/bun/-/bun-1.3.10.tgz", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
-
     "color/color-convert": ["color-convert@3.1.3", "https://registry.npmmirror.com/color-convert/-/color-convert-3.1.3.tgz", { "dependencies": { "color-name": "^2.0.0" } }, "sha512-fasDH2ont2GqF5HpyO4w0+BcewlhHEZOFn9c1ckZdHpJ56Qb7MHhH/IcJZbBGgvdtwdwNbLvxiBEdg336iA9Sg=="],
 
     "color-string/color-name": ["color-name@2.1.0", "https://registry.npmmirror.com/color-name/-/color-name-2.1.0.tgz", {}, "sha512-1bPaDNFm0axzE4MEAzKPuqKWeRaT43U/hyxKPBdqTfmPF+d6n7FSoTFxLVULUJOmiLp01KjhIPPH+HrXZJN4Rg=="],
@@ -1108,8 +1134,6 @@
     "wrap-ansi-cjs/strip-ansi": ["strip-ansi@6.0.1", "https://registry.npmmirror.com/strip-ansi/-/strip-ansi-6.0.1.tgz", { "dependencies": { "ansi-regex": "^5.0.1" } }, "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A=="],
 
     "@aws-crypto/util/@smithy/util-utf8/@smithy/util-buffer-from": ["@smithy/util-buffer-from@2.2.0", "https://registry.npmmirror.com/@smithy/util-buffer-from/-/util-buffer-from-2.2.0.tgz", { "dependencies": { "@smithy/is-array-buffer": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-IJdWBbTcMQ6DA0gdNhh/BwrLkDR+ADW5Kr1aZmd4k3DIF6ezMV4R2NIAmT08wQJ3yUK82thHWmC/TnK/wpMMIA=="],
-
-    "calyx-cli/@types/bun/bun-types": ["bun-types@1.3.10", "https://registry.npmmirror.com/bun-types/-/bun-types-1.3.10.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-tcpfCCl6XWo6nCVnpcVrxQ+9AYN1iqMIzgrSKYMB/fjLtV2eyAVEg7AxQJuCq/26R6HpKWykQXuSOq/21RYcbg=="],
 
     "color/color-convert/color-name": ["color-name@2.1.0", "https://registry.npmmirror.com/color-name/-/color-name-2.1.0.tgz", {}, "sha512-1bPaDNFm0axzE4MEAzKPuqKWeRaT43U/hyxKPBdqTfmPF+d6n7FSoTFxLVULUJOmiLp01KjhIPPH+HrXZJN4Rg=="],
 

@@ -2,16 +2,21 @@ import BotMessage from '@/components/BotMessage'
 import LoadingIndicator from '@/components/LoadingIndicator'
 import UserInput from '@/components/UserInput'
 import UserMessage from '@/components/UserMessage'
-import { streamChat } from '@/services/llm.ts'
+import { getFlowBuilder } from '@/services/useFlow'
 import logger from '@/utils/logger'
 import { addAssistantMessage, addMessage, messageHistory, updateLastMessage } from '@/utils/message'
 import type { JSX } from 'solid-js'
 import { For, createSignal } from 'solid-js'
 
+
 export function ChatView(): JSX.Element {
   const [isLoading, setIsLoading] = createSignal(false)
+  
 
   async function handleUserInputSubmit(value: string) {
+    const flowBuilder = await getFlowBuilder()
+    const flow = flowBuilder.build({})
+
     logger.info(`User input submitted: ${value}`)
     if (!value.trim()) return
 
@@ -26,7 +31,7 @@ export function ChatView(): JSX.Element {
     try {
       await logger.debug('Calling streamChat')
       // 3. Get stream
-      const result = await streamChat(value)
+      const result = flow.run(value)
 
       // 4. Create empty assistant message
       addAssistantMessage()
