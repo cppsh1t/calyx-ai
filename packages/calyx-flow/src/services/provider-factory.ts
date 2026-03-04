@@ -44,7 +44,7 @@ type ProviderInstance = { languageModel: (modelId: string) => LanguageModel }
 /**
  * Type for raw provider factory that creates the provider instance
  */
-type RawProviderFactory = (config: { apiKey: string }) => ProviderInstance
+type RawProviderFactory = () => ProviderInstance
 
 /**
  * Module-level cache for provider factory instances
@@ -58,7 +58,7 @@ const factoryCache = new Map<string, ProviderInstance>()
  * @returns The provider instance that can create model instances
  * @throws Error if provider is not supported or API key is missing
  */
-export async function getProviderFactory(providerId: string, apiKey: string): Promise<ProviderInstance> {
+export async function getProviderFactory(providerId: string): Promise<ProviderInstance> {
   // Check cache first
   if (factoryCache.has(providerId)) {
     return factoryCache.get(providerId)!
@@ -78,12 +78,8 @@ export async function getProviderFactory(providerId: string, apiKey: string): Pr
     throw new Error(`Provider factory '${config.factory}' not found in ${config.package}`)
   }
 
-  if (!apiKey) {
-    throw new Error(`API key missing for provider: ${providerId}`)
-  }
-
   // Create provider instance with API key
-  const provider = factory({ apiKey })
+  const provider = factory()
 
   // Cache the provider instance
   factoryCache.set(providerId, provider)

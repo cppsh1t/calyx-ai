@@ -14,16 +14,10 @@ export type FlowBuilder = {
   build: (config: FlowConfig) => Flow
 }
 
-type ApiKeyGetter = (providerId: string) => (Promise<string | undefined>) | (string | undefined)
-
-export async function createFlowBuilder(apiKeyGetter: ApiKeyGetter) {
+export async function createFlowBuilder() {
   const providerId = 'deepseek'
   const modelId = 'deepseek-reasoner'
-  const apiKey = await apiKeyGetter(providerId)
-  if (isEmpty(apiKey)) {
-    throw new Error('Api key not found')
-  }
-  const provider = await getProviderFactory(providerId, apiKey as string)
+  const provider = await getProviderFactory(providerId)
   const model = provider.languageModel(modelId)
   const builder: FlowBuilder = {
     build() {
