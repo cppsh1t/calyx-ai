@@ -1,5 +1,4 @@
-import { streamText, type LanguageModel } from 'ai'
-import { deepseek } from '@ai-sdk/deepseek'
+import { type LanguageModel } from 'ai'
 
 /**
  * Configuration mapping for AI provider packages and their factory functions
@@ -36,15 +35,8 @@ const PROVIDER_CONFIG: Record<
   'openai-compatible': { package: '@ai-sdk/openai-compatible', factory: 'createOpenAICompatible' },
 }
 
-/**
- * Generic type for provider instances returned by factory functions
- */
-type ProviderInstance = { languageModel: (modelId: string) => LanguageModel }
-
-/**
- * Type for raw provider factory that creates the provider instance
- */
-type RawProviderFactory = () => ProviderInstance
+export type ProviderInstance = { languageModel: (modelId: string) => LanguageModel }
+export type RawProviderFactory = () => ProviderInstance
 
 /**
  * Module-level cache for provider factory instances
@@ -86,8 +78,6 @@ export async function getProviderFactory(providerId: string): Promise<ProviderIn
 
   return provider
 }
-
-
 
 /**
  * Clear the provider factory cache

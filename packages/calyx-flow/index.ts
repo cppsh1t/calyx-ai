@@ -1,3 +1,4 @@
-export { createFlowBuilder, type Flow, type FlowBuilder, type FlowConfig } from './src/core/flow.ts'
+export { createFlowBuilder } from '@/core/flow.ts'
+export type { Flow, FlowBuilder, FlowConfig } from '@/core/flow.ts'
 
-export { clearProviderCache, getProviderFactory, getSupportedProviders, isProviderSupported } from './src/services/provider-factory.ts'
+export { clearProviderCache, getProviderFactory, getSupportedProviders, isProviderSupported } from '@/services/provider-factory.ts'

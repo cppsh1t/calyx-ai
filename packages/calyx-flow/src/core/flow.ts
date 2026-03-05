@@ -1,14 +1,11 @@
-import { streamText } from "ai"
-import { getProviderFactory } from "../services/provider-factory"
-import { isEmpty } from 'radash'
+import { getProviderFactory } from '@/services/provider-factory.ts'
+import { streamText } from 'ai'
 
 export type Flow = {
   run: (prompt: string, options?: any) => ReturnType<typeof streamText>
 }
 
-export type FlowConfig = {
-  
-}
+export type FlowConfig = {}
 
 export type FlowBuilder = {
   build: (config: FlowConfig) => Flow
@@ -23,12 +20,12 @@ export async function createFlowBuilder() {
     build() {
       const flow: Flow = {
         run: (prompt: string, options?: any) => {
-        return streamText({
-          model,
-          prompt,
-          ...options
-        })
-      }
+          return streamText({
+            model,
+            prompt,
+            ...options,
+          })
+        },
       }
       return flow
     },
