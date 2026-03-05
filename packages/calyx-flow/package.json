@@ -5,8 +5,22 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./index.ts",
-    "./types": "./src/types/index.ts"
+    ".": {
+      "types": "./index.ts",
+      "import": "./index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "import": "./src/types/index.ts"
+    },
+    "./core": {
+      "types": "./src/core/index.ts",
+      "import": "./src/core/index.ts"
+    },
+    "./services": {
+      "types": "./src/services/index.ts",
+      "import": "./src/services/index.ts"
+    }
   },
   "scripts": {
     "test": "bun test || true",
