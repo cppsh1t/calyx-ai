@@ -11,7 +11,7 @@ export type FlowBuilder = {
   build: (config: FlowConfig) => Flow
 }
 
-export async function createFlowBuilder() {
+export async function createFlowBuilder(): Promise<FlowBuilder> {
   const providerId = 'deepseek'
   const modelId = 'deepseek-reasoner'
   const provider = await getProviderFactory(providerId)

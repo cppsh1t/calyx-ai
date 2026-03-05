@@ -1,28 +1,35 @@
 {
   "name": "calyx-flow",
   "version": "0.1.0",
-  "module": "index.ts",
+  "module": "./index.ts",
+  "types": "./dist/src/core/flow.d.ts",
   "type": "module",
   "private": true,
+  "files": [
+    "dist/**/*",
+    "index.ts",
+    "src/**/*"
+  ],
   "exports": {
     ".": {
-      "types": "./index.ts",
+      "types": "./dist/src/core/flow.d.ts",
       "import": "./index.ts"
     },
     "./types": {
-      "types": "./src/types/index.ts",
+      "types": "./dist/src/types/index.d.ts",
       "import": "./src/types/index.ts"
     },
     "./core": {
-      "types": "./src/core/index.ts",
+      "types": "./dist/src/core/flow.d.ts",
       "import": "./src/core/index.ts"
     },
     "./services": {
-      "types": "./src/services/index.ts",
+      "types": "./dist/src/services/index.d.ts",
       "import": "./src/services/index.ts"
     }
   },
   "scripts": {
+    "build": "tsc",
     "test": "bun test || true",
     "check-types": "tsc --noEmit"
   },
