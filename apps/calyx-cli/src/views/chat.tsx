@@ -15,7 +15,7 @@ export function ChatView(): JSX.Element {
 
   async function handleUserInputSubmit(value: string) {
     const flowBuilder = await getFlowBuilder()
-    const flow = flowBuilder.build({})
+    const flow = flowBuilder.build()
 
     logger.info(`User input submitted: ${value}`)
     if (!value.trim()) return
