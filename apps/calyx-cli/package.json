@@ -39,6 +39,7 @@
     "commander": "^14.0.3",
     "dayjs": "^1.11.19",
     "env-paths": "^4.0.0",
+    "partial-xml-stream-parser": "^1.9.2",
     "radash": "^12.1.1",
     "solid-js": "1.9.9"
   }

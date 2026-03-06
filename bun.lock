@@ -30,6 +30,7 @@
         "commander": "^14.0.3",
         "dayjs": "^1.11.19",
         "env-paths": "^4.0.0",
+        "partial-xml-stream-parser": "^1.9.2",
         "radash": "^12.1.1",
         "solid-js": "1.9.9",
       },
@@ -862,6 +863,8 @@
     "parse-bmfont-xml": ["parse-bmfont-xml@1.1.6", "https://registry.npmmirror.com/parse-bmfont-xml/-/parse-bmfont-xml-1.1.6.tgz", { "dependencies": { "xml-parse-from-string": "^1.0.0", "xml2js": "^0.5.0" } }, "sha512-0cEliVMZEhrFDwMh4SxIyVJpqYoOWDJ9P895tFuS+XuNzI5UBmBk5U5O4KuJdTnZpSBI4LFA2+ZiJaiwfSwlMA=="],
 
     "parse5": ["parse5@7.3.0", "https://registry.npmmirror.com/parse5/-/parse5-7.3.0.tgz", { "dependencies": { "entities": "^6.0.0" } }, "sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw=="],
+
+    "partial-xml-stream-parser": ["partial-xml-stream-parser@1.9.2", "https://registry.npmmirror.com/partial-xml-stream-parser/-/partial-xml-stream-parser-1.9.2.tgz", {}, "sha512-S04VUGM7B0tVydA2FR5QvoJJ6zywFWAeS4tkpnp7KqcGcOU2hxHd2IHg7Kuwltd3eDTYkJXA4vlaDkwpL9EQNw=="],
 
     "path-exists": ["path-exists@4.0.0", "https://registry.npmmirror.com/path-exists/-/path-exists-4.0.0.tgz", {}, "sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w=="],
 

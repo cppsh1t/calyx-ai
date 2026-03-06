@@ -5,7 +5,7 @@ import zod from 'zod'
 type Message = {role: string, content: string}
 
 export type Flow = {
-  run: (prompt: string, history?: Message[], options?: any) => ReturnType<typeof streamText>
+  run: (messages: Message[], options?: any) => ReturnType<typeof streamText>
 }
 
 export type FlowConfig = {
@@ -29,10 +29,10 @@ export async function createFlowBuilder(config: FlowConfig): Promise<FlowBuilder
   const builder: FlowBuilder = {
     build() {
       const flow: Flow = {
-        run: (prompt: string, options?: any) => {
+        run: (messages: Message[], options?: any) => {
           return streamText({
             model,
-            prompt,
+            messages,
             ...options,
           })
         },
