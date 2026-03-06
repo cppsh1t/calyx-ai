@@ -8,7 +8,7 @@ export function LogRecord() {
 
   return (
     <box width={60} height={24} backgroundColor="#1a1a1a"  flexDirection="column" padding={1}>
-      <scrollbox width="100%" flexGrow={1}  flexDirection='column' gap={1}>
+      <scrollbox width="100%" flexGrow={1}  flexDirection='column' gap={1} >
         <For each={loggerMessages()}>
           {(message) => (
             <box width="100%" padding={1}>

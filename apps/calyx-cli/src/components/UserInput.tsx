@@ -5,6 +5,7 @@ import { createMemo, createSignal, onMount, type JSX, type Ref } from 'solid-js'
 
 type Props = {
   onSubmit?: (value: string) => void
+  running?: boolean
 }
 
 export function UserInput(props: Props): JSX.Element {
@@ -41,7 +42,7 @@ export function UserInput(props: Props): JSX.Element {
       {/* Main content area */}
       <box backgroundColor="#1a1a1a" minHeight={5} border={['left']} marginBottom={1} borderStyle={'heavy'} borderColor="#3b82f6" flexGrow={1} paddingTop={1} paddingBottom={1} paddingLeft={2} paddingRight={2} flexDirection="column">
         <input onMouseDown={setInputFocus} ref={inputRef} focused placeholder="Maybe you can ask something..." value={inputValue()} onInput={(e) => setInputValue(e)} marginBottom={1} onSubmit={handleSubmit} />
-        <text>Flow: test</text>
+        <text><span style={{fg: '#3b82f6'}}>Flow(test)</span><span>  {props.running ? 'Running...' : ''}</span></text>
       </box>
 
       {/* Footer */}

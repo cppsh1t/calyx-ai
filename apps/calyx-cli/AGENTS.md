@@ -1,0 +1,356 @@
+# Calyx CLI Project Guide
+
+## Directory Structure
+
+```
+apps/calyx-cli/
+└── src/
+    ├── assets/       # Static assets (images, fonts, configs)
+    ├── components/   # Reusable SolidJS UI components
+    ├── views/        # TUI views/screens
+    ├── store/        # State management (SolidJS stores)
+    ├── test/         # Test files
+    ├── types/        # TypeScript type definitions
+    ├── utils/        # Utility functions
+    └── index.tsx     # Entry point
+```
+
+## File Placement Guidelines
+
+### `/assets/` - Static Assets
+
+**Purpose**: Static files used by the application
+
+**File types**:
+
+- Images: `*.png`, `*.svg`, `*.jpg`
+- Fonts: `*.ttf`, `*.woff`, `*.woff2`
+- Configuration files: `*.json`, `*.yaml`
+- Any other static resources
+
+**Example structure**:
+
+```
+assets/
+├── icons/
+│   └── logo.svg
+└── config/
+    └── default-config.json
+```
+
+---
+
+### `/components/` - Reusable UI Components
+
+**Purpose**: Reusable SolidJS components for the TUI
+
+**File types**:
+
+- SolidJS components: `*.tsx`
+- Component styles: `*.css` (if needed)
+
+**Naming**: PascalCase files for components
+
+**Example**:
+
+```
+components/
+├── Button.tsx
+├── Input.tsx
+└── Modal.tsx
+```
+
+**Import pattern**:
+
+```typescript
+// In other files
+import { Button } from "@/components/Button";
+```
+
+---
+
+### `/views/` - TUI Views/Screens
+
+**Purpose**: Main screens and views for the CLI application
+
+**File types**:
+
+- SolidJS view components: `*.tsx`
+- Screen-specific logic
+
+**Naming**: PascalCase files for views
+
+**Example**:
+
+```
+views/
+├── HomeView.tsx
+├── SettingsView.tsx
+└── tui.tsx       # Main TUI renderer
+```
+
+**Import pattern**:
+
+```typescript
+// In other files
+import { HomeView } from "@/views/HomeView";
+```
+
+---
+
+### `/store/` - State Management
+
+**Purpose**: SolidJS stores for global/reactive state
+
+**File types**:
+
+- Store definitions: `*.ts`, `*.tsx`
+
+**Naming**: camelCase files with `-store` suffix
+
+**Example**:
+
+```
+store/
+├── cli-store.ts
+├── config-store.ts
+└── ui-store.ts
+```
+
+**Import pattern**:
+
+```typescript
+// In other files
+import { useCliStore } from "@/store/cli-store";
+```
+
+---
+
+### `/test/` - Test Files
+
+**Purpose**: Unit and integration tests
+
+**File types**:
+
+- Test files: `*.test.ts`, `*.test.tsx`
+- Test utilities: `*.ts`
+
+**Naming**: Match the file being tested with `.test.` suffix
+
+**Example**:
+
+```
+test/
+├── cli.test.ts
+├── utils.test.ts
+└── setup.ts
+```
+
+**Running tests**:
+
+```bash
+# From project root
+bun run --filter=calyx-cli test
+
+# From calyx-cli directory
+bun test
+```
+
+---
+
+### `/types/` - Type Definitions
+
+**Purpose**: TypeScript types and interfaces
+
+**File types**:
+
+- Type definitions: `*.ts`
+
+**Naming**: camelCase files
+
+**Example**:
+
+```
+types/
+├── cli.ts
+├── config.ts
+└── index.ts      # Re-exports common types
+```
+
+**Import pattern**:
+
+```typescript
+// In other files
+import type { CliConfig } from "@/types/config";
+import { CliCommand } from "@/types/cli";
+```
+
+---
+
+### `/utils/` - Utility Functions
+
+**Purpose**: Helper functions and utilities
+
+**File types**:
+
+- Utility modules: `*.ts`
+
+**Naming**: camelCase files
+
+**Example**:
+
+```
+utils/
+├── cli.ts        # CLI-related helpers
+├── format.ts     # Formatting utilities
+└── validate.ts   # Validation functions
+```
+
+**Import pattern**:
+
+```typescript
+// In other files
+import { formatOutput } from "@/utils/format";
+```
+
+---
+
+### Root Files
+
+#### `index.tsx` - Entry Point
+
+**Purpose**: Main entry point for the CLI application
+
+**Responsibilities**:
+
+- Parse CLI arguments (using Commander)
+- Initialize the TUI renderer
+- Handle application lifecycle
+
+---
+
+## Code Style Guidelines
+
+### Import Style
+
+**MANDATORY: Use `@/` path alias for all src imports**
+
+```typescript
+// ✅ CORRECT
+import { MyComponent } from "@/components/MyComponent";
+import { myUtil } from "@/utils/cli";
+import type { MyType } from "@/types/config";
+
+// ❌ WRONG - Relative imports
+import { MyComponent } from "../components/MyComponent";
+```
+
+### TypeScript Configuration
+
+- **Strict mode**: Enabled
+- **JSX**: `preserve` with `@opentui/solid` import source
+- **Module**: ESNext with bundler resolution
+
+### Naming Conventions
+
+- **Components**: PascalCase (`Button`, `Modal`)
+- **Types/Interfaces**: PascalCase (`CliConfig`, `ViewState`)
+- **Functions**: camelCase (`formatOutput`, `validateInput`)
+- **Files**: kebab-case for multi-word names
+
+---
+
+## Critical OpenTUI Rules
+
+### ⚠️ NOT ALL SOLIDJS FEATURES ARE SUPPORTED
+
+**CRITICAL**: OpenTUI is a TUI framework, not a web framework. It does NOT support all SolidJS features.
+
+**Common unsupported features:**
+
+- ❌ **ErrorBoundary** - Web-only, not available in TUI environment
+- ❌ **Suspense** - Async component loading not supported
+- ❌ **Portal** - No concept of multiple rendering targets
+- ❌ **Transition/Animation components** - Web-specific
+- ❌ **Hydration** - No server-side rendering in TUI
+
+**ALWAYS check OpenTUI documentation before using any SolidJS feature:**
+
+```bash
+# View OpenTUI documentation
+cat .opencode/skills/opentui/references/solid/REFERENCE.md
+cat .opencode/skills/opentui/references/solid/gotchas.md
+```
+
+**What IS supported:**
+
+- ✅ Core reactivity (`createSignal`, `createEffect`, `createMemo`)
+- ✅ Components (`Switch`, `Match`, `Show`, `For`, `Index`)
+- ✅ Hooks (`useKeyboard`, `useRenderer`, `onMount`, `onCleanup`)
+- ✅ Stores (`createStore` from `solid-js/store`)
+- ✅ JSX with OpenTUI components (`box`, `text`, `input`, etc.)
+
+**If a feature is not documented in OpenTUI references, assume it's NOT supported.**
+
+### Required Configuration Files
+
+**bunfig.toml** (MANDATORY):
+
+```toml
+preload = ["@opentui/solid/preload"]
+```
+
+This file is **required** for JSX to work correctly with OpenTUI. Without it, the application will fail to initialize with cryptic errors.
+
+
+### Error Handling
+
+Since ErrorBoundary is not available, use the unified `handleError()` utility:
+
+```tsx
+// ✅ CORRECT - Use unified error handler
+import { handleError } from "@/utils/error-handler";
+
+// In UI context (with router)
+const { setError } = useRouter();
+try {
+  // risky operation
+} catch (error) {
+  await handleError(error, {
+    router: { setError },
+    context: "operation-name"
+  });
+}
+
+// In CLI context (no router/UI)
+try {
+  // risky operation
+} catch (error) {
+  await handleError(error, {
+    context: "cli-operation",
+    exitCode: 1
+  });
+  // process.exit(1) is called automatically
+}
+
+// ❌ WRONG - ErrorBoundary won't work
+<ErrorBoundary fallback={...}>
+  <MyComponent />
+</ErrorBoundary>
+```
+
+**Logging**:
+
+- Errors are automatically logged via **pino** with structured metadata
+- Log files stored in: `~/.calyx/logs/YYYY-MM-DD.log`
+- Log retention: 30 days (automatic cleanup)
+- Log levels: `info`, `warn`, `error` (no debug level)
+
+**Utility Files**:
+
+- `/src/utils/logger.ts` - pino logger configuration with daily rotation
+- `/src/utils/error-handler.ts` - unified error handling with dual-mode support
+- `/src/utils/log-cleanup.ts` - automatic cleanup of logs older than 30 days
+
+---
+

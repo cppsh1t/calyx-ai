@@ -199,10 +199,10 @@ export function getSyntaxStyle(): SyntaxStyle {
   return markdownSyntaxStyle
 }
 
-export function BotMessage({ content }: { content: string }) {
+export function BotMessage({ content, streaming }: { content: string, streaming: boolean }) {
   return (
     <box paddingLeft={2} paddingRight={2} paddingTop={1} paddingBottom={1} width="100%">
-      <markdown syntaxStyle={markdownSyntaxStyle} content={content} />
+      <markdown syntaxStyle={markdownSyntaxStyle} content={content} streaming={streaming} />
     </box>
   )
 }
