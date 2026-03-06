@@ -1,7 +1,7 @@
 import BotMessage from '@/components/BotMessage'
 import UserInput from '@/components/UserInput'
 import UserMessage from '@/components/UserMessage'
-import { chat, messageHistory, pendingMessage, combinedMessages } from '@/utils/message'
+import { chat, combinedMessages, pendingMessage } from '@/utils/message'
 import type { JSX } from 'solid-js'
 import { For } from 'solid-js'
 
@@ -25,11 +25,15 @@ export function ChatView(): JSX.Element {
         <text>这是测试标题</text>
       </box>
 
-      <scrollbox width="100%" flexGrow={1} paddingTop={1} stickyScroll={true} stickyStart='bottom' viewportCulling>
+      <scrollbox width="100%" flexGrow={1} paddingTop={1} stickyScroll={true} stickyStart="bottom" viewportCulling>
         <For each={combinedMessages()}>
           {(message) => (
             <box width="100%">
-              {message.role === 'user' ? <UserMessage content={message.content} /> : <BotMessage content={message.content} streaming={message.streaming} />}
+              {message.role === 'user' ? (
+                <UserMessage content={message.content} />
+              ) : (
+                <BotMessage content={message.content} usage={message.usage} reason={message.reason} streaming={message.streaming} />
+              )}
             </box>
           )}
         </For>

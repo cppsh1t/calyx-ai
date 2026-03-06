@@ -2,8 +2,10 @@ import { getProviderFactory } from '@/services/provider-factory.ts'
 import { streamText } from 'ai'
 import zod from 'zod'
 
+type Message = {role: string, content: string}
+
 export type Flow = {
-  run: (prompt: string, options?: any) => ReturnType<typeof streamText>
+  run: (prompt: string, history?: Message[], options?: any) => ReturnType<typeof streamText>
 }
 
 export type FlowConfig = {

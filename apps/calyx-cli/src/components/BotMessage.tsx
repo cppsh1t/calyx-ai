@@ -1,19 +1,7 @@
 import { RGBA, SyntaxStyle } from '@opentui/core'
+import type { LanguageModelUsage } from 'ai'
+import { Show } from 'solid-js'
 
-/**
- * 需要纠正或者补充的格式
- * h6标题变成斜体了 - 已修复：去掉 italic
- * 粗斜体只生效了粗体 - 说明：Tree-sitter 不原生支持粗斜体组合，***text*** 会被识别为 strong
- * 下划线文本没生效 - 说明：标准 Markdown 没有下划线语法，<u> 标签需要检查是否支持
- * - [x] TODO格式没生效 - 已修复：添加 markup.list.checked
- * --- 分割线没生效 - 已修复：添加 punctuation.special
- * ==xx== 高亮没生效 - 说明：==高亮== 不是标准 Markdown 语法，OpenTUI 可能不支持
- */
-
-/**
- * 创建完整的 Markdown SyntaxStyle 对象
- * 包含 Markdown 语法元素和代码高亮样式
- */
 export function createMarkdownSyntaxStyle(): SyntaxStyle {
   return SyntaxStyle.fromStyles({
     // ========== Markdown 基础样式 ==========
@@ -192,17 +180,34 @@ export function createMarkdownSyntaxStyle(): SyntaxStyle {
   })
 }
 
-// 创建单例实例
 const markdownSyntaxStyle = createMarkdownSyntaxStyle()
 
 export function getSyntaxStyle(): SyntaxStyle {
   return markdownSyntaxStyle
 }
 
-export function BotMessage({ content, streaming }: { content: string, streaming: boolean }) {
+function getTokenDisplay(usage: LanguageModelUsage | null) {
+  if (usage === null) return 'Tokens: null'
+  return `Tokens: ${usage.totalTokens}(input: ${usage.inputTokens}, output: ${usage.outputTokens})`
+}
+
+export function BotMessage({ content, reason, streaming, usage }: { content: string; reason: string; streaming: boolean; usage: LanguageModelUsage | null }) {
   return (
     <box paddingLeft={2} paddingRight={2} paddingTop={1} paddingBottom={1} width="100%">
+      <Show when={reason}>
+        <box width="100%" marginBottom={1}>
+          <text >
+            <span style={{ fg: '#909399' }}>Thinking: </span>
+            <span style={{ fg: '#888' }}>{reason}</span>
+          </text>
+        </box>
+      </Show>
       <markdown syntaxStyle={markdownSyntaxStyle} content={content} streaming={streaming} />
+      <Show when={usage !== null}> 
+        <box>
+          <text style={{ fg: '#888' }}>{getTokenDisplay(usage)}</text>
+        </box>
+      </Show>
     </box>
   )
 }
