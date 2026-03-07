@@ -1,19 +1,36 @@
-import logger from "@/utils/logger"
-import { $ } from "bun"
+import { execa } from 'execa'
+import logger from './logger'
+
+
 
 export async function runCommand(command: string): Promise<string> {
+  const bashPath = '/mnt/d/env/Git/bin/bash.exe'
+
   try {
     logger.info(`Executing command: ${command}`)
-    const result = await $`${command}`
-    const output = result.stdout.toString()
-    logger.info(`Command completed successfully`)
+    logger.debug(`Using shell: ${bashPath}`)
+
+    const result = await execa(bashPath, ['-c', command], {
+      windowsHide: true,
+      cwd: process.cwd(),
+      env: process.env,
+    })
+
+    const output = result.stdout || ''
+    logger.info(`shell result: ${output}`)
+
     return output
   } catch (error) {
-    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Command execution failed')
-    if (error instanceof Error && 'stdout' in error) {
-      const execError = error as unknown as { stdout: string; stderr: string }
-      return `Error: ${execError.stderr || execError.stdout || error.message}`
+
+    if (error && typeof error === 'object' && 'stdout' in error) {
+      const execaError = error as { stdout?: string; stderr?: string; message: string }
+      const errorOutput = execaError.stdout || execaError.stderr || execaError.message
+      logger.error(`shell error: ${errorOutput}`)
+      return errorOutput
     }
-    return `Error: ${error instanceof Error ? error.message : String(error)}`
+
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    logger.error(`shell error: ${errorMessage}`)
+    return errorMessage
   }
 }
