@@ -1,5 +1,8 @@
 import { type LanguageModel } from 'ai'
 
+//FIXME:查找包名有问题，只限定了这几次，应该按package循环找
+//参数传递也有问题，后面修，需要函数参数上传递一个完整的配置json过来
+
 /**
  * Configuration mapping for AI provider packages and their factory functions
  * Maps provider IDs to their @ai-sdk package and factory function name
@@ -33,10 +36,11 @@ const PROVIDER_CONFIG: Record<
   togetherai: { package: '@ai-sdk/togetherai', factory: 'createTogetherAI' },
   vercel: { package: '@ai-sdk/vercel', factory: 'createVercel' },
   'openai-compatible': { package: '@ai-sdk/openai-compatible', factory: 'createOpenAICompatible' },
+  // 'moonshotai-cn': { package: '@ai-sdk/openai-compatible', factory: 'createOpenAICompatible' }
 }
 
 export type ProviderInstance = { languageModel: (modelId: string) => LanguageModel }
-export type RawProviderFactory = () => ProviderInstance
+export type RawProviderFactory = (options?: any) => ProviderInstance
 
 /**
  * Module-level cache for provider factory instances
@@ -71,7 +75,11 @@ export async function getProviderFactory(providerId: string): Promise<ProviderIn
   }
 
   // Create provider instance with API key
-  const provider = factory()
+  // const provider = factory({
+  //   baseURL: config
+  // })
+
+  const provider = factory({})
 
   // Cache the provider instance
   factoryCache.set(providerId, provider)
