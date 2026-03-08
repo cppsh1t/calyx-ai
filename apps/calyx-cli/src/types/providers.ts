@@ -1,15 +1,6 @@
-/**
- * Model information from models.dev API
- */
-export interface ModelInfo {
-  id: string
-  name: string
-  description?: string
-  context_length?: number
-  max_output_tokens?: number
-  input_modalities?: string[]
-  output_modalities?: string[]
-}
+import type { Model } from "calyx-flow/types"
+
+export type ModelInfo = Model
 
 /**
  * Provider information from models.dev API
@@ -18,8 +9,9 @@ export interface ModelInfo {
 export interface ProviderInfo {
   id: string
   name: string
-  env?: string[]
-  npm?: string
+  env: string[]
+  npm: string
+  api: string
   models: Record<string, ModelInfo>
 }
 

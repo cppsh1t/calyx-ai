@@ -133,7 +133,7 @@ async function chat(prompt: string, bySystem = false) {
 
   try {
     const flowBuilder = await getFlowBuilder()
-    const flow = flowBuilder.build()
+    const flow = await flowBuilder.build({providerId: 'moonshotai-cn', modelId: 'kimi-k2.5'})
     let usage: LanguageModelUsage | null = null
 
     logger.debug('Calling streamChat')
@@ -146,7 +146,6 @@ async function chat(prompt: string, bySystem = false) {
       } else if (chunk.type === 'finish') {
         usage = chunk.totalUsage
       }
-      // updatePendingMessage({content: JSON.stringify(chunk)})
     }
     const assistantMessage: Message = { role: 'assistant', content: pendingMessage().content, reason: pendingMessage().reason, usage }
     await stop(assistantMessage)

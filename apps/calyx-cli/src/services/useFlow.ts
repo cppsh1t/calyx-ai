@@ -1,8 +1,7 @@
+import { getProviders } from '@/utils/models-api'
 import { createFlowBuilder } from 'calyx-flow'
 
 export async function getFlowBuilder() {
-  return createFlowBuilder({
-    providerId: 'moonshotai-cn',
-    modelId: 'kimi-k2.5'
-  })
+  const providerConfig = await getProviders()
+  return createFlowBuilder(providerConfig)
 }
