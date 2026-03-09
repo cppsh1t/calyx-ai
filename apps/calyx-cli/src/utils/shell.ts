@@ -1,7 +1,10 @@
 import { execa } from 'execa'
 import logger from './logger'
+import zod from 'zod'
 
-
+export const runCommandToolParamZod = zod.object({
+  command: zod.string().describe("要让bash执行的命令")
+})
 
 export async function runCommand(command: string): Promise<string> {
   const bashPath = '/mnt/d/env/Git/bin/bash.exe'

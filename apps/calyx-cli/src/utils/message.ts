@@ -1,10 +1,12 @@
 import { getFlowBuilder } from '@/services/useFlow'
 import logger from '@/utils/logger'
 import type { LanguageModelUsage } from 'ai'
+import { randomUUIDv7 } from 'bun'
 import { PartialXMLStreamParser, type ParserOptions } from 'partial-xml-stream-parser'
 import { isEmpty } from 'radash'
 import { createMemo, createSignal, type Accessor } from 'solid-js'
-import { runCommand } from './shell'
+import zod from 'zod'
+import { runCommandToolParamZod } from './shell'
 
 const xmlparserOptions: ParserOptions = {
   textNodeName: 'text', // Default is "#text"
@@ -20,46 +22,106 @@ export type Role = 'user' | 'assistant' | 'system'
 const parser = new PartialXMLStreamParser(xmlparserOptions)
 
 export type Message = {
+  id: string
   role: Role
   reason: string
   content: string
   usage: LanguageModelUsage | null
 }
 
-export type PendingMessage = Omit<Message, 'role' | 'usage'> & {
+export type PendingMessage = Omit<Message, 'role' | 'usage' | 'id'> & {
   running: boolean
 }
 
+const textschema = zod.object({
+  filePath: zod.string().meta({ description: '文件地址' }),
+  line: zod.number().optional().meta({ description: '读取的行数, 不填则为所有行' }),
+})
+
 const systemPrompt: Message = {
+  id: 'system',
   role: 'system',
   reason: '',
   usage: null,
   content: `
-  你是一个本地Cli助手，你需要严格遵守ReAct模式,用户会使用<task></task>来进行提问，你首先需要使用<thought></thought>思考做什么，其次你需要判断是否能直接回答，还是需要调用工具。
-  如果可以直接回答，使用<answer></answer>包裹答案并返回。如果需要调用工具，使用<shell></shell>来编写bash命令执行。
-  shell执行的结果，系统会在下一个对话中会通过<observation></observation>返回给你并且附带上之前的xml标签。你需要一直执行这个过程循环直到任务完成或者任务无法继续进行，以足够的信息来总结，使用<answer></answer>来包裹答案返回
-  **警告**
-  在reason_content中使用这些xml标签不被视作有效，必须在正文回复内容中进行包裹，不能返回空值。
-  下一轮的回复中不能携带上一轮的xml!!!
+  <Role>
+  你是calyx-cli，一个运行在本地终端的cli助手，可以调用工具或终端来帮助用户解决问题,严格遵循ReAct（推理-行动-观察）范式解决问题
+  </Role>
+
+  <Behaviour>
+  ## 核心规则
+  1. 必须通过<thought>→<action>→<observation>的迭代闭环处理问题，当任务完成或者无法继续进行，或者情况出现变化需要用户重新决策时输出<answer>；
+  2. <action>可以调用工具，格式在下方；
+  3. 每次仅输出一个<thought>+一个<action>（除非可直接输出<answer>），等待<observation>后再继续推理；
+  4. 若工具调用失败/返回无效信息，需在<thought>中复盘并调整策略。
+  5. <answer>的格式用户可以自定义，详细参考下文
+
+  #### 工具格式
+  根据系统提供的工具参数schema，填入到Action块中，示例:
+  <action>
+  {
+    name: "writeToFile",
+    argument: { //schema示例的格式
+      fileName: "example.txt",
+      content: "hello world"
+    }
+  }
+  </action>
+  ####
+
+  #### 上下文格式
+  系统会为每轮对话附带一个id，并在消息接受后进行裁剪。在你进行回复时，不要携带上一轮的历史内容。如果携带了上一轮的内容，也不要忘记id
   示例:
 
-  \`\`\`xml
-  ## 第一轮
-  <task>我在什么目录下?</task>
+  <question id="first-xxxx-xxxx">我在什么目录下?</question>
+  <thought id="first-xxxx-xxxx">
+  用户问我现在程序运行在什么目录下，我需要调用bash工具来查看
+  </thought id="first-xxxx-xxxx">
+  <action id="first-xxxx-xxxx">
+  {
+    name: "bash",
+    argument: {
+      commands: "pwd"
+    }
+  }
+  </action>
 
-  <thought>用户问我现在的运行环境处在什么目录下，我需要执行bash的命令pwd来查看</thought>
-  <shell>pwd</shell>
-
-  ## 第二论
-  <observation>/home/root</observation>
-
-  <thought>看起来用户处于linux环境下root用户的根目录下，任务完成，让我来总结告诉用户</thought>
-  <answer>已执行bash命令: pwd
-  得到结果: /home/root
-  您正处于linux环境下root用户的根目录下
+  <observation id="second-xxxx-xxxx">
+  {
+    success: true,
+    error: null,
+    result: {
+      toolName: "bash",
+      toolResult: "D:/project/front/vue-template"
+    }
+  }
+  </observation>
+  <thought id="second-xxxx-xxxx">
+  根据工具调用结果，用户位于D:/project/front/vue-template，看起来是一个vue模板项目，我应该进行总结
+  </thought>
+  <answer id="second-xxxx-xxxx">
+  您当前位于D:/project/front/vue-template，这应该时一个vue模板项目
   </answer>
-  \`\`\`
 
+  #### 当前自定义Answer输出格式
+  当前<answer>格式为纯文本，没有复杂结构
+
+  </Behaviour>
+
+  <Tools>
+  当前可用工具:
+  1. bash
+  schema(zod toJSONSchema, target: "openapi-3.0"): 
+  ${JSON.stringify(
+    runCommandToolParamZod.toJSONSchema({
+      target: 'openapi-3.0',
+    })
+  )}
+
+  2. readFile
+  schema(zod toJSONSchema, target: "openapi-3.0"): 
+  ${JSON.stringify(textschema.toJSONSchema({ target: 'openapi-3.0' }))}
+  </Tools>
   `,
 }
 
@@ -82,9 +144,10 @@ function makeEmptyPendingMessage(): PendingMessage {
 const combinedMessages: Accessor<CombinedMessage[]> = createMemo(() => {
   const convertMessages = messageHistory()
     .filter((item) => item.role !== 'system')
-    .map((item) => ({ content: item.content, role: item.role, reason: item.reason, streaming: true, usage: item.usage }) as const)
+    .map((item) => ({ ...item, streaming: true }) as const)
   if (!pendingMessage().running) return convertMessages
   const pendingConvertMessage = {
+    id: 'pending',
     role: 'assistant',
     content: pendingMessage().content,
     streaming: true,
@@ -117,13 +180,14 @@ async function chat(prompt: string, bySystem = false) {
   if (isEmpty(prompt)) return
   if (pendingMessage().running) return
   logger.info(`User input submitted: ${prompt}`)
+  const id = randomUUIDv7()
   if (bySystem) {
-    prompt = `<observation>${prompt}</observation>`
-  } else[
-    prompt = `<task>${prompt}</task>`
-  ]
+    prompt = `<observation id="${id}">${prompt} </observation>`
+  } else {
+    prompt = `<question id="${id}">${prompt}</question>`
+  }
 
-  const userMessage: Message = { role: 'user', content: prompt, reason: '', usage: null }
+  const userMessage: Message = { id, role: 'user', content: prompt, reason: '', usage: null }
   appendMessageHistory(userMessage)
   setPendingMessage({
     running: true,
@@ -133,7 +197,7 @@ async function chat(prompt: string, bySystem = false) {
 
   try {
     const flowBuilder = await getFlowBuilder()
-    const flow = await flowBuilder.build({providerId: 'moonshotai-cn', modelId: 'kimi-k2.5'})
+    const flow = await flowBuilder.build({ providerId: 'deepseek', modelId: 'deepseek-reasoner' })
     let usage: LanguageModelUsage | null = null
 
     logger.debug('Calling streamChat')
@@ -147,11 +211,12 @@ async function chat(prompt: string, bySystem = false) {
         usage = chunk.totalUsage
       }
     }
-    const assistantMessage: Message = { role: 'assistant', content: pendingMessage().content, reason: pendingMessage().reason, usage }
+    const assistantMessage: Message = { id, role: 'assistant', content: pendingMessage().content, reason: pendingMessage().reason, usage }
     await stop(assistantMessage)
   } catch (error) {
     logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Chat error')
     const exceptionMessage: Message = {
+      id,
       role: 'assistant',
       reason: '',
       usage: null,
@@ -164,11 +229,14 @@ async function chat(prompt: string, bySystem = false) {
 }
 
 function combineXml<T>(array: any[]) {
-  return array.reduce((acc, obj) => {
-    const [key] = Object.keys(obj)
-    acc[key as string] = obj[key as string]
-    return acc
-  }, {} as Record<string, { text: string }>) as Record<(T & string), { text: string }>
+  return array.reduce(
+    (acc, obj) => {
+      const [key] = Object.keys(obj)
+      acc[key as string] = obj[key as string]
+      return acc
+    },
+    {} as Record<string, { text: string }>
+  ) as Record<T & string, { text: string }>
 }
 
 async function stop(assistantMessage: Message) {
@@ -177,7 +245,7 @@ async function stop(assistantMessage: Message) {
   const parseResult = parser.parseStream(assistantMessage.content).xml
   //JSON.stringify(parseResult: [{"thought": {"text": "用户在查询当前目录"}}, {"shell"}: {"text": "pwd"}]
 
-  const combineObj = combineXml<'thought' | 'shell' | 'answer'>(parseResult)
+  const combineObj = combineXml<'thought' | 'action' | 'answer'>(parseResult)
 
   let content = ''
   if (combineObj.thought) {
@@ -186,10 +254,11 @@ async function stop(assistantMessage: Message) {
 
   let bashResult: string | null = null
 
-  if (combineObj.shell) {
-    content += `调用bash: ${combineObj.shell.text}\n`
-    bashResult = await runCommand(combineObj.shell.text)
-    content += `执行结果: ${bashResult}\n`
+  if (combineObj.action) {
+    // content += `调用bash: ${combineObj.shell.text}\n`
+    // bashResult = await runCommand(combineObj.shell.text)
+    // content += `执行结果: ${bashResult}\n`
+    content += `action:\n ${JSON.stringify(combineObj.action)} `
   }
 
   if (combineObj.answer) {
@@ -198,12 +267,12 @@ async function stop(assistantMessage: Message) {
 
   content += `调试: ${JSON.stringify(combineObj)}`
 
-  const newMsg = { ...assistantMessage, content }
+  // const newMsg = { ...assistantMessage, content }
   setPendingMessage(makeEmptyPendingMessage())
-  appendMessageHistory(newMsg)
-  if (bashResult && !combineObj.answer) {
-    chat(bashResult, true)
-  }
+  appendMessageHistory(assistantMessage)
+  // if (bashResult && !combineObj.answer) {
+  //   chat(bashResult, true)
+  // }
 }
 
 export { chat, combinedMessages, messageHistory, pendingMessage, stop }

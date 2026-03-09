@@ -1,17 +1,5 @@
 {
   "name": "calyx-ai",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "check-types": "turbo run check-types",
-    "test": "turbo run test"
-  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
@@ -27,10 +15,20 @@
     "node": ">=18"
   },
   "packageManager": "bun@1.3.6",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test"
+  },
+  "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "dependencies": {
-  }
+  ]
 }
