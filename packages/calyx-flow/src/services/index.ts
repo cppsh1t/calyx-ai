@@ -1,1 +1,1 @@
-export { buildProviderFactory } from '@/services/provider-factory'
+export { buildProviderFactory } from './provider-factory.ts'

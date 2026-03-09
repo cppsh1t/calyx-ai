@@ -1,27 +1,13 @@
-import { buildProviderFactory } from '@/services/provider-factory'
-import type { Provider } from '@/types/services/provider-factory'
+import { buildProviderFactory } from '@/services/provider-factory.ts'
+import type { Flow, FlowBuilder, FlowConfig, Message } from '@/types/flow.ts'
+import type { Provider } from '@/types/services/provider-factory.ts'
 import { streamText } from 'ai'
 import zod from 'zod'
 
-type Message = { role: string, content: string }
-
-export type Flow = {
-  run: (messages: Message[], options?: any) => ReturnType<typeof streamText>
-}
-
-export type FlowConfig = {
-  providerId: string
-  modelId: string
-}
-
 const flowConfigZod = zod.object({
   providerId: zod.string(),
-  modelId: zod.string()
+  modelId: zod.string(),
 })
-
-export type FlowBuilder = {
-  build: (config: FlowConfig) => Promise<Flow>
-}
 
 export async function createFlowBuilder(providerConfig: Record<string, Provider>): Promise<FlowBuilder> {
   const providerFactory = buildProviderFactory(providerConfig)

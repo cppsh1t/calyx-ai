@@ -1,4 +1,4 @@
-import type { Provider, ProviderFactory, RawProviderFactory } from '@/types/services/provider-factory';
+import type { Provider, RawProviderFactory } from '@/types/services/provider-factory.ts'
 
 const factoryMethodMap = {
   // Core providers
@@ -23,7 +23,6 @@ const factoryMethodMap = {
   '@ai-sdk/togetherai': 'createTogetherAI',
   '@ai-sdk/vercel': 'createVercel',
   '@ai-sdk/openai-compatible': 'createOpenAICompatible',
-
 }
 
 export function buildProviderFactory(config: Record<string, Provider>) {
@@ -35,7 +34,7 @@ export function buildProviderFactory(config: Record<string, Provider>) {
       }
       const providerModule = await import(providerConfig!.npm)
 
-      const fatoryMethodName = factoryMethodMap[providerConfig!.npm as keyof typeof  factoryMethodMap]
+      const fatoryMethodName = factoryMethodMap[providerConfig!.npm as keyof typeof factoryMethodMap]
 
       if (!fatoryMethodName) {
         throw new Error(`Provider factory method not found`)
@@ -49,7 +48,7 @@ export function buildProviderFactory(config: Record<string, Provider>) {
 
       const provider = factory({
         baseURL: providerConfig!.api,
-        apiKey: process.env[providerConfig.env[0] as string]
+        apiKey: process.env[providerConfig.env[0] as string],
       })
       return provider
     },
