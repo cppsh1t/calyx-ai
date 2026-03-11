@@ -1,4 +1,5 @@
 import type { LanguageModelUsage } from 'ai'
+import zod from 'zod'
 
 export type OriginMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -33,11 +34,34 @@ export type UsagePendingMessage = {
 
 export type PendingMessage = UsagePendingMessage | OriginPendingMessage
 
-export type Flow = {
-  run: () => Promise<IteratorResult<Message>>
+export interface IFlow {
+  run: () => AsyncGenerator<PendingMessage, void, void>
+  getHistory: () => Message[]
 }
 
-export type Tool = {}
+export type Tool = {
+  name: string
+  description: string
+  paramsSchema: string
+  execute: (params: any) => any
+}
+
+export type ToolResult = {
+  tool: string
+  status: string
+  error: Error | any | null
+  result: any 
+}
+
+export type ToolCall = {
+  tool: string
+  arguement: any
+}
+
+export const toolCallZod = zod.object({
+  tool: zod.string(),
+  arguement: zod.any()
+})
 
 export type FlowConfig = {
   providerId: string
@@ -48,6 +72,7 @@ export type FlowConfig = {
 }
 
 export type FlowBuilder = {
-  build: (config: FlowConfig) => Promise<Flow>
+  build: (config: FlowConfig) => Promise<IFlow>
 }
+
 
