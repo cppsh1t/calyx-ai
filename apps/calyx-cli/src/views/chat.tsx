@@ -1,7 +1,7 @@
 import BotMessage from '@/components/BotMessage'
 import UserInput from '@/components/UserInput'
 import UserMessage from '@/components/UserMessage'
-import { chat, combinedMessages, pendingMessage } from '@/utils/message'
+import { chat, combinedMessages, pending } from '@/utils/message'
 import type { JSX } from 'solid-js'
 import { For } from 'solid-js'
 
@@ -30,9 +30,9 @@ export function ChatView(): JSX.Element {
           {(message) => (
             <box width="100%">
               {message.role === 'user' ? (
-                <UserMessage content={message.content} />
+                <UserMessage content={message.displayContent} />
               ) : (
-                <BotMessage content={message.content} usage={message.usage} reason={message.reason} streaming={message.streaming} />
+                <BotMessage content={message.displayContent} usage={message.usage} reason={message.reasonContent || ''} streaming={message.streaming} />
               )}
             </box>
           )}
@@ -40,7 +40,7 @@ export function ChatView(): JSX.Element {
       </scrollbox>
 
       <box width="100%" flexShrink={0} paddingLeft={2} paddingRight={2} marginTop={2}>
-        <UserInput onSubmit={handleUserInputSubmit} running={pendingMessage().running} />
+        <UserInput onSubmit={handleUserInputSubmit} running={pending()} />
       </box>
     </box>
   )

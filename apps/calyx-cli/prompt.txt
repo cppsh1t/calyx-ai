@@ -39,8 +39,8 @@ const systemPrompt: Message = {
   </thought id="first-xxxx-xxxx">
   <action id="first-xxxx-xxxx">
   {
-    name: "bash",
-    argument: {
+    tool: "bash",
+    arguments: {
       commands: "pwd"
     }
   }
@@ -48,12 +48,10 @@ const systemPrompt: Message = {
 
   <observation id="second-xxxx-xxxx">
   {
-    success: true,
+    tool: "bash",
+    status: true,
     error: null,
-    result: {
-      toolName: "bash",
-      toolResult: "D:/project/front/vue-template"
-    }
+    result: "D:/project/front/vue-template"
   }
   </observation>
   <thought id="second-xxxx-xxxx">

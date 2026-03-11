@@ -1,49 +1,13 @@
 import { getFlowBuilder } from '@/services/useFlow'
 import logger from '@/utils/logger'
 import type { LanguageModelUsage } from 'ai'
-import { randomUUIDv7 } from 'bun'
-import { PartialXMLStreamParser, type ParserOptions } from 'partial-xml-stream-parser'
+import type { AssistantMessage, Message, PendingMessage, Tool, UserMessage } from 'calyx-flow/types'
 import { isEmpty } from 'radash'
 import { createMemo, createSignal, type Accessor } from 'solid-js'
-import zod from 'zod'
-import { runCommandToolParamZod } from './shell'
+import { runCommand, runCommandToolParamZod } from './shell'
 
-const xmlparserOptions: ParserOptions = {
-  textNodeName: 'text', // Default is "#text"
-  attributeNamePrefix: '@', // Default is "@"
-  alwaysCreateTextNode: true, // Default is true
-  parsePrimitives: false, // Default is false
-  stopNodes: [], // Default is empty
-  maxDepth: null, // Default is null (no depth limit)
-  allowedRootNodes: [], // Default is empty (parse all XML unconditionally)
-}
+const systemPrompt = `
 
-export type Role = 'user' | 'assistant' | 'system'
-const parser = new PartialXMLStreamParser(xmlparserOptions)
-
-export type Message = {
-  id: string
-  role: Role
-  reason: string
-  content: string
-  usage: LanguageModelUsage | null
-}
-
-export type PendingMessage = Omit<Message, 'role' | 'usage' | 'id'> & {
-  running: boolean
-}
-
-const textschema = zod.object({
-  filePath: zod.string().meta({ description: '文件地址' }),
-  line: zod.number().optional().meta({ description: '读取的行数, 不填则为所有行' }),
-})
-
-const systemPrompt: Message = {
-  id: 'system',
-  role: 'system',
-  reason: '',
-  usage: null,
-  content: `
   <Role>
   你是calyx-cli，一个运行在本地终端的cli助手，可以调用工具或终端来帮助用户解决问题,严格遵循ReAct（推理-行动-观察）范式解决问题
   </Role>
@@ -79,8 +43,8 @@ const systemPrompt: Message = {
   </thought id="first-xxxx-xxxx">
   <action id="first-xxxx-xxxx">
   {
-    name: "bash",
-    argument: {
+    tool: "bash",
+    arguments: {
       commands: "pwd"
     }
   }
@@ -88,12 +52,10 @@ const systemPrompt: Message = {
 
   <observation id="second-xxxx-xxxx">
   {
-    success: true,
+    tool: "bash",
+    status: true,
     error: null,
-    result: {
-      toolName: "bash",
-      toolResult: "D:/project/front/vue-template"
-    }
+    result: "D:/project/front/vue-template"
   }
   </observation>
   <thought id="second-xxxx-xxxx">
@@ -107,172 +69,118 @@ const systemPrompt: Message = {
   当前<answer>格式为纯文本，没有复杂结构
 
   </Behaviour>
-
-  <Tools>
-  当前可用工具:
-  1. bash
-  schema(zod toJSONSchema, target: "openapi-3.0"): 
-  ${JSON.stringify(
-    runCommandToolParamZod.toJSONSchema({
-      target: 'openapi-3.0',
-    })
-  )}
-
-  2. readFile
-  schema(zod toJSONSchema, target: "openapi-3.0"): 
-  ${JSON.stringify(textschema.toJSONSchema({ target: 'openapi-3.0' }))}
-  </Tools>
-  `,
+  `
+const bashTool: Tool = {
+  name: 'bash',
+  description: 'bash command tool',
+  paramsSchema: JSON.stringify(runCommandToolParamZod.toJSONSchema({target: 'draft-2020-12'})),
+  execute: runCommand
 }
 
-const [messageHistory, setMessageHistory] = createSignal<Message[]>([systemPrompt])
+const [messageHistory, setMessageHistory] = createSignal<Message[]>([])
+const [pending, setPending] = createSignal<boolean>(false)
+const [pendingMessages, setPendingMessages] = createSignal<PendingMessage[]>([])
 
-const [pendingMessage, setPendingMessage] = createSignal<PendingMessage>(makeEmptyPendingMessage())
+function convertPeningToNormal(messages: PendingMessage[]): AssistantMessage {
+  let content = ''
+  let reason = ''
+  let usage: LanguageModelUsage | null = null
 
-export type CombinedMessage = Message & {
-  streaming: boolean
-}
+  const reasonMessages = messages.filter((item) => item.type === 'reason')
+  if (reasonMessages) {
+    reason += `${reasonMessages.join('')}\n`
+  }
 
-function makeEmptyPendingMessage(): PendingMessage {
+  const thoughtMessages = messages.filter((item) => item.type === 'thought')
+  if (thoughtMessages) {
+    content += `${thoughtMessages.join('')}\n`
+  }
+
+  const actionMessages = messages.filter((item) => item.type === 'action')
+  if (actionMessages) {
+    content += `Tool Excute: ${actionMessages.join('')}\n`
+  }
+
+  const answerMessage = messages.filter((item) => item.type === 'answer')
+  if (answerMessage) {
+    content += `${answerMessage.join('')}`
+  }
+
+  const usageMessage = messages.find((item) => item.type === 'usage')
+  if (usageMessage) {
+    usage = usageMessage.content
+  } else {
+    usage = null
+  }
+
   return {
-    running: false,
-    reason: '',
-    content: '',
+    role: 'assistant',
+    wrapperContent: '',
+    displayContent: content,
+    reasonContent: reason,
+    usage,
   }
 }
 
+type CombinedMessage = { streaming: boolean } & Message
+
 const combinedMessages: Accessor<CombinedMessage[]> = createMemo(() => {
-  const convertMessages = messageHistory()
-    .filter((item) => item.role !== 'system')
-    .map((item) => ({ ...item, streaming: true }) as const)
-  if (!pendingMessage().running) return convertMessages
-  const pendingConvertMessage = {
-    id: 'pending',
-    role: 'assistant',
-    content: pendingMessage().content,
-    streaming: true,
-    reason: pendingMessage().reason,
-    usage: null,
-  } as const
-  return [...convertMessages, pendingConvertMessage]
+  const convertMessages = messageHistory().map((item) => ({ streaming: false, ...item }) as const)
+  if (!pending()) return convertMessages
+  const pendingMsg = convertPeningToNormal(pendingMessages())
+  return [...convertMessages, { streaming: true, ...pendingMsg }]
 })
 
 function appendMessageHistory(message: Message) {
   setMessageHistory([...messageHistory(), message])
 }
 
-function updatePendingMessage(combineText: { content?: string; reason?: string }) {
-  const msg = pendingMessage()
-  if (combineText.content) {
-    setPendingMessage({
-      ...msg,
-      content: msg.content + combineText.content,
-    })
-  } else {
-    setPendingMessage({
-      ...msg,
-      reason: msg.reason + combineText.reason,
-    })
-  }
+function updatePendingMessage(newMessage: PendingMessage) {
+  const msgs = pendingMessages()
+  setPendingMessages([...msgs, newMessage])
 }
 
-async function chat(prompt: string, bySystem = false) {
+async function chat(prompt: string) {
   if (isEmpty(prompt)) return
-  if (pendingMessage().running) return
+  if (pending()) return
   logger.info(`User input submitted: ${prompt}`)
-  const id = randomUUIDv7()
-  if (bySystem) {
-    prompt = `<observation id="${id}">${prompt} </observation>`
-  } else {
-    prompt = `<question id="${id}">${prompt}</question>`
-  }
-
-  const userMessage: Message = { id, role: 'user', content: prompt, reason: '', usage: null }
+  setPending(true)
+  const userMessage: UserMessage = { role: 'user', displayContent: prompt, wrapperContent: '' }
   appendMessageHistory(userMessage)
-  setPendingMessage({
-    running: true,
-    reason: '',
-    content: '',
-  })
 
   try {
     const flowBuilder = await getFlowBuilder()
-    const flow = await flowBuilder.build({ providerId: 'deepseek', modelId: 'deepseek-reasoner' })
+    const flow = await flowBuilder.build({ providerId: 'deepseek', modelId: 'deepseek-reasoner', systemPrompt: '', tools: [bashTool], history: messageHistory() })
     let usage: LanguageModelUsage | null = null
 
     logger.debug('Calling streamChat')
-    const result = flow.run(messageHistory())
-    for await (const chunk of result.fullStream) {
-      if (chunk.type === 'reasoning-delta') {
-        updatePendingMessage({ reason: chunk.text })
-      } else if (chunk.type === 'text-delta') {
-        updatePendingMessage({ content: chunk.text })
-      } else if (chunk.type === 'finish') {
-        usage = chunk.totalUsage
-      }
+    const stream = flow.run()
+    for await (const chunk of stream) {
+      updatePendingMessage(chunk)
     }
-    const assistantMessage: Message = { id, role: 'assistant', content: pendingMessage().content, reason: pendingMessage().reason, usage }
+    const assistantMessage: Message = convertPeningToNormal(pendingMessages())
     await stop(assistantMessage)
   } catch (error) {
     logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Chat error')
     const exceptionMessage: Message = {
-      id,
       role: 'assistant',
-      reason: '',
+      reasonContent: '',
+      wrapperContent: '',
       usage: null,
-      content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      displayContent: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
     }
     await stop(exceptionMessage)
   } finally {
+    setPending(false)
     logger.info(`LLm stream completed`)
   }
 }
 
-function combineXml<T>(array: any[]) {
-  return array.reduce(
-    (acc, obj) => {
-      const [key] = Object.keys(obj)
-      acc[key as string] = obj[key as string]
-      return acc
-    },
-    {} as Record<string, { text: string }>
-  ) as Record<T & string, { text: string }>
-}
-
 async function stop(assistantMessage: Message) {
-  if (!pendingMessage().running) return
+  if (!pending()) return
   logger.info('User stop chat')
-  const parseResult = parser.parseStream(assistantMessage.content).xml
-  //JSON.stringify(parseResult: [{"thought": {"text": "用户在查询当前目录"}}, {"shell"}: {"text": "pwd"}]
-
-  const combineObj = combineXml<'thought' | 'action' | 'answer'>(parseResult)
-
-  let content = ''
-  if (combineObj.thought) {
-    content += `推理: ${combineObj.thought.text}\n`
-  }
-
-  let bashResult: string | null = null
-
-  if (combineObj.action) {
-    // content += `调用bash: ${combineObj.shell.text}\n`
-    // bashResult = await runCommand(combineObj.shell.text)
-    // content += `执行结果: ${bashResult}\n`
-    content += `action:\n ${JSON.stringify(combineObj.action)} `
-  }
-
-  if (combineObj.answer) {
-    content += `最终结果: ${combineObj.answer.text}\n`
-  }
-
-  content += `调试: ${JSON.stringify(combineObj)}`
-
-  // const newMsg = { ...assistantMessage, content }
-  setPendingMessage(makeEmptyPendingMessage())
+  setPendingMessages([])
   appendMessageHistory(assistantMessage)
-  // if (bashResult && !combineObj.answer) {
-  //   chat(bashResult, true)
-  // }
 }
 
-export { chat, combinedMessages, messageHistory, pendingMessage, stop }
+export { chat, combinedMessages, messageHistory, pending, pendingMessages, stop }

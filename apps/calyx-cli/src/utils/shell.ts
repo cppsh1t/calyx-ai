@@ -1,12 +1,10 @@
 import { execa } from 'execa'
-import logger from './logger'
 import zod from 'zod'
+import logger from './logger'
 
-export const runCommandToolParamZod = zod.object({
-  command: zod.string().describe("要让bash执行的命令")
-})
+export const runCommandToolParamZod = zod.string().describe('要让bash执行的命令')
 
-export async function runCommand(command: string): Promise<string> {
+export async function runCommand(command: zod.infer<typeof runCommandToolParamZod>): Promise<string> {
   const bashPath = '/mnt/d/env/Git/bin/bash.exe'
 
   try {
@@ -24,7 +22,6 @@ export async function runCommand(command: string): Promise<string> {
 
     return output
   } catch (error) {
-
     if (error && typeof error === 'object' && 'stdout' in error) {
       const execaError = error as { stdout?: string; stderr?: string; message: string }
       const errorOutput = execaError.stdout || execaError.stderr || execaError.message
