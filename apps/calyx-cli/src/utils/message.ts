@@ -1,4 +1,4 @@
-import { getFlowBuilder } from '@/services/useFlow'
+﻿import { getFlowBuilder } from '@/services/useFlow'
 import logger from '@/utils/logger'
 import type { LanguageModelUsage } from 'ai'
 import type { AssistantMessage, Message, PendingMessage, Tool, UserMessage } from 'calyx-flow/types'
@@ -23,34 +23,32 @@ const systemPrompt = `
   #### 工具格式
   根据系统提供的工具参数schema，填入到Action块中，示例:
   <action>
-  {
+  "{
     name: "writeToFile",
     argument: { //schema示例的格式
       fileName: "example.txt",
       content: "hello world"
     }
-  }
+  }"
   </action>
   ####
 
   #### 上下文格式
-  系统会为每轮对话附带一个id，并在消息接受后进行裁剪。在你进行回复时，不要携带上一轮的历史内容。如果携带了上一轮的内容，也不要忘记id
+  在你进行回复时，不要携带上一轮的历史内容。如果携带了上一轮的内容
   示例:
 
-  <question id="first-xxxx-xxxx">我在什么目录下?</question>
-  <thought id="first-xxxx-xxxx">
+  <question>我在什么目录下?</question>
+  <thought>
   用户问我现在程序运行在什么目录下，我需要调用bash工具来查看
-  </thought id="first-xxxx-xxxx">
-  <action id="first-xxxx-xxxx">
+  </thought>
+  <action>
   {
     tool: "bash",
-    arguments: {
-      commands: "pwd"
-    }
+    arguments: "pwd"
   }
   </action>
 
-  <observation id="second-xxxx-xxxx">
+  <observation>
   {
     tool: "bash",
     status: true,
@@ -58,23 +56,25 @@ const systemPrompt = `
     result: "D:/project/front/vue-template"
   }
   </observation>
-  <thought id="second-xxxx-xxxx">
+  <thought>
   根据工具调用结果，用户位于D:/project/front/vue-template，看起来是一个vue模板项目，我应该进行总结
   </thought>
-  <answer id="second-xxxx-xxxx">
+  <answer>
   您当前位于D:/project/front/vue-template，这应该时一个vue模板项目
   </answer>
 
   #### 当前自定义Answer输出格式
   当前<answer>格式为纯文本，没有复杂结构
 
+  ## 警告
+  ReAct xml标签必须出现在正文中！！！出现在思考内容中视为无效！！！
   </Behaviour>
   `
 const bashTool: Tool = {
   name: 'bash',
   description: 'bash command tool',
-  paramsSchema: JSON.stringify(runCommandToolParamZod.toJSONSchema({target: 'draft-2020-12'})),
-  execute: runCommand
+  paramsSchema: JSON.stringify(runCommandToolParamZod.toJSONSchema({ target: 'draft-2020-12' })),
+  execute: runCommand,
 }
 
 const [messageHistory, setMessageHistory] = createSignal<Message[]>([])
@@ -87,23 +87,23 @@ function convertPeningToNormal(messages: PendingMessage[]): AssistantMessage {
   let usage: LanguageModelUsage | null = null
 
   const reasonMessages = messages.filter((item) => item.type === 'reason')
-  if (reasonMessages) {
-    reason += `${reasonMessages.join('')}\n`
+  if (!isEmpty(reasonMessages)) {
+    reason += `${reasonMessages.map((item) => item.content).join('')}\n`
   }
 
   const thoughtMessages = messages.filter((item) => item.type === 'thought')
-  if (thoughtMessages) {
-    content += `${thoughtMessages.join('')}\n`
+  if (!isEmpty(thoughtMessages)) {
+    content += `${thoughtMessages.map((item) => item.content).join('')}\n`
   }
 
   const actionMessages = messages.filter((item) => item.type === 'action')
-  if (actionMessages) {
-    content += `Tool Excute: ${actionMessages.join('')}\n`
+  if (!isEmpty(actionMessages)) {
+    content += `Tool Excute: ${actionMessages.map((item) => item.content).join('')}\n`
   }
 
   const answerMessage = messages.filter((item) => item.type === 'answer')
-  if (answerMessage) {
-    content += `${answerMessage.join('')}`
+  if (!isEmpty(answerMessage)) {
+    content += `${answerMessage.map((item) => item.content).join('')}`
   }
 
   const usageMessage = messages.find((item) => item.type === 'usage')
@@ -150,9 +150,13 @@ async function chat(prompt: string) {
 
   try {
     const flowBuilder = await getFlowBuilder()
-    const flow = await flowBuilder.build({ providerId: 'deepseek', modelId: 'deepseek-reasoner', systemPrompt: '', tools: [bashTool], history: messageHistory() })
-    let usage: LanguageModelUsage | null = null
-
+    const flow = await flowBuilder.build({
+      providerId: 'deepseek',
+      modelId: 'deepseek-reasoner',
+      systemPrompt: systemPrompt,
+      tools: [bashTool],
+      history: messageHistory(),
+    })
     logger.debug('Calling streamChat')
     const stream = flow.run()
     for await (const chunk of stream) {
