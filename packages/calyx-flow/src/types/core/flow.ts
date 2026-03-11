@@ -14,12 +14,24 @@ export type AssistantMessage = {
 
 export type Message = UserMessage | AssistantMessage
 
-export type PendingMessageType = 'thought' | 'action' | 'observation' | 'answer' | 'reason'
+export type OriginPendingMessageType =
+  | 'thought'
+  | 'action'
+  | 'observation'
+  | 'answer'
+  | 'reason'
 
-export type PendingMessage = {
-  type: PendingMessageType
+export type OriginPendingMessage = {
+  type: OriginPendingMessageType
   content: string
 }
+
+export type UsagePendingMessage = {
+  type: 'usage',
+  content: LanguageModelUsage | null
+}
+
+export type PendingMessage = UsagePendingMessage | OriginPendingMessage
 
 export type Flow = {
   run: () => Promise<IteratorResult<Message>>
@@ -38,3 +50,4 @@ export type FlowConfig = {
 export type FlowBuilder = {
   build: (config: FlowConfig) => Promise<Flow>
 }
+

@@ -2,6 +2,7 @@ import { buildProviderFactory } from '@/services/provider-factory'
 import type { FlowBuilder, FlowConfig, Message, Tool } from '@/types/core/flow'
 import type { Provider } from '@/types/services/provider-factory'
 import { formatHistory } from '@/utils/messageConverter'
+import { streamAgent } from '@/utils/streamParse'
 import { streamText, type LanguageModel } from 'ai'
 
 class Flow {
@@ -22,11 +23,11 @@ class Flow {
   private async runLoop() {}
 
   public async run() {
-    const streamResult = streamText({
+    const stream = streamAgent({
       model: this.model,
       messages: formatHistory(this.systemPrompt, this.history),
     })
-    for await (const chunk of streamResult.fullStream) {
+    for await (const chunk of stream) {
       
     }
   }

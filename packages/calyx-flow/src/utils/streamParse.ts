@@ -1,9 +1,9 @@
 import { streamText } from 'ai'
-import type { PendingMessage, PendingMessageType } from '@/types/core/flow.ts'
+import type { OriginPendingMessageType, PendingMessage } from '@/types/core/flow.ts'
 
 type Param = Parameters<typeof streamText>[0]
 
-type ReActMessageType = Exclude<PendingMessageType, 'reason'>
+type ReActMessageType = Exclude<OriginPendingMessageType, 'reason'>
 
 type TagDefinition = {
   open: string
@@ -95,6 +95,28 @@ function getTailLengthToPreserve(buffer: string, candidates: readonly string[]):
   return 0
 }
 
+function toJsonString(value: unknown): string {
+  try {
+    return JSON.stringify(value)
+  } catch (error) {
+    return JSON.stringify({
+      error: 'failed_to_stringify',
+      detail: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
+function serializeError(error: unknown): unknown {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    }
+  }
+
+  return error
+}
 export async function* streamAgent(param: Param): AsyncGenerator<PendingMessage> {
   const streamResult = streamText(param)
 
@@ -178,6 +200,19 @@ export async function* streamAgent(param: Param): AsyncGenerator<PendingMessage>
         break
       }
 
+      case 'finish': {
+        yield { type: 'usage', content: chunk.totalUsage ?? null }
+        break
+      }
+
+      case 'error': {
+        yield {
+          type: 'answer',
+          content: toJsonString({ error: serializeError(chunk.error) }),
+        }
+        break
+      }
+
       default:
         break
     }
@@ -198,3 +233,5 @@ export async function* streamAgent(param: Param): AsyncGenerator<PendingMessage>
     yield { type: activeType, content: buffer }
   }
 }
+
+

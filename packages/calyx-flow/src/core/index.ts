@@ -1,1 +1,1 @@
-export { createFlowBuilder } from './flow.ts'
+export { createFlowBuilder, Flow } from './flow.ts'

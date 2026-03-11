@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { LanguageModelUsage } from 'ai'
 import type { PendingMessage } from '@/types/core/flow.ts'
 
 type MockChunk = {
   type: string
-  text: string
+  text?: string
+  totalUsage?: LanguageModelUsage
+  error?: unknown
 }
 
 const mockState: {
@@ -105,9 +108,44 @@ describe('streamAgent', () => {
     ])
   })
 
+  it('emits usage message when receiving finish chunk', async () => {
+    const totalUsage: LanguageModelUsage = {
+      inputTokens: 12,
+      inputTokenDetails: {
+        noCacheTokens: 12,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+      },
+      outputTokens: 8,
+      outputTokenDetails: {
+        textTokens: 8,
+        reasoningTokens: 0,
+      },
+      totalTokens: 20,
+    }
+
+    const messages = await collectMessages([{ type: 'finish', totalUsage }])
+
+    expect(messages).toEqual([{ type: 'usage', content: totalUsage }])
+  })
+
+  it('wraps error chunk payload with json and returns as answer', async () => {
+    const error = {
+      code: 'E_STREAM',
+      message: 'stream interrupted',
+    }
+
+    const messages = await collectMessages([{ type: 'error', error }])
+
+    expect(messages).toEqual([
+      { type: 'answer', content: JSON.stringify({ error }) },
+    ])
+  })
+
   it('passes through params to streamText', async () => {
     const param = { provider: 'fake', model: 'fake-model' }
     await collectMessages([], param)
     expect(mockState.params).toEqual([param])
   })
 })
+
