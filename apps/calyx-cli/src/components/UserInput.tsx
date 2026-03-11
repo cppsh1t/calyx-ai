@@ -1,7 +1,6 @@
 import logger from '@/utils/logger'
 import type { InputRenderable, SubmitEvent } from '@opentui/core'
-import type { InputProps } from '@opentui/solid'
-import { createMemo, createSignal, onMount, type JSX, type Ref } from 'solid-js'
+import { createMemo, createSignal, type JSX } from 'solid-js'
 
 type Props = {
   onSubmit?: (value: string) => void
@@ -27,7 +26,13 @@ export function UserInput(props: Props): JSX.Element {
 
   const lastLog = createMemo(() => {
     const history = logger.history()
-    return history.length > 0 ? history[0] : null
+    if (history.length === 0) return null
+    const entry = history[0]
+    if (!entry) return null
+    return {
+      ...entry,
+      message: entry.message.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim(),
+    }
   })
 
   const logColor = createMemo(() => {
@@ -38,11 +43,35 @@ export function UserInput(props: Props): JSX.Element {
 
   return (
     <box flexDirection="column">
-
       {/* Main content area */}
-      <box backgroundColor="#1a1a1a" minHeight={5} border={['left']} marginBottom={1} borderStyle={'heavy'} borderColor="#3b82f6" flexGrow={1} paddingTop={1} paddingBottom={1} paddingLeft={2} paddingRight={2} flexDirection="column">
-        <input onMouseDown={setInputFocus} ref={inputRef} focused placeholder="Maybe you can ask something..." value={inputValue()} onInput={(e) => setInputValue(e)} marginBottom={1} onSubmit={handleSubmit} />
-        <text><span style={{fg: '#3b82f6'}}>Flow(test)</span><span>  {props.running ? 'Running...' : ''}</span></text>
+      <box
+        backgroundColor="#1a1a1a"
+        minHeight={5}
+        border={['left']}
+        marginBottom={1}
+        borderStyle={'heavy'}
+        borderColor="#3b82f6"
+        flexGrow={1}
+        paddingTop={1}
+        paddingBottom={1}
+        paddingLeft={2}
+        paddingRight={2}
+        flexDirection="column"
+      >
+        <input
+          onMouseDown={setInputFocus}
+          ref={inputRef}
+          focused
+          placeholder="Maybe you can ask something..."
+          value={inputValue()}
+          onInput={(e) => setInputValue(e)}
+          marginBottom={1}
+          onSubmit={handleSubmit}
+        />
+        <text>
+          <span style={{ fg: '#3b82f6' }}>Flow(test)</span>
+          <span> {props.running ? 'Running...' : ''}</span>
+        </text>
       </box>
 
       {/* Footer */}
@@ -55,7 +84,7 @@ export function UserInput(props: Props): JSX.Element {
           <span style={{ fg: 'white' }}>tab</span>
           <span style={{ fg: '#888' }}> flows</span>
         </text>
-        <text flexGrow={1} flexWrap='no-wrap' truncate wrapMode='none'>
+        <text flexGrow={1} flexWrap="no-wrap" truncate wrapMode="none">
           {lastLog() && (
             <span style={{ fg: logColor() }}>
               [{lastLog()?.level}] {lastLog()?.message}
