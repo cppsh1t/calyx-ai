@@ -1,4 +1,4 @@
-import type { LanguageModelUsage } from 'ai'
+﻿import type { LanguageModelUsage } from 'ai'
 import zod from 'zod'
 
 export type OriginMessage = { role: 'system' | 'user' | 'assistant'; content: string }
@@ -50,17 +50,17 @@ export type ToolResult = {
   tool: string
   status: string
   error: Error | any | null
-  result: any 
+  result: any
 }
 
 export type ToolCall = {
   tool: string
-  arguement: any
+  arguments: any
 }
 
 export const toolCallZod = zod.object({
   tool: zod.string(),
-  arguement: zod.any()
+  arguments: zod.any()
 })
 
 export type FlowConfig = {
@@ -74,5 +74,3 @@ export type FlowConfig = {
 export type FlowBuilder = {
   build: (config: FlowConfig) => Promise<IFlow>
 }
-
-

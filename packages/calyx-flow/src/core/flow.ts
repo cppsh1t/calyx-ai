@@ -1,4 +1,4 @@
-import { buildProviderFactory } from '@/services/provider-factory.ts'
+﻿import { buildProviderFactory } from '@/services/provider-factory.ts'
 import {
   toolCallZod,
   type AssistantMessage,
@@ -81,6 +81,33 @@ function toLoopHistoryContent(pendingMessages: PendingMessage[]): string {
     .map((message) => serializePendingMessage(message))
     .filter((segment) => segment.length > 0)
     .join('')
+}
+function toRuntimeLoopMessages(pendingMessages: PendingMessage[]): OriginMessage[] {
+  const assistantContent = pendingMessages
+    .filter(
+      (message) =>
+        message.type === 'thought' || message.type === 'action' || message.type === 'answer',
+    )
+    .map((message) => serializePendingMessage(message))
+    .filter((segment) => segment.length > 0)
+    .join('')
+
+  const observationContent = pendingMessages
+    .filter((message) => message.type === 'observation')
+    .map((message) => serializePendingMessage(message))
+    .filter((segment) => segment.length > 0)
+    .join('')
+
+  const runtimeMessages: OriginMessage[] = []
+  if (assistantContent.length > 0) {
+    runtimeMessages.push({ role: 'assistant', content: assistantContent })
+  }
+
+  if (observationContent.length > 0) {
+    runtimeMessages.push({ role: 'user', content: observationContent })
+  }
+
+  return runtimeMessages
 }
 
 function toAssistantMessage(pendingMessages: PendingMessage[]): AssistantMessage | null {
@@ -219,7 +246,7 @@ class Flow implements IFlow {
         return loopMessages
       }
 
-      const result = await callTool(selectedTool, toolCallRes.data.arguement)
+      const result = await callTool(selectedTool, toolCallRes.data.arguments)
       const observationMessage: PendingMessage = {
         type: 'observation',
         content: safeStringify(result),
@@ -259,9 +286,9 @@ class Flow implements IFlow {
         break
       }
 
-      const loopHistoryContent = toLoopHistoryContent(loopPendingMessages)
-      if (loopHistoryContent.length > 0) {
-        runtimeHistory.push({ role: 'assistant', content: loopHistoryContent })
+      const runtimeLoopMessages = toRuntimeLoopMessages(loopPendingMessages)
+      if (runtimeLoopMessages.length > 0) {
+        runtimeHistory.push(...runtimeLoopMessages)
       }
 
       loopCount += 1
@@ -303,4 +330,5 @@ async function createFlowBuilder(providerConfig: Record<string, Provider>): Prom
 }
 
 export { createFlowBuilder, Flow }
+
 
