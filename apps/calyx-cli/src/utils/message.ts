@@ -171,7 +171,7 @@ async function chat(prompt: string) {
       reasonContent: '',
       wrapperContent: '',
       usage: null,
-      displayContent: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      displayContent: `Error: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
     }
     await stop(exceptionMessage)
   } finally {
