@@ -1,0 +1,48 @@
+{
+  "name": "test-wrapper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A React development server that can be used as a CLI tool or programmatically",
+  "main": "./src/server.ts",
+  "module": "./src/server.ts",
+  "types": "./src/server.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/server.ts",
+      "import": "./src/server.ts",
+      "types": "./src/server.ts"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "bin": {
+    "test-wrapper": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
+    "start": "NODE_ENV=production bun src/index.ts"
+  },
+  "dependencies": {
+    "react": "^19",
+    "react-dom": "^19",
+    "temp-test": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/bun": "latest"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "keywords": [
+    "react",
+    "development",
+    "server",
+    "bun"
+  ]
+}

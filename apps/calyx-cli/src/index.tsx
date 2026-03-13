@@ -31,6 +31,9 @@ try {
 
   // Only render TUI if no subcommand was executed (e.g., init, help, etc.)
   if (result.shouldRenderTUI && result.parsedConfig) {
+    const { host } = await import('test-wrapper')
+    await host()
+
     const config = result.parsedConfig
     // Render Router directly (ErrorBoundary not supported in OpenTUI)
     // Error handling is managed by the Router's error view

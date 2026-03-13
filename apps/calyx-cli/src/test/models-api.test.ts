@@ -52,6 +52,9 @@ describe('models-api', () => {
         id: 'anthropic',
         name: 'Anthropic',
         models: {},
+        env: [],
+        npm: '',
+        api: ''
       },
     }
     await cacheProviders(testData)
