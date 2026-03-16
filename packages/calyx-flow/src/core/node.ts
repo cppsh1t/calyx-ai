@@ -1,5 +1,5 @@
 import { NodePortFactory, type NodePortCreateOptions } from '@/core/node-port.ts'
-import type { INode, NodeParameter, NodePort, Position } from '@/types'
+import type { INode, INodePort, NodeParameter, Position } from '@/types'
 import { isEmpty } from 'radash'
 import { v4 as uuid } from 'uuid'
 import type { ZodType } from 'zod'
@@ -11,8 +11,8 @@ type NodeCreateOptions = {
   description?: string
   position?: Position
   parameters?: NodeParameter[]
-  inputs?: NodePort[]
-  outputs?: NodePort[]
+  inputs?: INodePort[]
+  outputs?: INodePort[]
 }
 
 class Node implements INode {
@@ -22,8 +22,8 @@ class Node implements INode {
   private description: string
   private position: Position
   protected parameters: NodeParameter[]
-  protected inputs: NodePort[]
-  protected outputs: NodePort[]
+  protected inputs: INodePort[]
+  protected outputs: INodePort[]
 
   protected inputValMap: Map<string, any> = new Map()
   protected outputValMap: Map<string, any> = new Map()
@@ -35,8 +35,8 @@ class Node implements INode {
     description: string,
     position: Position,
     parameters?: NodeParameter[],
-    inputs?: NodePort[],
-    outputs?: NodePort[]
+    inputs?: INodePort[],
+    outputs?: INodePort[]
   ) {
     this.id = uuid()
     this.type = type
@@ -98,36 +98,52 @@ class Node implements INode {
   }
 
   public setInputValue(id: string, value: any) {
-    const port = this.inputs.find((item) => item.id === id) as NodePort
+    const port = this.inputs.find((item) => item.getId() === id) as INodePort
     if (isEmpty(port)) return //TODO: return error in future
     let schema: ZodType
-    if (port.schema.type === 'json') {
-      schema = z.fromJSONSchema(JSON.parse(port.schema.data))
+    const originSchema = port.getSchema()
+    if (originSchema.type === 'json') {
+      schema = z.fromJSONSchema(JSON.parse(originSchema.data))
     } else {
-      schema = port.schema.data
+      schema = originSchema.data
     }
 
     const parseRes = schema.safeParse(value)
     if (!parseRes.success) return //TODO: return error in future
     this.inputValMap.set(id, parseRes.data)
+    if (this.hasRequiredPortsReady('input')) {
+      this.run()
+    }
   }
 
   public setOutputValue(id: string, value: any) {
-    const port = this.outputs.find((item) => item.id === id) as NodePort
+    const port = this.outputs.find((item) => item.getId() === id) as INodePort
     if (isEmpty(port)) return //TODO: return error in future
     let schema: ZodType
-    if (port.schema.type === 'json') {
-      schema = z.fromJSONSchema(JSON.parse(port.schema.data))
+    const originSchema = port.getSchema()
+    if (originSchema.type === 'json') {
+      schema = z.fromJSONSchema(JSON.parse(originSchema.data))
     } else {
-      schema = port.schema.data
+      schema = originSchema.data
     }
 
     const parseRes = schema.safeParse(value)
     if (!parseRes.success) return //TODO: return error in future
     this.outputValMap.set(id, parseRes.data)
+    if (this.hasRequiredPortsReady('output')) {
+      
+    }
   }
 
-  public async run() {}
+  public hasRequiredPortsReady(portType: 'input' | 'output'): boolean {
+    const ports = portType === 'input' ? this.inputs : this.outputs
+    const valueMap = portType === 'input' ? this.inputValMap : this.outputValMap
+    const requiredPorts = ports.filter((port) => port.getPolicy() === 'required')
+
+    return requiredPorts.every((port) => valueMap.has(port.getId()))
+  }
+
+  protected run() {}
 }
 
 class NodeBuilder {
@@ -157,7 +173,7 @@ class NodeBuilder {
     return this
   }
 
-  public withInputs(inputs: NodePort[]): NodeBuilder {
+  public withInputs(inputs: INodePort[]): NodeBuilder {
     this.options.inputs = inputs
     return this
   }
@@ -167,7 +183,7 @@ class NodeBuilder {
     return this
   }
 
-  public withOutputs(outputs: NodePort[]): NodeBuilder {
+  public withOutputs(outputs: INodePort[]): NodeBuilder {
     this.options.outputs = outputs
     return this
   }
