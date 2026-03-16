@@ -1,4 +1,4 @@
-import type { IEdge, INode, NodeParameter, NodePort, Position } from '@/types'
+import type { IEdge } from '@/types'
 import { v4 as uuid } from 'uuid'
 
 class Edge implements IEdge {
@@ -21,7 +21,6 @@ class Edge implements IEdge {
   public getTarget() {
     return this.target
   }
-  
 }
 
 export { Edge }
