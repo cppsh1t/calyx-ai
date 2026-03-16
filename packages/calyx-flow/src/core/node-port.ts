@@ -1,7 +1,7 @@
-import type { NodePort, Schema } from '@/types'
+import type { INode, INodePort, Schema } from '@/types'
 import { v4 as uuid } from 'uuid'
 
-type NodePortPolicy = NodePort['policy']
+type NodePortPolicy = 'required' | 'optional'
 
 type NodePortCreateOptions = {
   name: string
@@ -10,15 +10,58 @@ type NodePortCreateOptions = {
   policy: NodePortPolicy
 }
 
+class NodePort implements INodePort {
+  private readonly id: string
+  private readonly name: string
+  private readonly schema: Schema
+  private readonly description: string
+  private readonly policy: NodePortPolicy
+  private owner: INode | null
+
+  public constructor(name: string, schema: Schema, description: string, policy: NodePortPolicy) {
+    this.id = uuid()
+    this.name = name
+    this.schema = schema
+    this.description = description
+    this.policy = policy
+    this.owner = null
+  }
+
+  public getId(): string {
+    return this.id
+  }
+
+  public getName(): string {
+    return this.name
+  }
+
+  public getSchema(): Schema {
+    return this.schema
+  }
+
+  public getDescription(): string {
+    return this.description
+  }
+
+  public getPolicy(): NodePortPolicy {
+    return this.policy
+  }
+
+  public setOwner(node: INode): void {
+    this.owner = node
+  }
+
+  public getOwner(): INode {
+    if (!this.owner) {
+      throw new Error('NodePort owner is not set')
+    }
+    return this.owner
+  }
+}
+
 class NodePortFactory {
   public static create(options: NodePortCreateOptions): NodePort {
-    return {
-      id: uuid(),
-      name: options.name,
-      schema: options.schema,
-      description: options.description ?? '',
-      policy: options.policy,
-    }
+    return new NodePort(options.name, options.schema, options.description ?? '', options.policy)
   }
 
   public static builder(name: string, schema: Schema, policy: NodePortPolicy): NodePortBuilder {
