@@ -1,12 +1,14 @@
 ﻿import { ZodType } from 'zod'
 
-type Schema = {
-  type: 'zod',
-  data: ZodType
-} | {
-  type: 'json',
-  data: string
-}
+type Schema =
+  | {
+      type: 'zod'
+      data: ZodType
+    }
+  | {
+      type: 'json'
+      data: string
+    }
 
 type Position = {
   x: number
@@ -19,9 +21,14 @@ type NodeParameter = {
   description: string
 }
 
-type NodePort = NodeParameter & {
-  policy: 'required' | 'optional'// if port's policy is required, node need wait those props
-  id: string
+interface INodePort {
+  getId: () => string
+  getName: () => string
+  getSchema: () => Schema
+  getDescription: () => string
+  getPolicy: () => 'required' | 'optional'
+  setOwner: (node: INode) => void
+  getOwner: () => INode
 }
 
 interface INode {
@@ -31,10 +38,13 @@ interface INode {
   getDescription: () => string
   getPosition: () => Position
   setPosition: (position: Position) => void
-  readonly parameters?: NodeParameter[]
+  getParameters: () => NodeParameter[]
   setarguments: (name: string, value: any) => void
-  readonly inputs?: NodePort[]
-  readonly outputs?: NodePort[]
+  getInputs: () => INodePort[]
+  getOutputs: () => INodePort[]
+  setInputValue: (id: string, value: any) => void
+  setOutputValue: (id: string, value: any) => void
+  hasRequiredPortsReady: (portType: 'input' | 'output') => boolean
 }
 
 /**
@@ -42,8 +52,8 @@ interface INode {
  */
 interface IEdge {
   getId: () => string
-  getSource: ()=> string | undefined // source port id
+  getSource: () => string | undefined // source port id
   getTarget: () => string | undefined // target port id
 }
 
-export type { Schema, Position, NodeParameter, NodePort, INode, IEdge }
+export type { IEdge, INode, INodePort, NodeParameter, Position, Schema }

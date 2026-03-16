@@ -1,6 +1,9 @@
 import { NodePortFactory, type NodePortCreateOptions } from '@/core/node-port.ts'
 import type { INode, NodeParameter, NodePort, Position } from '@/types'
+import { isEmpty } from 'radash'
 import { v4 as uuid } from 'uuid'
+import type { ZodType } from 'zod'
+import z from 'zod'
 
 type NodeCreateOptions = {
   type: string
@@ -18,13 +21,15 @@ class Node implements INode {
   private name: string
   private description: string
   private position: Position
-  public readonly parameters?: NodeParameter[] | undefined
-  public readonly inputs?: NodePort[] | undefined
-  public readonly outputs?: NodePort[] | undefined
+  protected parameters: NodeParameter[]
+  protected inputs: NodePort[]
+  protected outputs: NodePort[]
 
-  private argumentsMap: Map<string, any> = new Map()
+  protected inputValMap: Map<string, any> = new Map()
+  protected outputValMap: Map<string, any> = new Map()
+  protected argumentsMap: Map<string, any> = new Map()
 
-  private constructor(
+  protected constructor(
     type: string,
     name: string,
     description: string,
@@ -38,9 +43,9 @@ class Node implements INode {
     this.name = name
     this.description = description
     this.position = position
-    this.parameters = parameters
-    this.inputs = inputs
-    this.outputs = outputs
+    this.parameters = parameters || []
+    this.inputs = inputs || []
+    this.outputs = outputs || []
   }
 
   public static create(options: NodeCreateOptions): Node {
@@ -81,6 +86,48 @@ class Node implements INode {
   public setarguments(name: string, value: any): void {
     this.argumentsMap.set(name, value)
   }
+
+  public getParameters() {
+    return this.parameters
+  }
+  public getInputs() {
+    return this.inputs
+  }
+  public getOutputs() {
+    return this.outputs
+  }
+
+  public setInputValue(id: string, value: any) {
+    const port = this.inputs.find((item) => item.id === id) as NodePort
+    if (isEmpty(port)) return //TODO: return error in future
+    let schema: ZodType
+    if (port.schema.type === 'json') {
+      schema = z.fromJSONSchema(JSON.parse(port.schema.data))
+    } else {
+      schema = port.schema.data
+    }
+
+    const parseRes = schema.safeParse(value)
+    if (!parseRes.success) return //TODO: return error in future
+    this.inputValMap.set(id, parseRes.data)
+  }
+
+  public setOutputValue(id: string, value: any) {
+    const port = this.outputs.find((item) => item.id === id) as NodePort
+    if (isEmpty(port)) return //TODO: return error in future
+    let schema: ZodType
+    if (port.schema.type === 'json') {
+      schema = z.fromJSONSchema(JSON.parse(port.schema.data))
+    } else {
+      schema = port.schema.data
+    }
+
+    const parseRes = schema.safeParse(value)
+    if (!parseRes.success) return //TODO: return error in future
+    this.outputValMap.set(id, parseRes.data)
+  }
+
+  public async run() {}
 }
 
 class NodeBuilder {
