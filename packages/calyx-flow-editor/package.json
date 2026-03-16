@@ -1,5 +1,5 @@
 {
-  "name": "temp-test",
+  "name": "calyx-flow-editor",
   "version": "1.0.0",
   "description": "A minimal React library example",
   "type": "module",
@@ -10,15 +10,16 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "require": "./dist/index.js"
+    },
+    "./style.css": "./dist/index.css"
   },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "bun run build.ts",
-    "dev": "bun run build.ts --watch",
+    "dev": "bun run dev-server.ts",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -26,9 +27,15 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest",
-    "typescript": "^5.0.0"
+    "@unocss/postcss": "^66.6.6",
+    "@unocss/preset-wind3": "^66.6.6",
+    "typescript": "^5.0.0",
+    "unocss": "^66.6.6"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.10.1"
   }
 }

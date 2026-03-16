@@ -1,5 +1,5 @@
 import React from 'react'
-import HelloWorld from 'temp-test'
+import HelloWorld from 'calyx-flow-editor'
 import './index.css'
 
 export function App() {

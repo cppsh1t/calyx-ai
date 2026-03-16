@@ -29,7 +29,7 @@
   "dependencies": {
     "react": "^19",
     "react-dom": "^19",
-    "temp-test": "workspace:*"
+    "calyx-flow-editor": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19",

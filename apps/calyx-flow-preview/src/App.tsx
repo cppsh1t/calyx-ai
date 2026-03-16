@@ -1,12 +1,8 @@
-/** @jsxImportSource react */
 import { FlowEditor } from 'calyx-flow-editor'
-import './index.css'
 
 export function App() {
   return (
-    <div className="app">
-      <FlowEditor />
-    </div>
+    <FlowEditor />
   )
 }
 

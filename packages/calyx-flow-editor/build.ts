@@ -56,24 +56,12 @@ async function buildLibrary() {
     sourcemap: 'linked',
   })
 
-  const cjsResult = await build({
-    entrypoints: ['./src/index.ts'],
-    outdir,
-    format: 'cjs',
-    target: 'browser',
-    external: ['react', 'react-dom'],
-    minify: true,
-    naming: {
-      entry: '[name].cjs',
-    },
-  })
-
   await generateTypes()
 
   const end = performance.now()
 
   console.log('\n📁 Build outputs:')
-  const allOutputs = [...esmResult.outputs, ...cjsResult.outputs]
+  const allOutputs = [...esmResult.outputs]
   const outputTable = allOutputs.map((output) => ({
     File: path.relative(process.cwd(), output.path),
     Type: output.kind,
