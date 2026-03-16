@@ -26,7 +26,6 @@ interface INodePort {
   getName: () => string
   getSchema: () => Schema
   getDescription: () => string
-  getPolicy: () => 'required' | 'optional'
   setOwner: (node: INode) => void
   getOwner: () => INode
 }
@@ -44,7 +43,6 @@ interface INode {
   getOutputs: () => INodePort[]
   setInputValue: (id: string, value: any) => void
   setOutputValue: (id: string, value: any) => void
-  hasRequiredPortsReady: (portType: 'input' | 'output') => boolean
 }
 
 /**

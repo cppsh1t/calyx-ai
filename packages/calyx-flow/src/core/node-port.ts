@@ -1,13 +1,10 @@
 import type { INode, INodePort, Schema } from '@/types'
 import { v4 as uuid } from 'uuid'
 
-type NodePortPolicy = 'required' | 'optional'
-
 type NodePortCreateOptions = {
   name: string
   schema: Schema
   description?: string
-  policy: NodePortPolicy
 }
 
 class NodePort implements INodePort {
@@ -15,15 +12,13 @@ class NodePort implements INodePort {
   private readonly name: string
   private readonly schema: Schema
   private readonly description: string
-  private readonly policy: NodePortPolicy
   private owner: INode | null
 
-  public constructor(name: string, schema: Schema, description: string, policy: NodePortPolicy) {
+  public constructor(name: string, schema: Schema, description: string) {
     this.id = uuid()
     this.name = name
     this.schema = schema
     this.description = description
-    this.policy = policy
     this.owner = null
   }
 
@@ -43,9 +38,6 @@ class NodePort implements INodePort {
     return this.description
   }
 
-  public getPolicy(): NodePortPolicy {
-    return this.policy
-  }
 
   public setOwner(node: INode): void {
     this.owner = node
@@ -61,22 +53,21 @@ class NodePort implements INodePort {
 
 class NodePortFactory {
   public static create(options: NodePortCreateOptions): NodePort {
-    return new NodePort(options.name, options.schema, options.description ?? '', options.policy)
+    return new NodePort(options.name, options.schema, options.description ?? '')
   }
 
-  public static builder(name: string, schema: Schema, policy: NodePortPolicy): NodePortBuilder {
-    return new NodePortBuilder(name, schema, policy)
+  public static builder(name: string, schema: Schema): NodePortBuilder {
+    return new NodePortBuilder(name, schema)
   }
 }
 
 class NodePortBuilder {
   private options: NodePortCreateOptions
 
-  public constructor(name: string, schema: Schema, policy: NodePortPolicy) {
+  public constructor(name: string, schema: Schema) {
     this.options = {
       name,
       schema,
-      policy,
       description: '',
     }
   }
@@ -86,14 +77,10 @@ class NodePortBuilder {
     return this
   }
 
-  public withPolicy(policy: NodePortPolicy): NodePortBuilder {
-    this.options.policy = policy
-    return this
-  }
 
   public build(): NodePort {
     return NodePortFactory.create(this.options)
   }
 }
 
-export { NodePortBuilder, NodePortFactory, type NodePortCreateOptions, type NodePortPolicy }
+export { NodePortBuilder, NodePortFactory, type NodePortCreateOptions,}

@@ -7,8 +7,7 @@ const startNodeOutput = new NodePortBuilder(
   {
     type: 'zod',
     data: z.any(),
-  },
-  'required'
+  }
 ).build()
 
 class StartNode extends Node {

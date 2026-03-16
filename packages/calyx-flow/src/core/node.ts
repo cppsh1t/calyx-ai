@@ -46,6 +46,9 @@ class Node implements INode {
     this.parameters = parameters || []
     this.inputs = inputs || []
     this.outputs = outputs || []
+
+    this.inputs.forEach(item => item.setOwner(this))
+    this.outputs.forEach(item => item.setOwner(this))
   }
 
   public static create(options: NodeCreateOptions): Node {
@@ -111,9 +114,7 @@ class Node implements INode {
     const parseRes = schema.safeParse(value)
     if (!parseRes.success) return //TODO: return error in future
     this.inputValMap.set(id, parseRes.data)
-    if (this.hasRequiredPortsReady('input')) {
-      this.run()
-    }
+    this.afterInput()
   }
 
   public setOutputValue(id: string, value: any) {
@@ -130,20 +131,12 @@ class Node implements INode {
     const parseRes = schema.safeParse(value)
     if (!parseRes.success) return //TODO: return error in future
     this.outputValMap.set(id, parseRes.data)
-    if (this.hasRequiredPortsReady('output')) {
-      
-    }
+    this.afterOutput()
   }
 
-  public hasRequiredPortsReady(portType: 'input' | 'output'): boolean {
-    const ports = portType === 'input' ? this.inputs : this.outputs
-    const valueMap = portType === 'input' ? this.inputValMap : this.outputValMap
-    const requiredPorts = ports.filter((port) => port.getPolicy() === 'required')
+  protected afterInput() {}
 
-    return requiredPorts.every((port) => valueMap.has(port.getId()))
-  }
-
-  protected run() {}
+  protected afterOutput() {}
 }
 
 class NodeBuilder {
