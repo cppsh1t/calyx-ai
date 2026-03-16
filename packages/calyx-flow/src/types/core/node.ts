@@ -31,8 +31,8 @@ interface INode {
   getDescription: () => string
   getPosition: () => Position
   setPosition: (position: Position) => void
-  readonly arguements?: NodeParameter[]
-  setArguements: (name: string, value: any) => void
+  readonly parameters?: NodeParameter[]
+  setarguments: (name: string, value: any) => void
   readonly inputs?: NodePort[]
   readonly outputs?: NodePort[]
 }
