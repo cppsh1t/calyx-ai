@@ -1,4 +1,4 @@
-﻿import { ZodType } from 'zod'
+﻿import { ZodType, z } from 'zod'
 import type { Option } from '../structure'
 
 type Position = {
@@ -41,9 +41,30 @@ type Node = {
   executor: NodeExecutor
 }
 
+type NodeDefinition = Omit<Node, 'id'>
+
 type Edge = {
   from: { nodeId: string; portId: string }
   to: { nodeId: string; portId: string }
 }
 
-export type { Edge, ExecutionContext, Node, NodeExecutor, NodeParameter, NodePort, Position }
+export type { Edge, ExecutionContext, Node, NodeDefinition, NodeExecutor, NodeParameter, NodePort, Position }
+
+// Option schema helper
+const OptionSchema = <T>(valueSchema: z.ZodType<T>) =>
+  z.union([z.object({ type: z.literal('Some'), value: valueSchema }), z.object({ type: z.literal('None') })])
+
+// NodeDefinition validation schema
+const NodeDefinitionSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  position: z.object({ x: z.number(), y: z.number() }),
+  symbol: OptionSchema(z.string()),
+  group: OptionSchema(z.string()),
+  parameters: OptionSchema(z.array(z.any())),
+  inputs: OptionSchema(z.array(z.any())),
+  output: OptionSchema(z.array(z.any())),
+  executor: z.object({ execute: z.function() }),
+})
+
+export { NodeDefinitionSchema }
