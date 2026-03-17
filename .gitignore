@@ -43,7 +43,7 @@ __pycache__/
 *$py.class
 
 *.tgz
-.sisyphus/*
+**/.sisyphus/
 
 .vscode
 .VSCodeCounter
