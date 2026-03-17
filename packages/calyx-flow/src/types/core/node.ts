@@ -1,57 +1,44 @@
 ﻿import { ZodType } from 'zod'
-
-type Schema =
-  | {
-      type: 'zod'
-      data: ZodType
-    }
-  | {
-      type: 'json'
-      data: string
-    }
+import type { Option } from '../structure'
 
 type Position = {
   x: number
   y: number
 }
 
+type ExecutionContext = {}
+
+
+type NodeExecutor = {
+  execute(ctx: ExecutionContext): Promise<void>
+}
+
+type NodePort = {
+  id: string
+  name: string
+  schema: ZodType
+  direction: 'input' | 'output'
+  description: string
+  value: Option<any>
+}
+
 type NodeParameter = {
   name: string
-  schema: Schema
+  schema: ZodType
   description: string
+  value: Option<any>
 }
 
-interface INodePort {
-  getId: () => string
-  getName: () => string
-  getSchema: () => Schema
-  getDescription: () => string
-  setOwner: (node: INode) => void
-  getOwner: () => INode
+type Node = {
+  id: string
+  name: string
+  position: Position
+  symbol: Option<string>
+  group: Option<string>
+  parameters: Option<NodeParameter[]>
+  inputs: Option<NodePort[]>
+  output: Option<NodePort[]>
 }
 
-interface INode {
-  getId: () => string
-  getType: () => string
-  getName: () => string
-  getDescription: () => string
-  getPosition: () => Position
-  setPosition: (position: Position) => void
-  getParameters: () => NodeParameter[]
-  setarguments: (name: string, value: any) => void
-  getInputs: () => INodePort[]
-  getOutputs: () => INodePort[]
-  setInputValue: (id: string, value: any) => void
-  setOutputValue: (id: string, value: any) => void
-}
 
-/**
- * can't change source or target, you need create a new one
- */
-interface IEdge {
-  getId: () => string
-  getSource: () => string | undefined // source port id
-  getTarget: () => string | undefined // target port id
-}
-
-export type { IEdge, INode, INodePort, NodeParameter, Position, Schema }
+export type { ExecutionContext, NodeExecutor, NodePort, NodeParameter, Node, Position }
