@@ -6,7 +6,12 @@ type Position = {
   y: number
 }
 
-type ExecutionContext = {}
+type ExecutionContext = {
+  parameters: Option<NodeParameter[]>
+  inputs: Option<NodePort[]>
+  outputs: Option<NodePort[]>
+  abort: AbortController
+}
 
 type NodeExecutor = {
   execute(ctx: ExecutionContext): Promise<void>
@@ -37,7 +42,7 @@ type Node = {
   group: Option<string>
   parameters: Option<NodeParameter[]>
   inputs: Option<NodePort[]>
-  output: Option<NodePort[]>
+  outputs: Option<NodePort[]>
   executor: NodeExecutor
 }
 
@@ -54,6 +59,22 @@ export type { Edge, ExecutionContext, Node, NodeDefinition, NodeExecutor, NodePa
 const OptionSchema = <T>(valueSchema: z.ZodType<T>) =>
   z.union([z.object({ type: z.literal('Some'), value: valueSchema }), z.object({ type: z.literal('None') })])
 
+const NodePortSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  direction: z.enum(['input', 'output']),
+  schema: z.string(),
+  value: z.any(),
+})
+
+const NodeParameterSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  schema: z.string(),
+  value: z.any(),
+})
+
 // NodeDefinition validation schema
 const NodeDefinitionSchema = z.object({
   name: z.string(),
@@ -61,10 +82,42 @@ const NodeDefinitionSchema = z.object({
   position: z.object({ x: z.number(), y: z.number() }),
   symbol: OptionSchema(z.string()),
   group: OptionSchema(z.string()),
-  parameters: OptionSchema(z.array(z.any())),
-  inputs: OptionSchema(z.array(z.any())),
-  output: OptionSchema(z.array(z.any())),
+  parameters: OptionSchema(z.array(NodeParameterSchema)),
+  inputs: OptionSchema(z.array(NodePortSchema)),
+  outputs: OptionSchema(z.array(NodePortSchema)),
   executor: z.object({ execute: z.function() }),
 })
 
-export { NodeDefinitionSchema }
+// Node registry key type: namespace/group
+type NodeRegistryKey = `${string}/${string}`
+
+// NodePortData schema - only id and value for input/output data
+const NodePortDataSchema = z.object({
+  id: z.string(),
+  value: z.any(),
+})
+
+// NodeParameterData schema - only name and value for parameter data
+const NodeParameterDataSchema = z.object({
+  name: z.string(),
+  value: z.any(),
+})
+
+// Node schema for object-to-node conversion (matches NodeRegistry key format)
+// Contains only data, schema validation uses NodeDefinition from registry
+const NodeSchema = z.object({
+  key: z.string().refine((val) => val.includes('/'), {
+    message: 'Key must be in format: namespace/group',
+  }) as z.ZodType<NodeRegistryKey>,
+  name: z.string(),
+  description: z.string(),
+  position: z.object({ x: z.number(), y: z.number() }),
+  symbol: z.string().optional(),
+  parameters: z.array(NodeParameterDataSchema).optional(),
+  inputs: z.array(NodePortDataSchema).optional(),
+  outputs: z.array(NodePortDataSchema).optional(),
+})
+
+export type { NodeRegistryKey }
+
+export { NodeDefinitionSchema, NodeParameterSchema, NodePortSchema, NodeSchema }

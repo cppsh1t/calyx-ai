@@ -1,10 +1,12 @@
 import type { Edge, Node, NodeExecutor, NodeParameter, NodePort, Position } from '@/types'
+import { NodeParameterSchema, NodePortSchema, NodeSchema } from '@/types/core/node.ts'
 import type { Option } from '@/types/structure'
 import { None, Some } from '@/utils/structure'
 import { isEmpty } from 'radash'
 import { v4 as uuid } from 'uuid'
 import type { ZodType } from 'zod'
 import z from 'zod'
+import { NodeRegistry } from './registry.ts'
 
 // NodePort Builder
 class NodePortBuilder {
@@ -23,6 +25,58 @@ class NodePortBuilder {
     builder.direction = port.direction
     builder.description = port.description
     builder.value = port.value
+    return builder
+  }
+
+  /**
+   * Create a NodePortBuilder from an object that conforms to NodePortSchema.
+   * Validates the object against NodePortSchema, converts JSONSchema string to Zod,
+   * and validates the value against the Zod schema.
+   */
+  static fromObject(obj: unknown): NodePortBuilder {
+    // Step 1: Validate object against NodePortSchema
+    const parseResult = NodePortSchema.safeParse(obj)
+    if (!parseResult.success) {
+      throw new Error(`Invalid NodePort object: ${parseResult.error.message}`)
+    }
+
+    const validatedObj = parseResult.data
+
+    // Step 2: Parse JSONSchema string and convert to Zod
+    let jsonSchema: Record<string, unknown>
+    try {
+      jsonSchema = JSON.parse(validatedObj.schema) as Record<string, unknown>
+    } catch (error) {
+      throw new Error(`Invalid JSONSchema string: ${validatedObj.schema}. Error: ${error}`)
+    }
+
+    // Convert JSONSchema to Zod using z.fromJSONSchema()
+    let zodSchema: ZodType
+    try {
+      zodSchema = z.fromJSONSchema(jsonSchema)
+    } catch (error) {
+      throw new Error(`Failed to convert JSONSchema to Zod: ${error}`)
+    }
+
+    // Step 3: Validate value against Zod schema if value is present
+    let validatedValue: Option<any> = None
+    if (validatedObj.value !== undefined && validatedObj.value !== null) {
+      const valueResult = zodSchema.safeParse(validatedObj.value)
+      if (!valueResult.success) {
+        throw new Error(`Invalid value for port "${validatedObj.name}": ${valueResult.error.message}`)
+      }
+      validatedValue = Some(valueResult.data)
+    }
+
+    // Step 4: Build and return NodePortBuilder
+    const builder = new NodePortBuilder()
+    builder.id = validatedObj.id
+    builder.name = validatedObj.name
+    builder.schema = zodSchema
+    builder.direction = validatedObj.direction
+    builder.description = validatedObj.description
+    builder.value = validatedValue
+
     return builder
   }
 
@@ -98,6 +152,56 @@ class NodeParameterBuilder {
     return builder
   }
 
+  /**
+   * Create a NodeParameterBuilder from an object that conforms to NodeParameterSchema.
+   * Validates the object against NodeParameterSchema, converts JSONSchema string to Zod,
+   * and validates the value against the Zod schema.
+   */
+  static fromObject(obj: unknown): NodeParameterBuilder {
+    // Step 1: Validate object against NodeParameterSchema
+    const parseResult = NodeParameterSchema.safeParse(obj)
+    if (!parseResult.success) {
+      throw new Error(`Invalid NodeParameter object: ${parseResult.error.message}`)
+    }
+
+    const validatedObj = parseResult.data
+
+    // Step 2: Parse JSONSchema string and convert to Zod
+    let jsonSchema: Record<string, unknown>
+    try {
+      jsonSchema = JSON.parse(validatedObj.schema) as Record<string, unknown>
+    } catch (error) {
+      throw new Error(`Invalid JSONSchema string for parameter "${validatedObj.name}": ${validatedObj.schema}. Error: ${error}`)
+    }
+
+    // Convert JSONSchema to Zod using z.fromJSONSchema()
+    let zodSchema: ZodType
+    try {
+      zodSchema = z.fromJSONSchema(jsonSchema)
+    } catch (error) {
+      throw new Error(`Failed to convert JSONSchema to Zod for parameter "${validatedObj.name}": ${error}`)
+    }
+
+    // Step 3: Validate value against Zod schema if value is present
+    let validatedValue: Option<any> = None
+    if (validatedObj.value !== undefined && validatedObj.value !== null) {
+      const valueResult = zodSchema.safeParse(validatedObj.value)
+      if (!valueResult.success) {
+        throw new Error(`Invalid value for parameter "${validatedObj.name}": ${valueResult.error.message}`)
+      }
+      validatedValue = Some(valueResult.data)
+    }
+
+    // Step 4: Build and return NodeParameterBuilder
+    const builder = new NodeParameterBuilder()
+    builder.name = validatedObj.name
+    builder.schema = zodSchema
+    builder.description = validatedObj.description
+    builder.value = validatedValue
+
+    return builder
+  }
+
   withName(name: string): this {
     this.name = name
     return this
@@ -155,8 +259,151 @@ class NodeBuilder {
     builder.group = node.group
     builder.parameters = node.parameters.type === 'Some' ? node.parameters.value : []
     builder.inputs = node.inputs.type === 'Some' ? node.inputs.value : []
-    builder.outputs = node.output.type === 'Some' ? node.output.value : []
+    builder.outputs = node.outputs.type === 'Some' ? node.outputs.value : []
     builder.executor = node.executor
+    return builder
+  }
+
+  /**
+   * Create a NodeBuilder from an object that conforms to NodeSchema.
+   * Validates the object against NodeSchema, retrieves the NodeDefinition from registry,
+   * validates parameters/inputs/outputs against their schema definitions from NodeDefinition,
+   * and returns a configured NodeBuilder.
+   *
+   * NodeSchema only contains data (id/name + value), schema comes from NodeDefinition.
+   */
+  static fromObject(obj: unknown, registry: NodeRegistry): NodeBuilder {
+    // Step 1: Validate object against NodeSchema
+    const parseResult = NodeSchema.safeParse(obj)
+    if (!parseResult.success) {
+      throw new Error(`Invalid Node object: ${parseResult.error.message}`)
+    }
+    const validatedObj = parseResult.data
+
+    // Step 2: Retrieve NodeDefinition from registry using key
+    const registryEntry = registry.get(validatedObj.key)
+    if (!registryEntry) {
+      throw new Error(`NodeDefinition not found for key: "${validatedObj.key}". Make sure to register it first.`)
+    }
+    const definition = registryEntry.definition
+
+    // Step 3: Build Node using definition as base
+    const builder = new NodeBuilder()
+    builder.name = validatedObj.name
+    builder.description = validatedObj.description
+    builder.position = validatedObj.position
+    builder.symbol = validatedObj.symbol !== undefined ? Some(validatedObj.symbol) : None
+    builder.executor = definition.executor
+
+    // Handle group from definition (since NodeSchema doesn't have it)
+    builder.group = definition.group.type === 'Some' ? definition.group : None
+
+    // Step 4: Validate and convert parameters using definition's schema
+    if (validatedObj.parameters && validatedObj.parameters.length > 0) {
+      const definitionParams = definition.parameters.type === 'Some' ? definition.parameters.value : []
+
+      for (const paramData of validatedObj.parameters) {
+        // Find matching parameter definition by name
+        const defParam = definitionParams.find((p) => p.name === paramData.name)
+        if (!defParam) {
+          throw new Error(`Parameter "${paramData.name}" not defined in NodeDefinition for key "${validatedObj.key}"`)
+        }
+
+        // Use schema from definition (already ZodType)
+        const paramSchema = defParam.schema
+
+        // Validate value against definition's schema
+        let validatedValue: Option<any> = None
+        if (paramData.value !== undefined && paramData.value !== null) {
+          const valueResult = paramSchema.safeParse(paramData.value)
+          if (!valueResult.success) {
+            throw new Error(`Invalid value for parameter "${paramData.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
+          }
+          validatedValue = Some(valueResult.data)
+        }
+
+        // Build parameter with definition's metadata and validated value
+        builder.parameters.push({
+          name: defParam.name,
+          schema: defParam.schema,
+          description: defParam.description,
+          value: validatedValue,
+        })
+      }
+    }
+
+    // Step 5: Validate and convert inputs using definition's schema
+    if (validatedObj.inputs && validatedObj.inputs.length > 0) {
+      const definitionInputs = definition.inputs.type === 'Some' ? definition.inputs.value : []
+
+      for (const inputData of validatedObj.inputs) {
+        // Find matching input definition by id
+        const defInput = definitionInputs.find((p) => p.id === inputData.id)
+        if (!defInput) {
+          throw new Error(`Input "${inputData.id}" not defined in NodeDefinition for key "${validatedObj.key}"`)
+        }
+
+        // Use schema from definition (already ZodType)
+        const inputSchema = defInput.schema
+
+        // Validate value against definition's schema
+        let validatedValue: Option<any> = None
+        if (inputData.value !== undefined && inputData.value !== null) {
+          const valueResult = inputSchema.safeParse(inputData.value)
+          if (!valueResult.success) {
+            throw new Error(`Invalid value for input "${defInput.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
+          }
+          validatedValue = Some(valueResult.data)
+        }
+
+        // Build input port with definition's metadata and validated value
+        builder.inputs.push({
+          id: defInput.id,
+          name: defInput.name,
+          schema: defInput.schema,
+          direction: defInput.direction,
+          description: defInput.description,
+          value: validatedValue,
+        })
+      }
+    }
+
+    // Step 6: Validate and convert outputs using definition's schema
+    if (validatedObj.outputs && validatedObj.outputs.length > 0) {
+      const definitionOutputs = definition.outputs.type === 'Some' ? definition.outputs.value : []
+
+      for (const outputData of validatedObj.outputs) {
+        // Find matching output definition by id
+        const defOutput = definitionOutputs.find((p) => p.id === outputData.id)
+        if (!defOutput) {
+          throw new Error(`Output "${outputData.id}" not defined in NodeDefinition for key "${validatedObj.key}"`)
+        }
+
+        // Use schema from definition (already ZodType)
+        const outputSchema = defOutput.schema
+
+        // Validate value against definition's schema
+        let validatedValue: Option<any> = None
+        if (outputData.value !== undefined && outputData.value !== null) {
+          const valueResult = outputSchema.safeParse(outputData.value)
+          if (!valueResult.success) {
+            throw new Error(`Invalid value for output "${defOutput.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
+          }
+          validatedValue = Some(valueResult.data)
+        }
+
+        // Build output port with definition's metadata and validated value
+        builder.outputs.push({
+          id: defOutput.id,
+          name: defOutput.name,
+          schema: defOutput.schema,
+          direction: defOutput.direction,
+          description: defOutput.description,
+          value: validatedValue,
+        })
+      }
+    }
+
     return builder
   }
 
@@ -253,7 +500,7 @@ class NodeBuilder {
       group: this.group,
       parameters: isEmpty(this.parameters) ? None : Some(this.parameters),
       inputs: isEmpty(this.inputs) ? None : Some(this.inputs),
-      output: isEmpty(this.outputs) ? None : Some(this.outputs),
+      outputs: isEmpty(this.outputs) ? None : Some(this.outputs),
       executor: this.executor,
     }
   }

@@ -1,6 +1,5 @@
-import type { NodeDefinition, Option } from '@/types'
+import type { NodeDefinition } from '@/types'
 import { NodeDefinitionSchema } from '@/types/core/node.ts'
-import { None, Some } from '@/utils/structure'
 
 // Node registry key type: namespace/group
 type NodeRegistryKey = `${string}/${string}`
@@ -98,12 +97,12 @@ class NodeRegistry {
   }
 
   /**
-   * Read Node definition (interface reserved)
+   * Read Node definition
    * @param key - Key to read
+   * @returns The registry entry if found, null otherwise
    */
-  get(key: NodeRegistryKey): Option<NodeRegistryEntry> {
-    const result = this.registry.get(key)
-    return result ? Some(result) : None
+  get(key: NodeRegistryKey): NodeRegistryEntry | null {
+    return this.registry.get(key) ?? null
   }
 
   /**
