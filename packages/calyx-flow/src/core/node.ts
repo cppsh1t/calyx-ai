@@ -15,6 +15,17 @@ class NodePortBuilder {
   private description: string = ''
   private value: Option<any> = None
 
+  static from(port: NodePort): NodePortBuilder {
+    const builder = new NodePortBuilder()
+    builder.id = port.id
+    builder.name = port.name
+    builder.schema = port.schema
+    builder.direction = port.direction
+    builder.description = port.description
+    builder.value = port.value
+    return builder
+  }
+
   withId(id: string): this {
     this.id = id
     return this
@@ -51,7 +62,11 @@ class NodePortBuilder {
   }
 
   withValue<T>(value: T): this {
-    this.value = Some(value)
+    const result = this.schema.safeParse(value)
+    if (!result.success) {
+      throw new Error(`Invalid value for port "${this.name}": ${result.error.message}`)
+    }
+    this.value = Some(result.data)
     return this
   }
 
@@ -74,6 +89,15 @@ class NodeParameterBuilder {
   private description: string = ''
   private value: Option<any> = None
 
+  static from(param: NodeParameter): NodeParameterBuilder {
+    const builder = new NodeParameterBuilder()
+    builder.name = param.name
+    builder.schema = param.schema
+    builder.description = param.description
+    builder.value = param.value
+    return builder
+  }
+
   withName(name: string): this {
     this.name = name
     return this
@@ -90,7 +114,11 @@ class NodeParameterBuilder {
   }
 
   withValue<T>(value: T): this {
-    this.value = Some(value)
+    const result = this.schema.safeParse(value)
+    if (!result.success) {
+      throw new Error(`Invalid value for parameter "${this.name}": ${result.error.message}`)
+    }
+    this.value = Some(result.data)
     return this
   }
 
@@ -116,6 +144,21 @@ class NodeBuilder {
   private inputs: NodePort[] = []
   private outputs: NodePort[] = []
   private executor: NodeExecutor | null = null
+
+  static from(node: Node): NodeBuilder {
+    const builder = new NodeBuilder()
+    builder.id = node.id
+    builder.name = node.name
+    builder.description = node.description
+    builder.position = node.position
+    builder.symbol = node.symbol
+    builder.group = node.group
+    builder.parameters = node.parameters.type === 'Some' ? node.parameters.value : []
+    builder.inputs = node.inputs.type === 'Some' ? node.inputs.value : []
+    builder.outputs = node.output.type === 'Some' ? node.output.value : []
+    builder.executor = node.executor
+    return builder
+  }
 
   withId(id: string): this {
     this.id = id
@@ -223,6 +266,15 @@ class EdgeBuilder {
   private toNodeId: string = ''
   private toPortId: string = ''
 
+  static from(edge: Edge): EdgeBuilder {
+    const builder = new EdgeBuilder()
+    builder.fromNodeId = edge.from.nodeId
+    builder.fromPortId = edge.from.portId
+    builder.toNodeId = edge.to.nodeId
+    builder.toPortId = edge.to.portId
+    return builder
+  }
+
   from(nodeId: string, portId: string): this {
     this.fromNodeId = nodeId
     this.fromPortId = portId
@@ -269,24 +321,5 @@ class EdgeBuilder {
     }
   }
 }
-
-// Factory functions for convenience
-function createNodePort(): NodePortBuilder {
-  return new NodePortBuilder()
-}
-
-function createNodeParameter(): NodeParameterBuilder {
-  return new NodeParameterBuilder()
-}
-
-function createNode(): NodeBuilder {
-  return new NodeBuilder()
-}
-
-function createEdge(): EdgeBuilder {
-  return new EdgeBuilder()
-}
-
-export { createEdge, createNode, createNodeParameter, createNodePort, None, Some }
 
 export type { EdgeBuilder, NodeBuilder, NodeParameterBuilder, NodePortBuilder }
