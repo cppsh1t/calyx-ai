@@ -69,22 +69,8 @@ export type { Edge, ExecutionContext, Node, NodeDefinition, NodeEmitter, NodeEmi
 const OptionSchema = <T>(valueSchema: z.ZodType<T>) =>
   z.union([z.object({ type: z.literal('Some'), value: valueSchema }), z.object({ type: z.literal('None') })])
 
-const NodePortSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  direction: z.enum(['input', 'output']),
-  schema: z.string(),
-  value: z.any(),
-})
-
-const NodeParameterSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  schema: z.string(),
-  value: z.any(),
-})
-
+// Definition layer (registry): holds executable Zod schema objects.
+// Data layer (flow object): holds only id/value overrides and resolves schema from registry.
 const NodePortDefinitionSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -152,4 +138,4 @@ const EdgeSchema = z.object({
 
 export type { NodeRegistryKey }
 
-export { EdgeSchema, NodeDefinitionSchema, NodeParameterSchema, NodePortSchema, NodeSchema }
+export { EdgeSchema, NodeDefinitionSchema, NodeSchema }

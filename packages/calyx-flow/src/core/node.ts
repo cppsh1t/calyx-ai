@@ -1,5 +1,5 @@
 import type { Edge, Node, NodeExecutor, NodeParameter, NodePort, Position } from '@/types'
-import { EdgeSchema, NodeParameterSchema, NodePortSchema, NodeSchema } from '@/types/core/node.ts'
+import { EdgeSchema, NodeSchema } from '@/types/core/node.ts'
 import type { Option } from '@/types/structure'
 import { None, Some } from '@/utils/structure'
 import { isEmpty } from 'radash'
@@ -25,58 +25,6 @@ class NodePortBuilder {
     builder.direction = port.direction
     builder.description = port.description
     builder.value = port.value
-    return builder
-  }
-
-  /**
-   * Create a NodePortBuilder from an object that conforms to NodePortSchema.
-   * Validates the object against NodePortSchema, converts JSONSchema string to Zod,
-   * and validates the value against the Zod schema.
-   */
-  static fromObject(obj: unknown): NodePortBuilder {
-    // Step 1: Validate object against NodePortSchema
-    const parseResult = NodePortSchema.safeParse(obj)
-    if (!parseResult.success) {
-      throw new Error(`Invalid NodePort object: ${parseResult.error.message}`)
-    }
-
-    const validatedObj = parseResult.data
-
-    // Step 2: Parse JSONSchema string and convert to Zod
-    let jsonSchema: Record<string, unknown>
-    try {
-      jsonSchema = JSON.parse(validatedObj.schema) as Record<string, unknown>
-    } catch (error) {
-      throw new Error(`Invalid JSONSchema string: ${validatedObj.schema}. Error: ${error}`)
-    }
-
-    // Convert JSONSchema to Zod using z.fromJSONSchema()
-    let zodSchema: ZodType
-    try {
-      zodSchema = z.fromJSONSchema(jsonSchema)
-    } catch (error) {
-      throw new Error(`Failed to convert JSONSchema to Zod: ${error}`)
-    }
-
-    // Step 3: Validate value against Zod schema if value is present
-    let validatedValue: Option<any> = None
-    if (validatedObj.value !== undefined && validatedObj.value !== null) {
-      const valueResult = zodSchema.safeParse(validatedObj.value)
-      if (!valueResult.success) {
-        throw new Error(`Invalid value for port "${validatedObj.name}": ${valueResult.error.message}`)
-      }
-      validatedValue = Some(valueResult.data)
-    }
-
-    // Step 4: Build and return NodePortBuilder
-    const builder = new NodePortBuilder()
-    builder.id = validatedObj.id
-    builder.name = validatedObj.name
-    builder.schema = zodSchema
-    builder.direction = validatedObj.direction
-    builder.description = validatedObj.description
-    builder.value = validatedValue
-
     return builder
   }
 
@@ -149,56 +97,6 @@ class NodeParameterBuilder {
     builder.schema = param.schema
     builder.description = param.description
     builder.value = param.value
-    return builder
-  }
-
-  /**
-   * Create a NodeParameterBuilder from an object that conforms to NodeParameterSchema.
-   * Validates the object against NodeParameterSchema, converts JSONSchema string to Zod,
-   * and validates the value against the Zod schema.
-   */
-  static fromObject(obj: unknown): NodeParameterBuilder {
-    // Step 1: Validate object against NodeParameterSchema
-    const parseResult = NodeParameterSchema.safeParse(obj)
-    if (!parseResult.success) {
-      throw new Error(`Invalid NodeParameter object: ${parseResult.error.message}`)
-    }
-
-    const validatedObj = parseResult.data
-
-    // Step 2: Parse JSONSchema string and convert to Zod
-    let jsonSchema: Record<string, unknown>
-    try {
-      jsonSchema = JSON.parse(validatedObj.schema) as Record<string, unknown>
-    } catch (error) {
-      throw new Error(`Invalid JSONSchema string for parameter "${validatedObj.name}": ${validatedObj.schema}. Error: ${error}`)
-    }
-
-    // Convert JSONSchema to Zod using z.fromJSONSchema()
-    let zodSchema: ZodType
-    try {
-      zodSchema = z.fromJSONSchema(jsonSchema)
-    } catch (error) {
-      throw new Error(`Failed to convert JSONSchema to Zod for parameter "${validatedObj.name}": ${error}`)
-    }
-
-    // Step 3: Validate value against Zod schema if value is present
-    let validatedValue: Option<any> = None
-    if (validatedObj.value !== undefined && validatedObj.value !== null) {
-      const valueResult = zodSchema.safeParse(validatedObj.value)
-      if (!valueResult.success) {
-        throw new Error(`Invalid value for parameter "${validatedObj.name}": ${valueResult.error.message}`)
-      }
-      validatedValue = Some(valueResult.data)
-    }
-
-    // Step 4: Build and return NodeParameterBuilder
-    const builder = new NodeParameterBuilder()
-    builder.name = validatedObj.name
-    builder.schema = zodSchema
-    builder.description = validatedObj.description
-    builder.value = validatedValue
-
     return builder
   }
 
