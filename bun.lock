@@ -104,6 +104,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@xyflow/react": "^12.10.1",
+        "calyx-flow": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "latest",
