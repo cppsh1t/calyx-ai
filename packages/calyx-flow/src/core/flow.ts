@@ -88,6 +88,10 @@ const runFlow = async (flow: Flow, startSymbol: string, options?: RunFlowOptions
       throw new Error(`Start node not found for symbol: "${startSymbol}"`)
     }
 
+    if (runtimeAbort.signal.aborted) {
+      return { status: 'aborted' }
+    }
+
     const queue: string[] = []
     const running = new Set<Promise<void>>()
     let executionError: Error | null = null
@@ -232,10 +236,12 @@ const runFlow = async (flow: Flow, startSymbol: string, options?: RunFlowOptions
     enqueueNode(startNode.id)
     schedule()
 
-    while ((queue.length > 0 || running.size > 0) && !executionError) {
+    while ((queue.length > 0 || running.size > 0) && !executionError && !runtimeAbort.signal.aborted) {
       if (running.size === 0) {
         schedule()
-        continue
+        if (running.size === 0) {
+          break
+        }
       }
 
       await Promise.race(Array.from(running))

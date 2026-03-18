@@ -295,116 +295,104 @@ class NodeBuilder {
     builder.name = validatedObj.name
     builder.description = validatedObj.description
     builder.position = validatedObj.position
-    builder.symbol = validatedObj.symbol !== undefined ? Some(validatedObj.symbol) : None
+    builder.symbol = validatedObj.symbol !== undefined ? Some(validatedObj.symbol) : definition.symbol
     builder.executor = definition.executor
 
     // Handle group from definition (since NodeSchema doesn't have it)
     builder.group = definition.group.type === 'Some' ? definition.group : None
 
-    // Step 4: Validate and convert parameters using definition's schema
-    if (validatedObj.parameters && validatedObj.parameters.length > 0) {
-      const definitionParams = definition.parameters.type === 'Some' ? definition.parameters.value : []
+    // Step 4: Build parameters from definition and apply validated object overrides
+    const definitionParams = definition.parameters.type === 'Some' ? definition.parameters.value : []
+    const parameterOverrides = validatedObj.parameters ?? []
 
-      for (const paramData of validatedObj.parameters) {
-        // Find matching parameter definition by name
-        const defParam = definitionParams.find((p) => p.name === paramData.name)
-        if (!defParam) {
-          throw new Error(`Parameter "${paramData.name}" not defined in NodeDefinition for key "${validatedObj.key}"`)
-        }
-
-        // Use schema from definition (already ZodType)
-        const paramSchema = defParam.schema
-
-        // Validate value against definition's schema
-        let validatedValue: Option<any> = None
-        if (paramData.value !== undefined && paramData.value !== null) {
-          const valueResult = paramSchema.safeParse(paramData.value)
-          if (!valueResult.success) {
-            throw new Error(`Invalid value for parameter "${paramData.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
-          }
-          validatedValue = Some(valueResult.data)
-        }
-
-        // Build parameter with definition's metadata and validated value
-        builder.parameters.push({
-          name: defParam.name,
-          schema: defParam.schema,
-          description: defParam.description,
-          value: validatedValue,
-        })
+    for (const override of parameterOverrides) {
+      if (!definitionParams.find((param) => param.name === override.name)) {
+        throw new Error(`Parameter "${override.name}" not defined in NodeDefinition for key "${validatedObj.key}"`)
       }
     }
 
-    // Step 5: Validate and convert inputs using definition's schema
-    if (validatedObj.inputs && validatedObj.inputs.length > 0) {
-      const definitionInputs = definition.inputs.type === 'Some' ? definition.inputs.value : []
+    for (const defParam of definitionParams) {
+      const paramData = parameterOverrides.find((param) => param.name === defParam.name)
+      let validatedValue = defParam.value
 
-      for (const inputData of validatedObj.inputs) {
-        // Find matching input definition by id
-        const defInput = definitionInputs.find((p) => p.id === inputData.id)
-        if (!defInput) {
-          throw new Error(`Input "${inputData.id}" not defined in NodeDefinition for key "${validatedObj.key}"`)
+      if (paramData && paramData.value !== undefined && paramData.value !== null) {
+        const valueResult = defParam.schema.safeParse(paramData.value)
+        if (!valueResult.success) {
+          throw new Error(`Invalid value for parameter "${paramData.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
         }
+        validatedValue = Some(valueResult.data)
+      }
 
-        // Use schema from definition (already ZodType)
-        const inputSchema = defInput.schema
+      builder.parameters.push({
+        name: defParam.name,
+        schema: defParam.schema,
+        description: defParam.description,
+        value: validatedValue,
+      })
+    }
 
-        // Validate value against definition's schema
-        let validatedValue: Option<any> = None
-        if (inputData.value !== undefined && inputData.value !== null) {
-          const valueResult = inputSchema.safeParse(inputData.value)
-          if (!valueResult.success) {
-            throw new Error(`Invalid value for input "${defInput.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
-          }
-          validatedValue = Some(valueResult.data)
-        }
+    // Step 5: Build input ports from definition and apply validated object overrides
+    const definitionInputs = definition.inputs.type === 'Some' ? definition.inputs.value : []
+    const inputOverrides = validatedObj.inputs ?? []
 
-        // Build input port with definition's metadata and validated value
-        builder.inputs.push({
-          id: defInput.id,
-          name: defInput.name,
-          schema: defInput.schema,
-          direction: defInput.direction,
-          description: defInput.description,
-          value: validatedValue,
-        })
+    for (const override of inputOverrides) {
+      if (!definitionInputs.find((input) => input.id === override.id)) {
+        throw new Error(`Input "${override.id}" not defined in NodeDefinition for key "${validatedObj.key}"`)
       }
     }
 
-    // Step 6: Validate and convert outputs using definition's schema
-    if (validatedObj.outputs && validatedObj.outputs.length > 0) {
-      const definitionOutputs = definition.outputs.type === 'Some' ? definition.outputs.value : []
+    for (const defInput of definitionInputs) {
+      const inputData = inputOverrides.find((input) => input.id === defInput.id)
+      let validatedValue = defInput.value
 
-      for (const outputData of validatedObj.outputs) {
-        // Find matching output definition by id
-        const defOutput = definitionOutputs.find((p) => p.id === outputData.id)
-        if (!defOutput) {
-          throw new Error(`Output "${outputData.id}" not defined in NodeDefinition for key "${validatedObj.key}"`)
+      if (inputData && inputData.value !== undefined && inputData.value !== null) {
+        const valueResult = defInput.schema.safeParse(inputData.value)
+        if (!valueResult.success) {
+          throw new Error(`Invalid value for input "${defInput.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
         }
-
-        // Use schema from definition (already ZodType)
-        const outputSchema = defOutput.schema
-
-        // Validate value against definition's schema
-        let validatedValue: Option<any> = None
-        if (outputData.value !== undefined && outputData.value !== null) {
-          const valueResult = outputSchema.safeParse(outputData.value)
-          if (!valueResult.success) {
-            throw new Error(`Invalid value for output "${defOutput.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
-          }
-          validatedValue = Some(valueResult.data)
-        }
-
-        // Build output port with definition's metadata and validated value
-        builder.outputs.push({
-          id: defOutput.id,
-          name: defOutput.name,
-          schema: defOutput.schema,
-          direction: defOutput.direction,
-          description: defOutput.description,
-          value: validatedValue,
-        })
+        validatedValue = Some(valueResult.data)
       }
+
+      builder.inputs.push({
+        id: defInput.id,
+        name: defInput.name,
+        schema: defInput.schema,
+        direction: defInput.direction,
+        description: defInput.description,
+        value: validatedValue,
+      })
+    }
+
+    // Step 6: Build output ports from definition and apply validated object overrides
+    const definitionOutputs = definition.outputs.type === 'Some' ? definition.outputs.value : []
+    const outputOverrides = validatedObj.outputs ?? []
+
+    for (const override of outputOverrides) {
+      if (!definitionOutputs.find((output) => output.id === override.id)) {
+        throw new Error(`Output "${override.id}" not defined in NodeDefinition for key "${validatedObj.key}"`)
+      }
+    }
+
+    for (const defOutput of definitionOutputs) {
+      const outputData = outputOverrides.find((output) => output.id === defOutput.id)
+      let validatedValue = defOutput.value
+
+      if (outputData && outputData.value !== undefined && outputData.value !== null) {
+        const valueResult = defOutput.schema.safeParse(outputData.value)
+        if (!valueResult.success) {
+          throw new Error(`Invalid value for output "${defOutput.name}" in node "${validatedObj.name}": ${valueResult.error.message}`)
+        }
+        validatedValue = Some(valueResult.data)
+      }
+
+      builder.outputs.push({
+        id: defOutput.id,
+        name: defOutput.name,
+        schema: defOutput.schema,
+        direction: defOutput.direction,
+        description: defOutput.description,
+        value: validatedValue,
+      })
     }
 
     return builder
