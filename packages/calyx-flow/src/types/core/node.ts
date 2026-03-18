@@ -119,7 +119,7 @@ const NodeParameterDataSchema = z.object({
 // Contains only data, schema validation uses NodeDefinition from registry
 const NodeSchema = z.object({
   id: z.string().optional(),
-  key: z.string().refine((val) => val.includes('/'), {
+  key: z.string().refine((val) => /^[^/]+\/[^/]+$/.test(val), {
     message: 'Key must be in format: namespace/group',
   }) as z.ZodType<NodeRegistryKey>,
   name: z.string(),
