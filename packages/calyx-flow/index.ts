@@ -1,5 +1,6 @@
 // Core implementation exports
-export { createFlowBuilder, Flow } from '@/core/flow.ts'
+export { createFlow, runFlow } from '@/core/flow.ts'
+export type { Flow, RunFlowOptions, RunFlowResult } from '@/core/flow.ts'
 export { buildProviderFactory } from '@/services/provider-factory.ts'
 
 // Type exports (unified export from types directory)

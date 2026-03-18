@@ -1,5 +1,5 @@
 import type { Edge, Node, NodeExecutor, NodeParameter, NodePort, Position } from '@/types'
-import { NodeParameterSchema, NodePortSchema, NodeSchema } from '@/types/core/node.ts'
+import { EdgeSchema, NodeParameterSchema, NodePortSchema, NodeSchema } from '@/types/core/node.ts'
 import type { Option } from '@/types/structure'
 import { None, Some } from '@/utils/structure'
 import { isEmpty } from 'radash'
@@ -289,6 +289,9 @@ class NodeBuilder {
 
     // Step 3: Build Node using definition as base
     const builder = new NodeBuilder()
+    if (validatedObj.id) {
+      builder.id = validatedObj.id
+    }
     builder.name = validatedObj.name
     builder.description = validatedObj.description
     builder.position = validatedObj.position
@@ -522,6 +525,16 @@ class EdgeBuilder {
     return builder
   }
 
+  static fromObject(obj: unknown): EdgeBuilder {
+    const parseResult = EdgeSchema.safeParse(obj)
+    if (!parseResult.success) {
+      throw new Error(`Invalid Edge object: ${parseResult.error.message}`)
+    }
+
+    const edge = parseResult.data
+    return EdgeBuilder.from(edge)
+  }
+
   from(nodeId: string, portId: string): this {
     this.fromNodeId = nodeId
     this.fromPortId = portId
@@ -569,4 +582,4 @@ class EdgeBuilder {
   }
 }
 
-export type { EdgeBuilder, NodeBuilder, NodeParameterBuilder, NodePortBuilder }
+export { EdgeBuilder, NodeBuilder, NodeParameterBuilder, NodePortBuilder }

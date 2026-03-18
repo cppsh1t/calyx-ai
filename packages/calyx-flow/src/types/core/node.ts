@@ -6,11 +6,21 @@ type Position = {
   y: number
 }
 
+type NodeEmitterEvent = {
+  type: string
+  node: Node
+  data: any
+}
+
+type NodeEmitter = (event: NodeEmitterEvent) => void
+
 type ExecutionContext = {
+  node: Node
   parameters: Option<NodeParameter[]>
   inputs: Option<NodePort[]>
   outputs: Option<NodePort[]>
   abort: AbortController
+  emitter: NodeEmitter
 }
 
 type NodeExecutor = {
@@ -53,7 +63,7 @@ type Edge = {
   to: { nodeId: string; portId: string }
 }
 
-export type { Edge, ExecutionContext, Node, NodeDefinition, NodeExecutor, NodeParameter, NodePort, Position }
+export type { Edge, ExecutionContext, Node, NodeDefinition, NodeEmitter, NodeEmitterEvent, NodeExecutor, NodeParameter, NodePort, Position }
 
 // Option schema helper
 const OptionSchema = <T>(valueSchema: z.ZodType<T>) =>
@@ -75,6 +85,22 @@ const NodeParameterSchema = z.object({
   value: z.any(),
 })
 
+const NodePortDefinitionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  direction: z.enum(['input', 'output']),
+  schema: z.custom<ZodType>((value) => value instanceof ZodType),
+  value: z.any(),
+})
+
+const NodeParameterDefinitionSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  schema: z.custom<ZodType>((value) => value instanceof ZodType),
+  value: z.any(),
+})
+
 // NodeDefinition validation schema
 const NodeDefinitionSchema = z.object({
   name: z.string(),
@@ -82,9 +108,9 @@ const NodeDefinitionSchema = z.object({
   position: z.object({ x: z.number(), y: z.number() }),
   symbol: OptionSchema(z.string()),
   group: OptionSchema(z.string()),
-  parameters: OptionSchema(z.array(NodeParameterSchema)),
-  inputs: OptionSchema(z.array(NodePortSchema)),
-  outputs: OptionSchema(z.array(NodePortSchema)),
+  parameters: OptionSchema(z.array(NodeParameterDefinitionSchema)),
+  inputs: OptionSchema(z.array(NodePortDefinitionSchema)),
+  outputs: OptionSchema(z.array(NodePortDefinitionSchema)),
   executor: z.object({ execute: z.function() }),
 })
 
@@ -106,6 +132,7 @@ const NodeParameterDataSchema = z.object({
 // Node schema for object-to-node conversion (matches NodeRegistry key format)
 // Contains only data, schema validation uses NodeDefinition from registry
 const NodeSchema = z.object({
+  id: z.string().optional(),
   key: z.string().refine((val) => val.includes('/'), {
     message: 'Key must be in format: namespace/group',
   }) as z.ZodType<NodeRegistryKey>,
@@ -118,6 +145,11 @@ const NodeSchema = z.object({
   outputs: z.array(NodePortDataSchema).optional(),
 })
 
+const EdgeSchema = z.object({
+  from: z.object({ nodeId: z.string(), portId: z.string() }),
+  to: z.object({ nodeId: z.string(), portId: z.string() }),
+})
+
 export type { NodeRegistryKey }
 
-export { NodeDefinitionSchema, NodeParameterSchema, NodePortSchema, NodeSchema }
+export { EdgeSchema, NodeDefinitionSchema, NodeParameterSchema, NodePortSchema, NodeSchema }

@@ -1,3 +1,5 @@
-export type { EdgeBuilder, NodeBuilder, NodeParameterBuilder, NodePortBuilder } from './node.ts'
+export { createFlow, runFlow } from './flow.ts'
+export type { Flow, RunFlowOptions, RunFlowResult } from './flow.ts'
+export { EdgeBuilder, NodeBuilder, NodeParameterBuilder, NodePortBuilder } from './node.ts'
 export { NodeRegistry } from './registry.ts'
 export type { NodeRegistryEntry, NodeRegistryKey } from './registry.ts'
