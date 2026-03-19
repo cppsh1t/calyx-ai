@@ -166,7 +166,7 @@ export function FlowNode({ data }: FlowNodeProps) {
       <Card className="w-fit min-w-[180px] max-w-[360px] overflow-hidden rounded-lg backdrop-blur-sm">
         <div>
           <CardHeader className="rounded-t-lg bg-slate-900 px-3 py-1.5">
-            <CardTitle className="truncate">{data.label}</CardTitle>
+            <CardTitle className="truncate text-primary-foreground">{data.label}</CardTitle>
           </CardHeader>
 
           {onParameterChange && (primitiveParams.length > 0 || complexParams.length > 0) && (

@@ -4,7 +4,8 @@ import { execSync } from 'child_process'
 import { existsSync } from 'fs'
 import { mkdir, rm } from 'fs/promises'
 import path from 'path'
-import { createGenerator, presetWind3 } from 'unocss'
+import { createGenerator } from 'unocss'
+import unoConfig from './uno.config.ts'
 
 const outdir = path.join(process.cwd(), 'dist')
 
@@ -30,9 +31,7 @@ async function generateTypes() {
 async function generateUnoCss() {
   console.log('🎨 Generating UnoCSS output...')
   try {
-    const generator = await createGenerator({
-      presets: [presetWind3()],
-    })
+    const generator = await createGenerator(unoConfig)
 
     const contentChunks: string[] = []
     const scanner = new Bun.Glob('src/**/*.{ts,tsx}')

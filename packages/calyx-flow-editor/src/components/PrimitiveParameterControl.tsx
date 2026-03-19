@@ -1,12 +1,19 @@
 /** @jsxImportSource react */
 
 import { SchemaInfoPopover } from '@/components/SchemaInfoPopover.tsx'
-import { Button } from '@/components/ui/button.tsx'
 import { Input } from '@/components/ui/input.tsx'
 import { isBoolean, isNumber, isPrimitive, isString } from '@/utils/classify.ts'
 import { fromOption, isSome, none, some } from '@/utils/option.ts'
 import type { NodeParameter, Option } from 'calyx-flow/types'
-import type { ChangeEvent } from 'react'
+import type { ChangeEvent, ReactNode } from 'react'
+
+function ClearInputIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" aria-hidden="true">
+      <path d="M7 7l10 10M17 7L7 17" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 /**
  * Props for primitive parameter control component.
@@ -161,11 +168,31 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
   const handleBooleanChange = createBooleanChangeHandler(onChange)
   const handleClear = createClearHandler(onChange)
 
+  const renderClearableInput = (input: ReactNode) => {
+    return (
+      <div className="relative min-w-0 w-full max-w-full overflow-hidden">
+        {input}
+        {hasValue && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-1 top-1/2 inline-flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full border border-transparent bg-transparent text-slate-400/90 transition hover:border-slate-200/80 hover:bg-slate-100/80 hover:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            aria-label={`Clear ${parameter.name}`}
+            title="Clear value"
+            data-action="clear"
+          >
+            <ClearInputIcon />
+          </button>
+        )}
+      </div>
+    )
+  }
+
   // Render appropriate control based on detected primitive type
   const renderControl = () => {
     switch (primitiveType) {
       case 'string':
-        return (
+        return renderClearableInput(
           <Input
             type="text"
             value={isString(currentValue) ? currentValue : ''}
@@ -175,11 +202,12 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
             title={parameter.description}
             data-param-name={parameter.name}
             data-param-type="string"
+            className="pr-6"
           />
         )
 
       case 'number':
-        return (
+        return renderClearableInput(
           <Input
             type="number"
             value={isNumber(currentValue) ? currentValue : ''}
@@ -189,13 +217,14 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
             title={parameter.description}
             data-param-name={parameter.name}
             data-param-type="number"
+            className="pr-6"
           />
         )
 
       case 'boolean':
         return (
           <label
-            className="inline-flex h-8 w-full items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 shadow-sm"
+            className="inline-flex h-6 min-w-0 w-full max-w-full items-center gap-2 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700 shadow-sm"
             data-param-name={parameter.name}
             data-param-type="boolean"
           >
@@ -208,12 +237,28 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
               className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900"
             />
             <span>Enabled</span>
+            {hasValue && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  handleClear()
+                }}
+                className="ml-auto inline-flex h-4 w-4 items-center justify-center rounded-full border border-transparent bg-transparent text-slate-400/90 transition hover:border-slate-200/80 hover:bg-slate-100/80 hover:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                aria-label={`Clear ${parameter.name}`}
+                title="Clear value"
+                data-action="clear"
+              >
+                <ClearInputIcon />
+              </button>
+            )}
           </label>
         )
 
       default:
         // Fallback to string input for unknown types
-        return (
+        return renderClearableInput(
           <Input
             type="text"
             value={isPrimitive(currentValue) ? String(currentValue) : ''}
@@ -223,6 +268,7 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
             title={parameter.description}
             data-param-name={parameter.name}
             data-param-type="string"
+            className="pr-6"
           />
         )
     }
@@ -234,22 +280,7 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
         <span className="text-xs font-medium text-slate-800">{parameter.name}</span>
         <SchemaInfoPopover title={parameter.name} schema={parameter.schema} description={parameter.description} />
       </div>
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">{renderControl()}</div>
-        {hasValue && (
-          <Button
-            onClick={handleClear}
-            variant="outline"
-            size="sm"
-            className="h-8 shrink-0 px-2.5 text-[11px] text-slate-500"
-            aria-label={`Clear ${parameter.name}`}
-            title="Clear value"
-            data-action="clear"
-          >
-            Clear
-          </Button>
-        )}
-      </div>
+      <div className="min-w-0 w-full max-w-full">{renderControl()}</div>
     </div>
   )
 }

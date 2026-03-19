@@ -1,6 +1,4 @@
-/** @jsxImportSource react */
-
-import * as Popover from '@radix-ui/react-popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx'
 import { useMemo, useState } from 'react'
 
 export type SchemaInfoPopoverProps = {
@@ -64,42 +62,30 @@ export function SchemaInfoPopover({ title, schema, description, className }: Sch
   const schemaText = useMemo(() => formatSchema(schema), [schema])
 
   return (
-    <div
-      className={`group/info relative inline-flex items-center ${className ?? ''}`}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-      <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
-        <Popover.Trigger asChild>
+    <div className={`group/info relative inline-flex items-center ${className ?? ''}`}>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
           <button
             type="button"
-            onClick={() => setIsOpen((current) => !current)}
-            className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-slate-300/80 bg-white/70 text-slate-500 shadow-sm transition hover:border-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+            className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-input bg-background text-muted-foreground shadow-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             aria-label={`Show metadata for ${title}`}
           >
             <InfoIcon />
           </button>
-        </Popover.Trigger>
+        </PopoverTrigger>
 
-        <Popover.Portal>
-          <Popover.Content
-            side="bottom"
-            align="start"
-            sideOffset={8}
-            className="z-[1000] min-w-52 max-w-72 rounded-lg border border-slate-200/80 bg-white/95 p-3 text-left shadow-xl backdrop-blur-sm"
-          >
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{title}</div>
-            <div className="mt-1 text-xs text-slate-900">
-              <span className="font-medium">Schema:</span> {schemaText}
+        <PopoverContent side="right" align="start" sideOffset={10} className="z-[1000] min-w-52 max-w-72 p-3 text-left">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</div>
+          <div className="mt-1 text-xs text-foreground">
+            <span className="font-medium">Schema:</span> {schemaText}
+          </div>
+          {description && (
+            <div className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              <span className="font-medium text-foreground">Description:</span> {description}
             </div>
-            {description && (
-              <div className="mt-1.5 text-xs leading-relaxed text-slate-600">
-                <span className="font-medium text-slate-700">Description:</span> {description}
-              </div>
-            )}
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
+          )}
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

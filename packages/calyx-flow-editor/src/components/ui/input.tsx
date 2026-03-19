@@ -1,18 +1,19 @@
-/** @jsxImportSource react */
-
 import { cn } from '@/components/ui/cn.ts'
-import type { InputHTMLAttributes } from 'react'
+import * as React from 'react'
 
-export type InputProps = InputHTMLAttributes<HTMLInputElement>
-
-export function Input({ className, ...props }: InputProps) {
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(({ className, type, ...props }, ref) => {
   return (
     <input
+      type={type}
       className={cn(
-        'h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30',
+        'flex h-7 min-w-0 w-full max-w-full rounded-md border border-input bg-background px-2 py-0 text-[11px] shadow-sm transition-colors file:border-0 file:bg-transparent file:text-[11px] file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
+      ref={ref}
       {...props}
     />
   )
-}
+})
+Input.displayName = 'Input'
+
+export { Input }

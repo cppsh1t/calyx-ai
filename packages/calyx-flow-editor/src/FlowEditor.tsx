@@ -4,6 +4,7 @@ import { extractDomainEdges, extractDomainNodes, flowToReactFlow, parseHandleId 
 import { FlowNode } from '@/components/FlowNode.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import '@/styles/reactflow.css'
+import '@/styles/shadcn-theme.css'
 import {
   Background,
   BackgroundVariant,
@@ -26,6 +27,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import type { Flow } from 'calyx-flow'
 import type { NodeParameter, Option } from 'calyx-flow/types'
+import type { MouseEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 /**
@@ -252,6 +254,28 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
     [setEdges]
   )
 
+  const removeEdgeById = useCallback(
+    (edgeId: string) => {
+      setEdges((edgesSnapshot) => edgesSnapshot.filter((edge) => edge.id !== edgeId))
+    },
+    [setEdges]
+  )
+
+  const onEdgeClick = useCallback(
+    (_event: MouseEvent, edge: Edge) => {
+      removeEdgeById(edge.id)
+    },
+    [removeEdgeById]
+  )
+
+  const onEdgeContextMenu = useCallback(
+    (event: MouseEvent, edge: Edge) => {
+      event.preventDefault()
+      removeEdgeById(edge.id)
+    },
+    [removeEdgeById]
+  )
+
   /**
    * Build canonical Flow from current XYFlow state.
    * Uses adapter to extract domain nodes and edges.
@@ -321,7 +345,7 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
   return (
     <div
       ref={hostRef}
-      className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 via-slate-50 to-white shadow-[0_8px_40px_-26px_rgba(15,23,42,0.55)]"
+      className="calyx-flow-editor-theme relative h-full w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 via-slate-50 to-white shadow-[0_8px_40px_-26px_rgba(15,23,42,0.55)]"
       style={{ minHeight: 520 }}
     >
       <div className="w-full" style={{ height: canvasHeight }}>
@@ -332,6 +356,8 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onEdgeClick={onEdgeClick}
+            onEdgeContextMenu={onEdgeContextMenu}
             nodeTypes={nodeTypes}
             isValidConnection={isValidConnection}
             defaultEdgeOptions={{
@@ -360,6 +386,7 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
             panOnDrag
             zoomOnScroll
             panOnScroll
+            zoomOnDoubleClick={false}
             selectionOnDrag
             elevateEdgesOnSelect={false}
             fitViewOptions={{
