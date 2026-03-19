@@ -4,6 +4,7 @@ import { execSync } from 'child_process'
 import { existsSync } from 'fs'
 import { mkdir, rm } from 'fs/promises'
 import path from 'path'
+import { createGenerator, presetWind3 } from 'unocss'
 
 const outdir = path.join(process.cwd(), 'dist')
 
@@ -22,6 +23,32 @@ async function generateTypes() {
     console.log('✅ Types generated successfully')
   } catch {
     console.error('❌ Type generation failed')
+    process.exit(1)
+  }
+}
+
+async function generateUnoCss() {
+  console.log('🎨 Generating UnoCSS output...')
+  try {
+    const generator = await createGenerator({
+      presets: [presetWind3()],
+    })
+
+    const contentChunks: string[] = []
+    const scanner = new Bun.Glob('src/**/*.{ts,tsx}')
+    for await (const filePath of scanner.scan('.')) {
+      contentChunks.push(await Bun.file(filePath).text())
+    }
+
+    const { css } = await generator.generate(contentChunks.join('\n'), {
+      preflights: true,
+      minify: true,
+    })
+
+    await Bun.write(path.join(outdir, 'uno.css'), css)
+    console.log('✅ UnoCSS generated successfully')
+  } catch {
+    console.error('❌ UnoCSS generation failed')
     process.exit(1)
   }
 }
@@ -51,11 +78,12 @@ async function buildLibrary() {
     outdir,
     format: 'esm',
     target: 'browser',
-    external: ['react', 'react-dom'],
+    external: ['react', 'react-dom', '@xyflow/react', 'calyx-flow'],
     minify: true,
     sourcemap: 'linked',
   })
 
+  await generateUnoCss()
   await generateTypes()
 
   const end = performance.now()

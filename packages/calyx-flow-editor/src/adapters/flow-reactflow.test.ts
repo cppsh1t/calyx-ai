@@ -222,7 +222,7 @@ describe('reactFlowToFlow', () => {
         label: 'Updated Label',
         _domainNode: preservedNode,
       },
-      type: 'default',
+      type: 'flowNode',
     }
 
     const xyEdge: XYFlowEdge = {

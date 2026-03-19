@@ -129,7 +129,7 @@ export function FlowNode({ data }: FlowNodeProps) {
     return (
       <div
         key={port.id}
-        className="group/port relative inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm"
+        className="group/port relative inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm"
       >
         <Handle
           type="target"
@@ -147,7 +147,7 @@ export function FlowNode({ data }: FlowNodeProps) {
           }}
         />
         <span className="text-slate-500">{renderPortIcon('input')}</span>
-        <span>{port.name}</span>
+        <span className="max-w-[88px] truncate">{port.name}</span>
         <SchemaInfoPopover title={port.name} schema={port.schema} description={port.description} className="opacity-80" />
       </div>
     )
@@ -157,10 +157,10 @@ export function FlowNode({ data }: FlowNodeProps) {
     return (
       <div
         key={port.id}
-        className="group/port relative inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm"
+        className="group/port relative inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm"
       >
         <span className="text-slate-500">{renderPortIcon('output')}</span>
-        <span>{port.name}</span>
+        <span className="max-w-[88px] truncate">{port.name}</span>
         <SchemaInfoPopover title={port.name} schema={port.schema} description={port.description} className="opacity-80" />
         <Handle
           type="source"
@@ -182,14 +182,14 @@ export function FlowNode({ data }: FlowNodeProps) {
   }
 
   return (
-    <Card className="w-88 rounded-2xl shadow-[0_8px_40px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm">
+    <Card className="w-fit min-w-[180px] max-w-[360px] overflow-hidden rounded-2xl shadow-[0_8px_40px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm">
       <div>
         <CardHeader className="rounded-t-2xl bg-slate-900">
-          <CardTitle>{data.label}</CardTitle>
+          <CardTitle className="truncate">{data.label}</CardTitle>
         </CardHeader>
 
         {onParameterChange && (primitiveParams.length > 0 || complexParams.length > 0) && (
-          <CardContent className="space-y-2 p-3">
+          <CardContent className="max-h-72 space-y-1.5 overflow-x-hidden overflow-y-auto p-3">
             {primitiveParams.length > 0 && (
               <div className="space-y-2">
                 {primitiveParams.map((param) => (
@@ -208,10 +208,10 @@ export function FlowNode({ data }: FlowNodeProps) {
         )}
       </div>
 
-      <div className="border-t border-slate-200/80 bg-slate-50/80 p-2.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex max-w-[48%] flex-wrap gap-1.5">{inputs.map(renderInputPort)}</div>
-          <div className="flex max-w-[48%] flex-wrap justify-end gap-1.5">{outputs.map(renderOutputPort)}</div>
+      <div className="border-t border-slate-200/80 bg-slate-50/80 p-2">
+        <div className="flex items-start justify-between gap-1.5">
+          <div className="flex min-w-0 max-w-[48%] flex-wrap gap-1.5">{inputs.map(renderInputPort)}</div>
+          <div className="flex min-w-0 max-w-[48%] flex-wrap justify-end gap-1.5">{outputs.map(renderOutputPort)}</div>
         </div>
       </div>
     </Card>

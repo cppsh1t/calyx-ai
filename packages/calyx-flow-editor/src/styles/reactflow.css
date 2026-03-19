@@ -8,6 +8,11 @@
 }
 
 .workflow-editor-canvas .react-flow__node {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease;

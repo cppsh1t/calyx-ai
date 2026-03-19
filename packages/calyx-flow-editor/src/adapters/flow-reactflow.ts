@@ -137,7 +137,7 @@ export function domainNodeToXYFlowNode(node: Node): XYFlowNode {
       // Include original node data for round-trip preservation
       _domainNode: node,
     },
-    type: 'default', // Can be overridden by custom node types
+    type: 'flowNode',
   }
 }
 

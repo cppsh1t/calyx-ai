@@ -12,10 +12,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
-    "./style.css": "./dist/index.css"
+    "./style.css": "./style.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "style.css"
   ],
   "scripts": {
     "build": "bun run build.ts",
@@ -24,6 +25,7 @@
     "test": "bun test"
   },
   "peerDependencies": {
+    "@xyflow/react": ">=12.10.1",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
@@ -33,11 +35,12 @@
     "@types/react-dom": "^19",
     "@unocss/postcss": "^66.6.6",
     "@unocss/preset-wind3": "^66.6.6",
+    "@xyflow/react": "^12.10.1",
     "typescript": "^5.0.0",
     "unocss": "^66.6.6"
   },
   "dependencies": {
-    "@xyflow/react": "^12.10.1",
+    "@radix-ui/react-popover": "^1.1.15",
     "calyx-flow": "workspace:*"
   }
 }

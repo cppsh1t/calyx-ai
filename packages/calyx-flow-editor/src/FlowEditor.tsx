@@ -26,7 +26,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import type { Flow } from 'calyx-flow'
 import type { NodeParameter, Option } from 'calyx-flow/types'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 /**
  * Props for the controlled FlowEditor component.
@@ -52,7 +52,7 @@ export type FlowEditorProps = {
  * Maps node type keys to custom component implementations.
  */
 const nodeTypes: NodeTypes = {
-  default: FlowNode,
+  flowNode: FlowNode,
 }
 
 /**
@@ -134,6 +134,8 @@ type ExtendedNodeData = {
  * ```
  */
 export function FlowEditor({ flow, onSave }: FlowEditorProps) {
+  const hostRef = useRef<HTMLDivElement | null>(null)
+
   // Derive XYFlow state from canonical Flow
   const initialXYFlow = useMemo(() => {
     const result = flowToReactFlow(flow)
@@ -147,6 +149,8 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
   // Internal XYFlow state (derived from Flow, not source of truth)
   const [nodes, setNodes] = useState<Node[]>(initialXYFlow.nodes)
   const [edges, setEdges] = useState<Edge[]>(initialXYFlow.edges)
+  const [isHostReady, setIsHostReady] = useState(false)
+  const [canvasHeight, setCanvasHeight] = useState(520)
 
   // Sync internal state when flow prop changes
   useEffect(() => {
@@ -283,73 +287,112 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
     onSave(canonicalFlow)
   }, [buildCanonicalFlow, onSave])
 
+  useEffect(() => {
+    const hostElement = hostRef.current
+    if (!hostElement) {
+      setIsHostReady(false)
+      return
+    }
+
+    const syncHostState = () => {
+      const bounds = hostElement.getBoundingClientRect()
+      setCanvasHeight(Math.max(520, Math.floor(bounds.height)))
+      setIsHostReady(bounds.width > 0)
+    }
+
+    syncHostState()
+
+    if (typeof ResizeObserver === 'undefined') {
+      setIsHostReady(true)
+      return
+    }
+
+    const observer = new ResizeObserver(() => {
+      syncHostState()
+    })
+
+    observer.observe(hostElement)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 via-slate-50 to-white shadow-[0_8px_40px_-26px_rgba(15,23,42,0.55)]">
-      <div className="h-full w-full">
-        <ReactFlow
-          nodes={nodesWithCallbacks}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          isValidConnection={isValidConnection}
-          defaultEdgeOptions={{
-            type: 'smoothstep',
-            animated: false,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              width: 16,
-              height: 16,
-              color: '#334155',
-            },
-            style: {
-              stroke: '#334155',
+    <div
+      ref={hostRef}
+      className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 via-slate-50 to-white shadow-[0_8px_40px_-26px_rgba(15,23,42,0.55)]"
+      style={{ minHeight: 520 }}
+    >
+      <div className="w-full" style={{ height: canvasHeight }}>
+        {isHostReady ? (
+          <ReactFlow
+            nodes={nodesWithCallbacks}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            isValidConnection={isValidConnection}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              animated: false,
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                width: 16,
+                height: 16,
+                color: '#334155',
+              },
+              style: {
+                stroke: '#334155',
+                strokeWidth: 2,
+              },
+            }}
+            connectionLineType={ConnectionLineType.SmoothStep}
+            connectionLineStyle={{
+              stroke: '#475569',
               strokeWidth: 2,
-            },
-          }}
-          connectionLineType={ConnectionLineType.SmoothStep}
-          connectionLineStyle={{
-            stroke: '#475569',
-            strokeWidth: 2,
-            strokeDasharray: '5 4',
-          }}
-          proOptions={{ hideAttribution: true }}
-          panOnDrag
-          zoomOnScroll
-          panOnScroll
-          selectionOnDrag
-          elevateEdgesOnSelect
-          fitViewOptions={{
-            maxZoom: 1.1,
-            padding: 0.3,
-          }}
-          className="workflow-editor-canvas"
-          fitView
-        >
-          <Background variant={BackgroundVariant.Dots} size={1} gap={18} color="#cbd5e1" />
-          <Background variant={BackgroundVariant.Cross} size={1} gap={90} color="#e2e8f0" />
-          <MiniMap
-            pannable
-            zoomable
-            className="!rounded-xl !border !border-slate-200/80 !bg-white/95 !shadow-lg"
-            maskColor="rgba(148, 163, 184, 0.12)"
-            nodeColor="#334155"
-          />
-          <Controls className="!overflow-hidden !rounded-xl !border !border-slate-200/80 !bg-white/95 !shadow-lg [&>button]:!h-8 [&>button]:!w-8 [&>button]:!border-slate-200 [&>button]:!text-slate-700 [&>button:hover]:!bg-slate-100" />
+              strokeDasharray: '5 4',
+            }}
+            proOptions={{ hideAttribution: true }}
+            panOnDrag
+            zoomOnScroll
+            panOnScroll
+            selectionOnDrag
+            elevateEdgesOnSelect
+            fitViewOptions={{
+              maxZoom: 1.1,
+              padding: 0.3,
+            }}
+            className="workflow-editor-canvas"
+            fitView
+          >
+            <Background variant={BackgroundVariant.Dots} size={1} gap={18} color="#cbd5e1" />
+            <Background variant={BackgroundVariant.Cross} size={1} gap={90} color="#e2e8f0" />
+            <MiniMap
+              pannable
+              zoomable
+              className="!rounded-xl !border !border-slate-200/80 !bg-white/95 !shadow-lg"
+              maskColor="rgba(148, 163, 184, 0.12)"
+              nodeColor="#334155"
+            />
+            <Controls className="!overflow-hidden !rounded-xl !border !border-slate-200/80 !bg-white/95 !shadow-lg [&>button]:!h-8 [&>button]:!w-8 [&>button]:!border-slate-200 [&>button]:!text-slate-700 [&>button:hover]:!bg-slate-100" />
 
-          <Panel position="top-left">
-            <div className="rounded-lg border border-slate-200/80 bg-white/85 px-3 py-1.5 text-xs font-medium tracking-wide text-slate-600 shadow-sm backdrop-blur-sm">
-              Workflow Canvas
-            </div>
-          </Panel>
+            <Panel position="top-left">
+              <div className="rounded-lg border border-slate-200/80 bg-white/85 px-3 py-1.5 text-xs font-medium tracking-wide text-slate-600 shadow-sm backdrop-blur-sm">
+                Workflow Canvas
+              </div>
+            </Panel>
 
-          <Panel position="top-right">
-            <Button onClick={handleSave} data-action="save-flow" className="inline-flex h-9 items-center text-xs font-semibold">
-              Save Flow
-            </Button>
-          </Panel>
-        </ReactFlow>
+            <Panel position="top-right">
+              <Button onClick={handleSave} data-action="save-flow" className="inline-flex h-9 items-center text-xs font-semibold">
+                Save Flow
+              </Button>
+            </Panel>
+          </ReactFlow>
+        ) : (
+          <div className="grid h-full w-full place-items-center text-xs font-medium text-slate-500">Preparing canvas...</div>
+        )}
       </div>
     </div>
   )

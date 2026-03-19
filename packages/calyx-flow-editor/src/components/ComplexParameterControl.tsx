@@ -193,12 +193,12 @@ export function ComplexParameterControl({ parameter, onChange }: ComplexParamete
 
   return (
     <div
-      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2.5"
+      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2"
       data-has-value={hasValue}
       data-is-complex={isComplexValue}
       data-param-name={parameter.name}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-1.5">
           <span className="text-xs font-medium text-slate-800">{parameter.name}</span>
           <SchemaInfoPopover title={parameter.name} schema={parameter.schema} description={parameter.description} />
@@ -224,8 +224,6 @@ export function ComplexParameterControl({ parameter, onChange }: ComplexParamete
           rows={2}
         />
       </div>
-
-      {parameter.description && <div className="mt-2 text-[11px] leading-relaxed text-slate-500">{parameter.description}</div>}
 
       {/* Modal */}
       {isModalOpen && (

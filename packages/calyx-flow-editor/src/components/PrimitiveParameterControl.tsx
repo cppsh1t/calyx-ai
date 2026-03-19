@@ -229,18 +229,19 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
   }
 
   return (
-    <div className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2.5" data-has-value={hasValue} data-param-name={parameter.name}>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="inline-flex items-center gap-1.5">
-          <span className="text-xs font-medium text-slate-800">{parameter.name}</span>
-          <SchemaInfoPopover title={parameter.name} schema={parameter.schema} description={parameter.description} />
-        </div>
+    <div className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2" data-has-value={hasValue} data-param-name={parameter.name}>
+      <div className="mb-1.5 inline-flex items-center gap-1.5">
+        <span className="text-xs font-medium text-slate-800">{parameter.name}</span>
+        <SchemaInfoPopover title={parameter.name} schema={parameter.schema} description={parameter.description} />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">{renderControl()}</div>
         {hasValue && (
           <Button
             onClick={handleClear}
             variant="outline"
             size="sm"
-            className="h-6 px-2 text-[11px] text-slate-500"
+            className="h-8 shrink-0 px-2.5 text-[11px] text-slate-500"
             aria-label={`Clear ${parameter.name}`}
             title="Clear value"
             data-action="clear"
@@ -249,8 +250,6 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
           </Button>
         )}
       </div>
-      <div>{renderControl()}</div>
-      {parameter.description && <div className="mt-2 text-[11px] leading-relaxed text-slate-500">{parameter.description}</div>}
     </div>
   )
 }
