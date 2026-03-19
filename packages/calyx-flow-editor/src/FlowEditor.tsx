@@ -337,6 +337,8 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
             defaultEdgeOptions={{
               type: 'smoothstep',
               animated: false,
+              selectable: false,
+              focusable: false,
               markerEnd: {
                 type: MarkerType.ArrowClosed,
                 width: 16,
@@ -359,7 +361,7 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
             zoomOnScroll
             panOnScroll
             selectionOnDrag
-            elevateEdgesOnSelect
+            elevateEdgesOnSelect={false}
             fitViewOptions={{
               maxZoom: 1.1,
               padding: 0.3,

@@ -161,6 +161,8 @@ export function domainEdgeToXYFlowEdge(edge: Edge): XYFlowEdge {
     target: edge.to.nodeId,
     sourceHandle,
     targetHandle,
+    selectable: false,
+    focusable: false,
     // Preserve original edge data for round-trip
     data: {
       _domainEdge: edge,

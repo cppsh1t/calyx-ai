@@ -107,24 +107,6 @@ export function FlowNode({ data }: FlowNodeProps) {
     onParameterChange?.(param.name, value)
   }
 
-  const renderPortIcon = (direction: 'input' | 'output') => {
-    if (direction === 'input') {
-      return (
-        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" aria-hidden="true">
-          <path d="M3 10h10" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-          <path d="m9 6 4 4-4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )
-    }
-
-    return (
-      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" aria-hidden="true">
-        <path d="M17 10H7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-        <path d="m11 6-4 4 4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    )
-  }
-
   const renderInputPort = (port: NodePort) => {
     return (
       <div
@@ -146,7 +128,6 @@ export function FlowNode({ data }: FlowNodeProps) {
             transform: 'translateY(-50%)',
           }}
         />
-        <span className="text-slate-500">{renderPortIcon('input')}</span>
         <span className="max-w-[88px] truncate">{port.name}</span>
         <SchemaInfoPopover title={port.name} schema={port.schema} description={port.description} className="opacity-80" />
       </div>
@@ -159,7 +140,6 @@ export function FlowNode({ data }: FlowNodeProps) {
         key={port.id}
         className="group/port relative inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm"
       >
-        <span className="text-slate-500">{renderPortIcon('output')}</span>
         <span className="max-w-[88px] truncate">{port.name}</span>
         <SchemaInfoPopover title={port.name} schema={port.schema} description={port.description} className="opacity-80" />
         <Handle
@@ -182,38 +162,40 @@ export function FlowNode({ data }: FlowNodeProps) {
   }
 
   return (
-    <Card className="w-fit min-w-[180px] max-w-[360px] overflow-hidden rounded-2xl shadow-[0_8px_40px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm">
-      <div>
-        <CardHeader className="rounded-t-2xl bg-slate-900">
-          <CardTitle className="truncate">{data.label}</CardTitle>
-        </CardHeader>
+    <div className="rounded-lg shadow-[0_14px_30px_-8px_rgba(0,0,0,0.75)]">
+      <Card className="w-fit min-w-[180px] max-w-[360px] overflow-hidden rounded-lg backdrop-blur-sm">
+        <div>
+          <CardHeader className="rounded-t-lg bg-slate-900 px-3 py-1.5">
+            <CardTitle className="truncate">{data.label}</CardTitle>
+          </CardHeader>
 
-        {onParameterChange && (primitiveParams.length > 0 || complexParams.length > 0) && (
-          <CardContent className="max-h-72 space-y-1.5 overflow-x-hidden overflow-y-auto p-3">
-            {primitiveParams.length > 0 && (
-              <div className="space-y-2">
-                {primitiveParams.map((param) => (
-                  <PrimitiveParameterControl key={param.name} parameter={param} onChange={handleParameterChange(param)} />
-                ))}
-              </div>
-            )}
-            {complexParams.length > 0 && (
-              <div className="space-y-2">
-                {complexParams.map((param) => (
-                  <ComplexParameterControl key={param.name} parameter={param} onChange={handleParameterChange(param)} />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        )}
-      </div>
-
-      <div className="border-t border-slate-200/80 bg-slate-50/80 p-2">
-        <div className="flex items-start justify-between gap-1.5">
-          <div className="flex min-w-0 max-w-[48%] flex-wrap gap-1.5">{inputs.map(renderInputPort)}</div>
-          <div className="flex min-w-0 max-w-[48%] flex-wrap justify-end gap-1.5">{outputs.map(renderOutputPort)}</div>
+          {onParameterChange && (primitiveParams.length > 0 || complexParams.length > 0) && (
+            <CardContent className="max-h-72 space-y-1.5 overflow-x-hidden overflow-y-auto p-3">
+              {primitiveParams.length > 0 && (
+                <div className="space-y-2">
+                  {primitiveParams.map((param) => (
+                    <PrimitiveParameterControl key={param.name} parameter={param} onChange={handleParameterChange(param)} />
+                  ))}
+                </div>
+              )}
+              {complexParams.length > 0 && (
+                <div className="space-y-2">
+                  {complexParams.map((param) => (
+                    <ComplexParameterControl key={param.name} parameter={param} onChange={handleParameterChange(param)} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          )}
         </div>
-      </div>
-    </Card>
+
+        <div className="border-t border-slate-200/80 bg-slate-50/80 p-2">
+          <div className="flex items-start justify-between gap-1.5">
+            <div className="flex min-w-0 max-w-[48%] flex-wrap gap-1.5">{inputs.map(renderInputPort)}</div>
+            <div className="flex min-w-0 max-w-[48%] flex-wrap justify-end gap-1.5">{outputs.map(renderOutputPort)}</div>
+          </div>
+        </div>
+      </Card>
+    </div>
   )
 }
