@@ -9,9 +9,11 @@
     "start": "NODE_ENV=production bun src/index.ts"
   },
   "dependencies": {
+    "calyx-flow": "workspace:*",
     "react": "^19",
     "react-dom": "^19",
-    "calyx-flow-editor": "workspace:*"
+    "calyx-flow-editor": "workspace:*",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/react": "^19",
