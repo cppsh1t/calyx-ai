@@ -1,5 +1,8 @@
 /** @jsxImportSource react */
 
+import { SchemaInfoPopover } from '@/components/SchemaInfoPopover.tsx'
+import { Button } from '@/components/ui/button.tsx'
+import { Input } from '@/components/ui/input.tsx'
 import { isBoolean, isNumber, isPrimitive, isString } from '@/utils/classify.ts'
 import { fromOption, isSome, none, some } from '@/utils/option.ts'
 import type { NodeParameter, Option } from 'calyx-flow/types'
@@ -163,14 +166,13 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
     switch (primitiveType) {
       case 'string':
         return (
-          <input
+          <Input
             type="text"
             value={isString(currentValue) ? currentValue : ''}
             onChange={handleStringChange}
             placeholder={`Enter ${parameter.name}...`}
             aria-label={parameter.name}
             title={parameter.description}
-            className="primitive-param-input primitive-param-input--string"
             data-param-name={parameter.name}
             data-param-type="string"
           />
@@ -178,14 +180,13 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
 
       case 'number':
         return (
-          <input
+          <Input
             type="number"
             value={isNumber(currentValue) ? currentValue : ''}
             onChange={handleNumberChange}
             placeholder={`Enter ${parameter.name}...`}
             aria-label={parameter.name}
             title={parameter.description}
-            className="primitive-param-input primitive-param-input--number"
             data-param-name={parameter.name}
             data-param-type="number"
           />
@@ -193,30 +194,33 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
 
       case 'boolean':
         return (
-          <label className="primitive-param-boolean-label" data-param-name={parameter.name} data-param-type="boolean">
+          <label
+            className="inline-flex h-8 w-full items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 shadow-sm"
+            data-param-name={parameter.name}
+            data-param-type="boolean"
+          >
             <input
               type="checkbox"
               checked={isBoolean(currentValue) ? currentValue : false}
               onChange={handleBooleanChange}
               aria-label={parameter.name}
               title={parameter.description}
-              className="primitive-param-input primitive-param-input--boolean"
+              className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900"
             />
-            <span className="primitive-param-boolean-text">{parameter.name}</span>
+            <span>Enabled</span>
           </label>
         )
 
       default:
         // Fallback to string input for unknown types
         return (
-          <input
+          <Input
             type="text"
             value={isPrimitive(currentValue) ? String(currentValue) : ''}
             onChange={handleStringChange}
             placeholder={`Enter ${parameter.name}...`}
             aria-label={parameter.name}
             title={parameter.description}
-            className="primitive-param-input primitive-param-input--string"
             data-param-name={parameter.name}
             data-param-type="string"
           />
@@ -225,24 +229,28 @@ export function PrimitiveParameterControl({ parameter, onChange }: PrimitivePara
   }
 
   return (
-    <div className="primitive-parameter-control" data-has-value={hasValue} data-param-name={parameter.name}>
-      <div className="primitive-parameter-header">
-        <span className="primitive-parameter-name">{parameter.name}</span>
+    <div className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2.5" data-has-value={hasValue} data-param-name={parameter.name}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-1.5">
+          <span className="text-xs font-medium text-slate-800">{parameter.name}</span>
+          <SchemaInfoPopover title={parameter.name} schema={parameter.schema} description={parameter.description} />
+        </div>
         {hasValue && (
-          <button
-            type="button"
+          <Button
             onClick={handleClear}
-            className="primitive-parameter-clear"
+            variant="outline"
+            size="sm"
+            className="h-6 px-2 text-[11px] text-slate-500"
             aria-label={`Clear ${parameter.name}`}
             title="Clear value"
             data-action="clear"
           >
-            ×
-          </button>
+            Clear
+          </Button>
         )}
       </div>
-      <div className="primitive-parameter-input-wrapper">{renderControl()}</div>
-      {parameter.description && <div className="primitive-parameter-description">{parameter.description}</div>}
+      <div>{renderControl()}</div>
+      {parameter.description && <div className="mt-2 text-[11px] leading-relaxed text-slate-500">{parameter.description}</div>}
     </div>
   )
 }

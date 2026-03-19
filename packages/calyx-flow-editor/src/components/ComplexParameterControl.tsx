@@ -1,5 +1,8 @@
 /** @jsxImportSource react */
 
+import { SchemaInfoPopover } from '@/components/SchemaInfoPopover.tsx'
+import { Button } from '@/components/ui/button.tsx'
+import { Textarea } from '@/components/ui/textarea.tsx'
 import { isComplex } from '@/utils/classify.ts'
 import { fromOption, isSome, none, some } from '@/utils/option.ts'
 import { isValidationParseError, isValidationSchemaError, isValidationSuccess, validateComplexParameterJson } from '@/utils/validation.ts'
@@ -189,16 +192,28 @@ export function ComplexParameterControl({ parameter, onChange }: ComplexParamete
   }, [])
 
   return (
-    <div className="complex-parameter-control" data-has-value={hasValue} data-is-complex={isComplexValue} data-param-name={parameter.name}>
-      <div className="complex-parameter-header">
-        <span className="complex-parameter-name">{parameter.name}</span>
-        {isComplexValue && <span className="complex-parameter-type-badge">{Array.isArray(currentValue) ? 'array' : 'object'}</span>}
+    <div
+      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2.5"
+      data-has-value={hasValue}
+      data-is-complex={isComplexValue}
+      data-param-name={parameter.name}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-1.5">
+          <span className="text-xs font-medium text-slate-800">{parameter.name}</span>
+          <SchemaInfoPopover title={parameter.name} schema={parameter.schema} description={parameter.description} />
+        </div>
+        {isComplexValue && (
+          <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            {Array.isArray(currentValue) ? 'array' : 'object'}
+          </span>
+        )}
       </div>
 
       {/* Textarea preview - clickable to open modal */}
-      <div className="complex-parameter-preview-wrapper">
-        <textarea
-          className="complex-parameter-preview"
+      <div>
+        <Textarea
+          className="min-h-14 w-full resize-none rounded-md border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30"
           value={previewText}
           readOnly
           onClick={handleOpenModal}
@@ -210,30 +225,40 @@ export function ComplexParameterControl({ parameter, onChange }: ComplexParamete
         />
       </div>
 
-      {parameter.description && <div className="complex-parameter-description">{parameter.description}</div>}
+      {parameter.description && <div className="mt-2 text-[11px] leading-relaxed text-slate-500">{parameter.description}</div>}
 
       {/* Modal */}
       {isModalOpen && (
         <div
-          className="complex-parameter-modal-overlay"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-[1px]"
           onClick={handleCancel}
           role="dialog"
           aria-modal="true"
           aria-label={`Edit ${parameter.name}`}
           data-modal-open="true"
         >
-          <div className="complex-parameter-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="complex-parameter-modal-header">
-              <h3 className="complex-parameter-modal-title">Edit {parameter.name}</h3>
-              <button type="button" className="complex-parameter-modal-close" onClick={handleCancel} aria-label="Cancel" data-action="cancel">
-                ×
-              </button>
+          <div
+            className="w-full max-w-xl rounded-xl border border-slate-200/80 bg-white/95 shadow-2xl ring-1 ring-black/5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+              <h3 className="text-sm font-semibold text-slate-900">Edit {parameter.name}</h3>
+              <Button
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-sm text-slate-500 transition hover:text-slate-900"
+                onClick={handleCancel}
+                aria-label="Cancel"
+                data-action="cancel"
+                variant="outline"
+                size="icon"
+              >
+                x
+              </Button>
             </div>
 
-            <div className="complex-parameter-modal-body">
-              {parameter.description && <p className="complex-parameter-modal-description">{parameter.description}</p>}
-              <textarea
-                className="complex-parameter-modal-editor"
+            <div className="space-y-3 px-4 py-3">
+              {parameter.description && <p className="text-xs text-slate-500">{parameter.description}</p>}
+              <Textarea
+                className="min-h-56 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs leading-relaxed text-slate-800 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30"
                 value={draftText}
                 onChange={handleDraftChange}
                 placeholder="Enter JSON value..."
@@ -248,15 +273,15 @@ export function ComplexParameterControl({ parameter, onChange }: ComplexParamete
               {/* Validation error display */}
               {validationError && (
                 <div
-                  className="complex-parameter-modal-error"
+                  className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
                   data-testid="validation-error"
                   data-error-type={validationError.type}
                   role="alert"
                   id="validation-error"
                 >
-                  <div className="complex-parameter-modal-error-message">{validationError.message}</div>
+                  <div>{validationError.message}</div>
                   {validationError.type === 'schema' && validationError.issues.length > 0 && (
-                    <ul className="complex-parameter-modal-error-issues">
+                    <ul className="mt-1 list-disc space-y-1 pl-4">
                       {validationError.issues.map((issue, index) => (
                         <li key={index} data-issue-path={issue.path.join('.')}>
                           {issue.path.length > 0 ? `${issue.path.join('.')}: ${issue.message}` : issue.message}
@@ -268,13 +293,23 @@ export function ComplexParameterControl({ parameter, onChange }: ComplexParamete
               )}
             </div>
 
-            <div className="complex-parameter-modal-footer">
-              <button type="button" className="complex-parameter-modal-btn complex-parameter-modal-btn--cancel" onClick={handleCancel} data-action="cancel">
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-4 py-3">
+              <Button
+                className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:text-slate-900"
+                onClick={handleCancel}
+                data-action="cancel"
+                variant="outline"
+              >
                 Cancel
-              </button>
-              <button type="button" className="complex-parameter-modal-btn complex-parameter-modal-btn--confirm" onClick={handleConfirm} data-action="confirm">
+              </Button>
+              <Button
+                className="inline-flex h-8 items-center rounded-md border border-slate-900 bg-slate-900 px-3 text-xs font-medium text-white transition hover:bg-slate-800"
+                onClick={handleConfirm}
+                data-action="confirm"
+                variant="default"
+              >
                 Confirm
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -2,7 +2,16 @@
 
 import { extractDomainEdges, extractDomainNodes, flowToReactFlow, parseHandleId } from '@/adapters/flow-reactflow.ts'
 import { FlowNode } from '@/components/FlowNode.tsx'
+import { Button } from '@/components/ui/button.tsx'
+import '@/styles/reactflow.css'
 import {
+  Background,
+  BackgroundVariant,
+  ConnectionLineType,
+  Controls,
+  MarkerType,
+  MiniMap,
+  Panel,
   ReactFlow,
   addEdge,
   applyEdgeChanges,
@@ -275,15 +284,8 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
   }, [buildCanonicalFlow, onSave])
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div style={{ flex: 1 }}>
+    <div className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 via-slate-50 to-white shadow-[0_8px_40px_-26px_rgba(15,23,42,0.55)]">
+      <div className="h-full w-full">
         <ReactFlow
           nodes={nodesWithCallbacks}
           edges={edges}
@@ -292,20 +294,62 @@ export function FlowEditor({ flow, onSave }: FlowEditorProps) {
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           isValidConnection={isValidConnection}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: false,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 16,
+              height: 16,
+              color: '#334155',
+            },
+            style: {
+              stroke: '#334155',
+              strokeWidth: 2,
+            },
+          }}
+          connectionLineType={ConnectionLineType.SmoothStep}
+          connectionLineStyle={{
+            stroke: '#475569',
+            strokeWidth: 2,
+            strokeDasharray: '5 4',
+          }}
+          proOptions={{ hideAttribution: true }}
+          panOnDrag
+          zoomOnScroll
+          panOnScroll
+          selectionOnDrag
+          elevateEdgesOnSelect
+          fitViewOptions={{
+            maxZoom: 1.1,
+            padding: 0.3,
+          }}
+          className="workflow-editor-canvas"
           fitView
-        />
-      </div>
-      {/* Save button for triggering canonical save */}
-      <div
-        style={{
-          padding: '8px',
-          borderTop: '1px solid #ddd',
-          background: '#f5f5f5',
-        }}
-      >
-        <button type="button" onClick={handleSave} data-action="save-flow">
-          Save Flow
-        </button>
+        >
+          <Background variant={BackgroundVariant.Dots} size={1} gap={18} color="#cbd5e1" />
+          <Background variant={BackgroundVariant.Cross} size={1} gap={90} color="#e2e8f0" />
+          <MiniMap
+            pannable
+            zoomable
+            className="!rounded-xl !border !border-slate-200/80 !bg-white/95 !shadow-lg"
+            maskColor="rgba(148, 163, 184, 0.12)"
+            nodeColor="#334155"
+          />
+          <Controls className="!overflow-hidden !rounded-xl !border !border-slate-200/80 !bg-white/95 !shadow-lg [&>button]:!h-8 [&>button]:!w-8 [&>button]:!border-slate-200 [&>button]:!text-slate-700 [&>button:hover]:!bg-slate-100" />
+
+          <Panel position="top-left">
+            <div className="rounded-lg border border-slate-200/80 bg-white/85 px-3 py-1.5 text-xs font-medium tracking-wide text-slate-600 shadow-sm backdrop-blur-sm">
+              Workflow Canvas
+            </div>
+          </Panel>
+
+          <Panel position="top-right">
+            <Button onClick={handleSave} data-action="save-flow" className="inline-flex h-9 items-center text-xs font-semibold">
+              Save Flow
+            </Button>
+          </Panel>
+        </ReactFlow>
       </div>
     </div>
   )
