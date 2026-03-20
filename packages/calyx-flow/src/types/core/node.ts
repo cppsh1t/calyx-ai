@@ -6,136 +6,106 @@ type Position = {
   y: number
 }
 
-type NodeEmitterEvent = {
-  type: string
-  node: Node
-  data: any
+type NodeExecuteContext = {}
+type NodeExecutor<T = any> = {
+  outputName: string //bind a nodeoutput port
+  func: (ctx: NodeExecuteContext) => Promise<T>
 }
 
-type NodeEmitter = (event: NodeEmitterEvent) => void
-
-type ExecutionContext = {
-  node: Node
-  parameters: Option<NodeParameter[]>
-  inputs: Option<NodePort[]>
-  outputs: Option<NodePort[]>
-  abort: AbortController
-  emitter: NodeEmitter
-}
-
-type NodeExecutor = {
-  execute(ctx: ExecutionContext): Promise<void>
-}
-
-type NodePort = {
+//NodeInputPort Intancese type
+type NodeInputPort<T = any> = {
   id: string
   name: string
-  schema: ZodType
-  direction: 'input' | 'output'
   description: string
-  value: Option<any>
+  schema: ZodType
+  value: Option<T>
 }
 
-type NodeParameter = {
+const NodeInputPortDataSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  schema: z.record(z.string(), z.any()), //json schema
+  value: z.unknown().optional(),
+})
+
+type NodeInputPortData = z.infer<typeof NodeInputPortDataSchema>
+
+type NodeOutputPort<T = any> = {
+  id: string
   name: string
-  schema: ZodType
   description: string
-  value: Option<any>
+  schema: ZodType
+  value: Option<T>
+  requiredInputs: Option<string[]> // required input names
 }
+
+const NodeOutputPortDataSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  schema: z.record(z.string(), z.any()), //json schema
+  value: z.unknown().optional(),
+  requiredInputs: z.array(z.string()).optional(),
+})
+
+type NodeOutputPortData = z.infer<typeof NodeOutputPortDataSchema>
+
+type NodeParameter<T = any> = {
+  name: string
+  description: string
+  schema: ZodType
+  value: Option<T>
+}
+
+const NodeParameterSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  schema: z.custom<ZodType>((v) => v instanceof ZodType),
+  value: z.unknown().optional()
+})
+
+const NodeParameterDataSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  schema: z.record(z.string(), z.any()), //json schema
+  value: z.unknown().optional(),
+})
+
+type NodeParameterData = z.infer<typeof NodeParameterDataSchema>
 
 type Node = {
   id: string
   name: string
   description: string
-  position: Position
-  symbol: Option<string>
-  group: Option<string>
-  parameters: Option<NodeParameter[]>
-  inputs: Option<NodePort[]>
-  outputs: Option<NodePort[]>
-  executor: NodeExecutor
+  docs: string //markdown
+  parameters: Option<NodeParameter>
+  inputs: Option<NodeInputPort>
+  outputs: Option<NodeOutputPort>
+  executors: Array<NodeExecutor>
 }
 
 type NodeDefinition = Omit<Node, 'id'>
 
-type Edge = {
-  from: { nodeId: string; portId: string }
-  to: { nodeId: string; portId: string }
-}
-
-export type { Edge, ExecutionContext, Node, NodeDefinition, NodeEmitter, NodeEmitterEvent, NodeExecutor, NodeParameter, NodePort, Position }
-
-// Option schema helper
-const OptionSchema = <T>(valueSchema: z.ZodType<T>) =>
-  z.union([z.object({ type: z.literal('Some'), value: valueSchema }), z.object({ type: z.literal('None') })])
-
-// Definition layer (registry): holds executable Zod schema objects.
-// Data layer (flow object): holds only id/value overrides and resolves schema from registry.
-const NodePortDefinitionSchema = z.object({
+const NodeDataSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string(),
-  direction: z.enum(['input', 'output']),
-  schema: z.custom<ZodType>((value) => value instanceof ZodType),
-  value: z.any(),
-})
-
-const NodeParameterDefinitionSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  schema: z.custom<ZodType>((value) => value instanceof ZodType),
-  value: z.any(),
-})
-
-// NodeDefinition validation schema
-const NodeDefinitionSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  position: z.object({ x: z.number(), y: z.number() }),
-  symbol: OptionSchema(z.string()),
-  group: OptionSchema(z.string()),
-  parameters: OptionSchema(z.array(NodeParameterDefinitionSchema)),
-  inputs: OptionSchema(z.array(NodePortDefinitionSchema)),
-  outputs: OptionSchema(z.array(NodePortDefinitionSchema)),
-  executor: z.object({ execute: z.function() }),
-})
-
-// Node registry key type: namespace/group
-type NodeRegistryKey = `${string}/${string}`
-
-// NodePortData schema - only id and value for input/output data
-const NodePortDataSchema = z.object({
-  id: z.string(),
-  value: z.any(),
-})
-
-// NodeParameterData schema - only name and value for parameter data
-const NodeParameterDataSchema = z.object({
-  name: z.string(),
-  value: z.any(),
-})
-
-// Node schema for object-to-node conversion (matches NodeRegistry key format)
-// Contains only data, schema validation uses NodeDefinition from registry
-const NodeSchema = z.object({
-  id: z.string().optional(),
-  key: z.string().refine((val) => /^[^/]+\/[^/]+$/.test(val), {
-    message: 'Key must be in format: namespace/group',
-  }) as z.ZodType<NodeRegistryKey>,
-  name: z.string(),
-  description: z.string(),
-  position: z.object({ x: z.number(), y: z.number() }),
-  symbol: z.string().optional(),
   parameters: z.array(NodeParameterDataSchema).optional(),
-  inputs: z.array(NodePortDataSchema).optional(),
-  outputs: z.array(NodePortDataSchema).optional(),
+  inputs: z.array(NodeInputPortDataSchema).optional(),
+  outputs: z.array(NodeOutputPortDataSchema).optional(),
 })
 
-const EdgeSchema = z.object({
-  from: z.object({ nodeId: z.string(), portId: z.string() }),
-  to: z.object({ nodeId: z.string(), portId: z.string() }),
-})
-
-export type { NodeRegistryKey }
-
-export { EdgeSchema, NodeDefinitionSchema, NodeSchema }
+export { NodeDataSchema, NodeInputPortDataSchema, NodeOutputPortDataSchema, NodeParameterDataSchema, NodeParameterSchema }
+export type {
+  Node,
+  NodeDefinition,
+  NodeExecuteContext,
+  NodeExecutor,
+  NodeInputPort,
+  NodeInputPortData,
+  NodeOutputPort,
+  NodeOutputPortData,
+  NodeParameter,
+  NodeParameterData,
+  Position,
+}
