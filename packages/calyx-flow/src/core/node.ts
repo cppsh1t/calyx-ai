@@ -1,5 +1,6 @@
-import type { NodeInputPort, NodeInputPortData, NodeOutputPort, NodeOutputPortData, NodeParameter, NodeParameterData } from '@/types/core/node.ts'
+import type { Node, NodeInputPort, NodeInputPortData, NodeOutputPort, NodeOutputPortData, NodeParameter, NodeParameterData } from '@/types/core/node.ts'
 import {
+  NodeDataSchema,
   NodeInputPortDataSchema,
   NodeInputPortSchema,
   NodeOutputPortDataSchema,
@@ -10,6 +11,7 @@ import {
 import type { Option } from '@/types/structure'
 import { None, Some } from '@/utils/structure'
 import z from 'zod'
+import type { NodeRegistry } from './registry.ts'
 
 function createNodeParameterBuilder(data?: Partial<NodeParameterData>) {
   let state: Partial<NodeParameterData> = {
@@ -235,4 +237,136 @@ function createNodeOutputPortBuilder(data?: Partial<NodeOutputPortData>) {
   }
 }
 
-export { createNodeInputPortBuilder, createNodeOutputPortBuilder, createNodeParameterBuilder }
+type NodeData = {
+  id: string
+  key: `${string}/${string}`
+  name: string
+  parameters?: NodeParameterData[]
+  inputs?: NodeInputPortData[]
+  outputs?: NodeOutputPortData[]
+}
+
+function createNodeBuilder(data?: Partial<NodeData>) {
+  let state: Partial<NodeData> = {
+    id: data?.id,
+    key: data?.key,
+    name: data?.name,
+    parameters: data?.parameters,
+    inputs: data?.inputs,
+    outputs: data?.outputs,
+  }
+  let registry: NodeRegistry | null = null
+
+  return {
+    setId(id: NodeData['id']) {
+      state.id = id
+      return this
+    },
+    setKey(key: NodeData['key']) {
+      state.key = key
+      return this
+    },
+    setName(name: NodeData['name']) {
+      state.name = name
+      return this
+    },
+    setParameters(parameters: NodeData['parameters']) {
+      state.parameters = parameters
+      return this
+    },
+    setInputs(inputs: NodeData['inputs']) {
+      state.inputs = inputs
+      return this
+    },
+    setOutputs(outputs: NodeData['outputs']) {
+      state.outputs = outputs
+      return this
+    },
+    setRegistry(nodeRegistry: NodeRegistry) {
+      registry = nodeRegistry
+      return this
+    },
+    from(obj: object) {
+      const result = NodeDataSchema.safeParse(obj)
+      if (!result.success) {
+        throw new Error(`Invalid NodeData: ${result.error.message}`)
+      }
+      const data = result.data
+      state = {
+        id: data.id,
+        key: data.key,
+        name: data.name,
+        parameters: data.parameters,
+        inputs: data.inputs,
+        outputs: data.outputs,
+      }
+      return this
+    },
+    build(): Node {
+      if (!registry) {
+        throw new Error('NodeRegistry is required to build a Node')
+      }
+      if (!state.key) {
+        throw new Error('Node key is required to build a Node')
+      }
+
+      const entry = registry.get(state.key)
+      if (!entry) {
+        throw new Error(`Node definition not found for key: "${state.key}"`)
+      }
+
+      const definition = entry.definition
+
+      if (!state.id) {
+        throw new Error('Node id is required to build a Node')
+      }
+
+      const nodeName = state.name ?? definition.name
+
+      // Build parameters
+      let optionParameters: Option<Array<NodeParameter>>
+      if (state.parameters && state.parameters.length > 0) {
+        // If NodeData has parameters, use them to build NodeParameter instances
+        const params = state.parameters.map((paramData) => createNodeParameterBuilder(paramData).build())
+        optionParameters = Some(params) // For now, take the first one
+      } else {
+        optionParameters = None
+      }
+
+      // Build inputs
+      let optionInputs: Option<Array<NodeInputPort>>
+      if (state.inputs && state.inputs.length > 0) {
+        const inputs = state.inputs.map((inputData) => createNodeInputPortBuilder(inputData).build())
+        optionInputs = Some(inputs) // For now, take the first one
+      } else {
+        optionInputs = None
+      }
+
+      // Build outputs
+      let optionOutputs: Option<Array<NodeOutputPort>>
+      if (state.outputs && state.outputs.length > 0) {
+        const outputs = state.outputs.map((outputData) => createNodeOutputPortBuilder(outputData).build())
+        optionOutputs = Some(outputs) // For now, take the first one
+      } else {
+        optionOutputs = None
+      }
+
+      const node: Node = {
+        id: state.id,
+        name: nodeName,
+        description: definition.description,
+        docs: definition.docs,
+        state: 'wait',
+        group: definition.group,
+        parameters: optionParameters,
+        inputs: optionInputs,
+        outputs: optionOutputs,
+        executors: definition.executors,
+      }
+
+      return node
+    },
+  }
+}
+
+export { createNodeBuilder, createNodeInputPortBuilder, createNodeOutputPortBuilder, createNodeParameterBuilder }

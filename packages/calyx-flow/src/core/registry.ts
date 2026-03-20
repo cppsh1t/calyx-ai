@@ -1,5 +1,4 @@
 import type { NodeDefinition } from '@/types'
-import { NodeDefinitionSchema } from '@/types/core/node.ts'
 
 // Node registry key type: namespace/group
 type NodeRegistryKey = `${string}/${string}`
@@ -25,12 +24,6 @@ class NodeRegistry {
     const [namespace, group] = key.split('/')
     if (!namespace || !group) {
       throw new Error(`Invalid registry key: ${key}. Expected format: namespace/group`)
-    }
-
-    // Validate definition with Zod schema
-    const result = NodeDefinitionSchema.safeParse(definition)
-    if (!result.success) {
-      throw new Error(`Invalid NodeDefinition for key "${key}": ${result.error.message}`)
     }
 
     const entry: NodeRegistryEntry = {

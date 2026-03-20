@@ -6,6 +6,8 @@ type Position = {
   y: number
 }
 
+const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.string().min(1)])
+
 type NodeExecuteContext = {}
 type NodeExecutor<T = any> = {
   outputName: string //bind a nodeoutput port
@@ -56,7 +58,7 @@ const NodeOutputPortSchema = <T extends ZodType>(valueSchema: T) =>
     description: z.string(),
     schema: z.custom<ZodType>((v) => v instanceof z.ZodType, { message: 'schema must be a Zod schema' }),
     value: optionSchema(valueSchema),
-    requiredInputs: optionSchema(z.array(z.string()))
+    requiredInputs: optionSchema(z.array(z.string())),
   })
 
 const NodeOutputPortDataSchema = z.object({
@@ -94,28 +96,42 @@ const NodeParameterDataSchema = z.object({
 
 type NodeParameterData = z.infer<typeof NodeParameterDataSchema>
 
+type NodeState = 'wait' | 'running' | 'finish'
+
 type Node = {
   id: string
   name: string
   description: string
   docs: string //markdown
-  parameters: Option<NodeParameter>
-  inputs: Option<NodeInputPort>
-  outputs: Option<NodeOutputPort>
+  state: NodeState //default wait
+  group: string
+  parameters: Option<Array<NodeParameter>>
+  inputs: Option<Array<NodeInputPort>>
+  outputs: Option<Array<NodeOutputPort>>
   executors: Array<NodeExecutor>
 }
 
-type NodeDefinition = Omit<Node, 'id'>
+type NodeDefinition = Omit<Node, 'id' | 'state'>
 
 const NodeDataSchema = z.object({
   id: z.string(),
+  key: NodeRegistryKeySchema,
   name: z.string(),
   parameters: z.array(NodeParameterDataSchema).optional(),
   inputs: z.array(NodeInputPortDataSchema).optional(),
   outputs: z.array(NodeOutputPortDataSchema).optional(),
 })
 
-export { NodeDataSchema, NodeInputPortDataSchema, NodeOutputPortDataSchema, NodeParameterDataSchema, NodeParameterSchema, NodeInputPortSchema, NodeOutputPortSchema }
+export {
+  NodeDataSchema,
+  NodeInputPortDataSchema,
+  NodeInputPortSchema,
+  NodeOutputPortDataSchema,
+  NodeOutputPortSchema,
+  NodeParameterDataSchema,
+  NodeParameterSchema,
+  NodeRegistryKeySchema,
+}
 export type {
   Node,
   NodeDefinition,
@@ -127,5 +143,6 @@ export type {
   NodeOutputPortData,
   NodeParameter,
   NodeParameterData,
+  NodeState,
   Position,
 }
