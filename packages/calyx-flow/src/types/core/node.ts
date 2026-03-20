@@ -1,5 +1,5 @@
 ﻿import { ZodType, z } from 'zod'
-import type { Option } from '../structure'
+import { optionSchema, type Option } from '../structure'
 
 type Position = {
   x: number
@@ -21,6 +21,15 @@ type NodeInputPort<T = any> = {
   value: Option<T>
 }
 
+const NodeInputPortSchema = <T extends ZodType>(valueSchema: T) =>
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    schema: z.custom<ZodType>((v) => v instanceof z.ZodType, { message: 'schema must be a Zod schema' }),
+    value: optionSchema(valueSchema),
+  })
+
 const NodeInputPortDataSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -40,6 +49,16 @@ type NodeOutputPort<T = any> = {
   requiredInputs: Option<string[]> // required input names
 }
 
+const NodeOutputPortSchema = <T extends ZodType>(valueSchema: T) =>
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    schema: z.custom<ZodType>((v) => v instanceof z.ZodType, { message: 'schema must be a Zod schema' }),
+    value: optionSchema(valueSchema),
+    requiredInputs: optionSchema(z.array(z.string()))
+  })
+
 const NodeOutputPortDataSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -58,12 +77,13 @@ type NodeParameter<T = any> = {
   value: Option<T>
 }
 
-const NodeParameterSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  schema: z.custom<ZodType>((v) => v instanceof ZodType),
-  value: z.unknown().optional()
-})
+const NodeParameterSchema = <T extends ZodType>(valueSchema: T) =>
+  z.object({
+    name: z.string(),
+    description: z.string(),
+    schema: z.custom<ZodType>((v) => v instanceof z.ZodType, { message: 'schema must be a Zod schema' }),
+    value: optionSchema(valueSchema),
+  })
 
 const NodeParameterDataSchema = z.object({
   name: z.string(),
@@ -95,7 +115,7 @@ const NodeDataSchema = z.object({
   outputs: z.array(NodeOutputPortDataSchema).optional(),
 })
 
-export { NodeDataSchema, NodeInputPortDataSchema, NodeOutputPortDataSchema, NodeParameterDataSchema, NodeParameterSchema }
+export { NodeDataSchema, NodeInputPortDataSchema, NodeOutputPortDataSchema, NodeParameterDataSchema, NodeParameterSchema, NodeInputPortSchema, NodeOutputPortSchema }
 export type {
   Node,
   NodeDefinition,
