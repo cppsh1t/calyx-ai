@@ -11,6 +11,7 @@ const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.strin
 type NodeExecuteContext = {}
 type NodeExecutor<T = any> = {
   outputName: string //bind a nodeoutput port
+  state: NodeState
   func: (ctx: NodeExecuteContext) => Promise<T>
 }
 
@@ -122,6 +123,15 @@ const NodeDataSchema = z.object({
   outputs: z.array(NodeOutputPortDataSchema).optional(),
 })
 
+const EdgeSchema = z.object({
+  sourceNodeId: z.string(),
+  targetNodeId: z.string(),
+  sourcePortId: z.string(),
+  targetPortId: z.string()
+})
+
+type Edge = z.infer<typeof EdgeSchema>
+
 export {
   NodeDataSchema,
   NodeInputPortDataSchema,
@@ -131,6 +141,7 @@ export {
   NodeParameterDataSchema,
   NodeParameterSchema,
   NodeRegistryKeySchema,
+  EdgeSchema
 }
 export type {
   Node,
@@ -145,4 +156,5 @@ export type {
   NodeParameterData,
   NodeState,
   Position,
+  Edge
 }
