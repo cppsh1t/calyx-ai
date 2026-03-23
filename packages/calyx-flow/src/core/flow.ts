@@ -1,4 +1,5 @@
 import type { Edge, Node, NodeExecutor, NodeInputPort, NodeOutputPort, Option } from '@/types'
+import { catchPromise } from '@/utils/promise'
 import { None, Some } from '@/utils/structure'
 
 //TODO: update node state
@@ -37,9 +38,13 @@ async function executeNode(node: Node, nodes: Node[], edges: Edge[]) {
       if (checkExecutorAvaible(executor, node.inputs, targetOutput)) {
         const ctx = makeExecutorContext()
         executor.state = 'running'
-        const result = await executor.func(ctx)
+        const result = await catchPromise(executor.func(ctx))
         executor.state = 'finish'
-        await setNodeOutput(targetOutput, nodes, edges, result)
+        if (result.type === 'success') {
+          await setNodeOutput(targetOutput, nodes, edges, result)
+        } else {
+          //TODO: impl error handle in future
+        }
       }
     })
   )

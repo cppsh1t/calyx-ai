@@ -361,7 +361,10 @@ function createNodeBuilder(data?: Partial<NodeData>) {
         parameters: optionParameters,
         inputs: optionInputs,
         outputs: optionOutputs,
-        executors: definition.executors,
+        executors: definition.executors.map((executor) => ({
+          ...executor,
+          state: 'wait',
+        })),
       }
 
       return node
