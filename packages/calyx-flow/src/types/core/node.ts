@@ -8,7 +8,7 @@ type Position = {
 
 const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.string().min(1)])
 
-type NodeExecuteContext = {}
+type NodeExecuteContext = {inputs: Option<NodeInputPort[]>, parameters: Option<NodeParameter[]>, abort: AbortController}
 type NodeExecuteResult<T = any> = {
   continue: boolean
   data: T | null

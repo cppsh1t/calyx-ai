@@ -1,6 +1,9 @@
-import type { Edge, Node, NodeExecutor, NodeInputPort, NodeOutputPort, Option } from '@/types'
+import type { Edge, Flow, FlowConfig, FlowRaw, Node, NodeExecuteContext, NodeExecutor, NodeInputPort, NodeOutputPort, Option } from '@/types'
+import { FlowConfigSchema } from '@/types/core/flow'
 import { catchPromise } from '@/utils/promise'
 import { None, Some } from '@/utils/structure'
+import { createNodeBuilder } from './node'
+import type { NodeRegistry } from './registry'
 
 function findOutputPortNext(output: NodeOutputPort, edges: Edge[]) {
   const targetEdges = edges.filter((item) => item.sourcePortId === output.id)
@@ -20,8 +23,8 @@ function checkExecutorAvailable(executor: NodeExecutor, inputs: Option<NodeInput
   return true
 }
 
-function makeExecutorContext() {
-  return {}
+function makeExecutorContext(node: Node): NodeExecuteContext {
+  return { inputs: node.inputs, parameters: node.parameters, abort: new AbortController() }
 }
 
 async function executeNode(node: Node, nodes: Node[], edges: Edge[]) {
@@ -33,14 +36,13 @@ async function executeNode(node: Node, nodes: Node[], edges: Edge[]) {
       const targetOutput = outputs.find((item) => item.name === executor.outputName)
       if (!targetOutput) return
       if (checkExecutorAvailable(executor, node.inputs, targetOutput)) {
-        const ctx = makeExecutorContext()
+        const ctx = makeExecutorContext(node)
         executor.used = true
         node.runningTimes += 1
         const result = await catchPromise(executor.func(ctx))
         node.runningTimes -= 1
         if (result.type === 'success') {
-          if (result.value.continue)
-          await setNodeOutput(targetOutput, nodes, edges, result.value.data)
+          if (result.value.continue) await setNodeOutput(targetOutput, nodes, edges, result.value.data)
         } else {
           //TODO: impl error handle in future
         }
@@ -96,4 +98,37 @@ async function setNodeOutput(nodeOutput: NodeOutputPort, nodes: Node[], edges: E
       await setNodeInput(targetInput, nodes, edges, valParse.data)
     })
   )
+}
+
+function compileFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
+  const parseRes = FlowConfigSchema.safeParse(flowConfig)
+  if (!parseRes.success) {
+    throw new Error(`FlowConfig validation failed: ${parseRes.error.message}`)
+  }
+
+  const validatedConfig = parseRes.data
+
+  // Build nodes from NodeData using the registry
+  const nodes: Node[] = validatedConfig.nodes.map((nodeData) => {
+    return createNodeBuilder()
+      .setId(nodeData.id)
+      .setKey(nodeData.key)
+      .setName(nodeData.name)
+      .setParameters(nodeData.parameters)
+      .setInputs(nodeData.inputs)
+      .setOutputs(nodeData.outputs)
+      .setRegistry(registry)
+      .build()
+  })
+
+  // Build FlowRaw
+  const flowRaw: FlowRaw = {
+    name: validatedConfig.name,
+    nodes,
+    edges: validatedConfig.edges,
+  }
+
+
+
+  return {} as unknown as Flow
 }
