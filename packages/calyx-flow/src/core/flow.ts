@@ -2,15 +2,13 @@ import type { Edge, Node, NodeExecutor, NodeInputPort, NodeOutputPort, Option } 
 import { catchPromise } from '@/utils/promise'
 import { None, Some } from '@/utils/structure'
 
-//TODO: update node state
-
 function findOutputPortNext(output: NodeOutputPort, edges: Edge[]) {
   const targetEdges = edges.filter((item) => item.sourcePortId === output.id)
   return targetEdges
 }
 
-function checkExecutorAvaible(executor: NodeExecutor, inputs: Option<NodeInputPort[]>, targetOutput: NodeOutputPort) {
-  if (executor.state !== 'wait') return false
+function checkExecutorAvailable(executor: NodeExecutor, inputs: Option<NodeInputPort[]>, targetOutput: NodeOutputPort) {
+  if (executor.used) return false
   const requiredInputs = targetOutput.requiredInputs
   if (requiredInputs.type === 'None') return true
   if (inputs.type === 'None') return false
@@ -27,21 +25,22 @@ function makeExecutorContext() {
 }
 
 async function executeNode(node: Node, nodes: Node[], edges: Edge[]) {
-  if (node.state === 'finish') return
-  const remainExecutors = node.executors.filter((item) => item.state === 'wait')
+  const remainExecutors = node.executors.filter((item) => !item.used)
   if (node.outputs.type === 'None') return
   const outputs = node.outputs.value
   await Promise.all(
     remainExecutors.map(async (executor) => {
       const targetOutput = outputs.find((item) => item.name === executor.outputName)
       if (!targetOutput) return
-      if (checkExecutorAvaible(executor, node.inputs, targetOutput)) {
+      if (checkExecutorAvailable(executor, node.inputs, targetOutput)) {
         const ctx = makeExecutorContext()
-        executor.state = 'running'
+        executor.used = true
+        node.runningTimes += 1
         const result = await catchPromise(executor.func(ctx))
-        executor.state = 'finish'
+        node.runningTimes -= 1
         if (result.type === 'success') {
-          await setNodeOutput(targetOutput, nodes, edges, result)
+          if (result.value.continue)
+          await setNodeOutput(targetOutput, nodes, edges, result.value.data)
         } else {
           //TODO: impl error handle in future
         }
@@ -69,7 +68,7 @@ function findNodeByInputPortId(portId: string, nodes: Node[]): Option<Node> {
 async function setNodeInput(nodeInput: NodeInputPort, nodes: Node[], edges: Edge[], value: any) {
   const valParse = nodeInput.schema.safeParse(value)
   if (!valParse.success) {
-    throw new Error(`Output port "${nodeInput.name}" (id: ${nodeInput.id}) schema validation failed: ${valParse.error.message}`)
+    throw new Error(`Input port "${nodeInput.name}" (id: ${nodeInput.id}) schema validation failed: ${valParse.error.message}`)
   }
   nodeInput.value = Some(valParse.data)
   const node = findNodeByInputPortId(nodeInput.id, nodes)
@@ -94,7 +93,7 @@ async function setNodeOutput(nodeOutput: NodeOutputPort, nodes: Node[], edges: E
       if (targetInputOpt.type === 'None') return
 
       const targetInput = targetInputOpt.value
-      await setNodeInput(targetInput, nodes, edges, value)
+      await setNodeInput(targetInput, nodes, edges, valParse.data)
     })
   )
 }

@@ -9,10 +9,14 @@ type Position = {
 const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.string().min(1)])
 
 type NodeExecuteContext = {}
+type NodeExecuteResult<T = any> = {
+  continue: boolean
+  data: T | null
+}
 type NodeExecutor<T = any> = {
   outputName: string //bind a nodeoutput port
-  state: NodeState
-  func: (ctx: NodeExecuteContext) => Promise<T>
+  used: boolean 
+  func: (ctx: NodeExecuteContext) => Promise<NodeExecuteResult<T>>
 }
 
 //NodeInputPort Intancese type
@@ -97,14 +101,13 @@ const NodeParameterDataSchema = z.object({
 
 type NodeParameterData = z.infer<typeof NodeParameterDataSchema>
 
-type NodeState = 'wait' | 'running' | 'finish'
 
 type Node = {
   id: string
   name: string
   description: string
   docs: string //markdown
-  state: NodeState //default wait
+  runningTimes: number
   group: string
   parameters: Option<Array<NodeParameter>>
   inputs: Option<Array<NodeInputPort>>
@@ -112,7 +115,7 @@ type Node = {
   executors: Array<NodeExecutor>
 }
 
-type NodeDefinition = Omit<Node, 'id' | 'state'>
+type NodeDefinition = Omit<Node, 'id' | 'runningTimes'>
 
 const NodeDataSchema = z.object({
   id: z.string(),
@@ -154,7 +157,7 @@ export type {
   NodeOutputPortData,
   NodeParameter,
   NodeParameterData,
-  NodeState,
+  NodeExecuteResult,
   Position,
   Edge
 }

@@ -356,7 +356,7 @@ function createNodeBuilder(data?: Partial<NodeData>) {
         name: nodeName,
         description: definition.description,
         docs: definition.docs,
-        state: 'wait',
+        runningTimes: 0,
         group: definition.group,
         parameters: optionParameters,
         inputs: optionInputs,

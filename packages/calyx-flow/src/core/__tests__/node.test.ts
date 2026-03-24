@@ -451,7 +451,7 @@ describe('createNodeBuilder', () => {
     expect(node.name).toBe('TestNode')
     expect(node.description).toBe('Description for TestNode')
     expect(node.docs).toBe('# TestNode\nDocumentation')
-    expect(node.state).toBe('wait')
+    expect(node.runningTimes).toBe(0)
     expect(node.group).toBe('test-group')
     expect(node.parameters.type).toBe('None')
     expect(node.inputs.type).toBe('None')
@@ -608,7 +608,11 @@ describe('createNodeBuilder', () => {
   it('should preserve executors from definition', () => {
     const executor = {
       outputName: 'result',
-      func: async () => 'result',
+      used: false,
+      func: async () => ({
+        continue: true,
+        data: 'result',
+      }),
     }
 
     const definition: NodeDefinition = {
