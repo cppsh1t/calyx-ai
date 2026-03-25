@@ -3,8 +3,85 @@ import { FlowConfigSchema } from '@/types/core/flow'
 import { catchPromise } from '@/utils/promise'
 import { None, Some } from '@/utils/structure'
 import { isEmpty } from 'radash'
+import { v4 as uuidv4 } from 'uuid'
 import { createNodeBuilder } from './node'
 import type { NodeRegistry } from './registry'
+
+function makeScopedPortKey(nodeId: string, portId: string): string {
+  return `${nodeId}::${portId}`
+}
+
+function regenerateFlowConfigIds(flowConfig: FlowConfig): FlowConfig {
+  const nodeIdMap = new Map<string, string>()
+  const inputPortIdMap = new Map<string, string>()
+  const outputPortIdMap = new Map<string, string>()
+
+  const nodes = flowConfig.nodes.map((nodeData) => {
+    const newNodeId = uuidv4()
+    nodeIdMap.set(nodeData.id, newNodeId)
+
+    const inputs = nodeData.inputs?.map((input) => {
+      const newInputId = uuidv4()
+      inputPortIdMap.set(makeScopedPortKey(nodeData.id, input.id), newInputId)
+      return {
+        ...input,
+        id: newInputId,
+      }
+    })
+
+    const outputs = nodeData.outputs?.map((output) => {
+      const newOutputId = uuidv4()
+      outputPortIdMap.set(makeScopedPortKey(nodeData.id, output.id), newOutputId)
+      return {
+        ...output,
+        id: newOutputId,
+      }
+    })
+
+    return {
+      ...nodeData,
+      id: newNodeId,
+      inputs,
+      outputs,
+    }
+  })
+
+  const edges = flowConfig.edges.map((edge) => {
+    const sourceNodeId = nodeIdMap.get(edge.sourceNodeId)
+    if (!sourceNodeId) {
+      throw new Error(`Cannot remap edge source node id "${edge.sourceNodeId}" during flow fork.`)
+    }
+
+    const targetNodeId = nodeIdMap.get(edge.targetNodeId)
+    if (!targetNodeId) {
+      throw new Error(`Cannot remap edge target node id "${edge.targetNodeId}" during flow fork.`)
+    }
+
+    const sourcePortId = outputPortIdMap.get(makeScopedPortKey(edge.sourceNodeId, edge.sourcePortId))
+    if (!sourcePortId) {
+      throw new Error(`Cannot remap edge source port id "${edge.sourcePortId}" on node "${edge.sourceNodeId}" during flow fork.`)
+    }
+
+    const targetPortId = inputPortIdMap.get(makeScopedPortKey(edge.targetNodeId, edge.targetPortId))
+    if (!targetPortId) {
+      throw new Error(`Cannot remap edge target port id "${edge.targetPortId}" on node "${edge.targetNodeId}" during flow fork.`)
+    }
+
+    return {
+      ...edge,
+      sourceNodeId,
+      targetNodeId,
+      sourcePortId,
+      targetPortId,
+    }
+  })
+
+  return {
+    ...flowConfig,
+    nodes,
+    edges,
+  }
+}
 
 function findOutputPortNext(output: NodeOutputPort, edges: Edge[]) {
   const targetEdges = edges.filter((item) => item.sourcePortId === output.id)
@@ -121,6 +198,167 @@ function findStartNode(flowRaw: FlowRaw): Node {
   return startNode
 }
 
+function validateNodePortAndExecutorBoundary(flowRaw: FlowRaw): void {
+  const nodeIdSet = new Set<string>()
+
+  for (const node of flowRaw.nodes) {
+    if (nodeIdSet.has(node.id)) {
+      throw new Error(`Flow "${flowRaw.name}" has duplicate node id: "${node.id}".`)
+    }
+    nodeIdSet.add(node.id)
+
+    const inputNames = new Set<string>()
+    const inputIds = new Set<string>()
+    if (node.inputs.type === 'Some') {
+      for (const input of node.inputs.value) {
+        if (inputIds.has(input.id)) {
+          throw new Error(`Node "${node.id}" has duplicate input port id: "${input.id}".`)
+        }
+        if (inputNames.has(input.name)) {
+          throw new Error(`Node "${node.id}" has duplicate input port name: "${input.name}".`)
+        }
+        inputIds.add(input.id)
+        inputNames.add(input.name)
+      }
+    }
+
+    const outputNames = new Set<string>()
+    const outputIds = new Set<string>()
+    if (node.outputs.type === 'Some') {
+      for (const output of node.outputs.value) {
+        if (outputIds.has(output.id)) {
+          throw new Error(`Node "${node.id}" has duplicate output port id: "${output.id}".`)
+        }
+        if (outputNames.has(output.name)) {
+          throw new Error(`Node "${node.id}" has duplicate output port name: "${output.name}".`)
+        }
+        outputIds.add(output.id)
+        outputNames.add(output.name)
+
+        if (output.requiredInputs.type === 'Some') {
+          if (node.inputs.type === 'None') {
+            throw new Error(`Node "${node.id}" output "${output.name}" declares requiredInputs, but this node has no input ports defined.`)
+          }
+
+          for (const requiredInputName of output.requiredInputs.value) {
+            if (!inputNames.has(requiredInputName)) {
+              throw new Error(`Node "${node.id}" output "${output.name}" requires missing input "${requiredInputName}".`)
+            }
+          }
+        }
+      }
+    }
+
+    const outputCount = node.outputs.type === 'Some' ? node.outputs.value.length : 0
+    if (outputCount !== node.executors.length) {
+      throw new Error(`Node "${node.id}" executor/output mismatch: expected ${outputCount} executor(s), got ${node.executors.length}.`)
+    }
+
+    const mappedOutputNames = new Set<string>()
+    for (const executor of node.executors) {
+      if (!outputNames.has(executor.outputName)) {
+        throw new Error(`Node "${node.id}" executor binds unknown output "${executor.outputName}".`)
+      }
+      if (mappedOutputNames.has(executor.outputName)) {
+        throw new Error(`Node "${node.id}" has multiple executors bound to output "${executor.outputName}".`)
+      }
+      mappedOutputNames.add(executor.outputName)
+    }
+
+    for (const outputName of outputNames) {
+      if (!mappedOutputNames.has(outputName)) {
+        throw new Error(`Node "${node.id}" output "${outputName}" has no executor bound.`)
+      }
+    }
+  }
+}
+
+function validateEdgeBoundary(flowRaw: FlowRaw): void {
+  const nodeById = new Map<string, Node>()
+  for (const node of flowRaw.nodes) {
+    nodeById.set(node.id, node)
+  }
+
+  for (const edge of flowRaw.edges) {
+    const sourceNode = nodeById.get(edge.sourceNodeId)
+    if (!sourceNode) {
+      throw new Error(`Edge references missing source node: "${edge.sourceNodeId}".`)
+    }
+
+    const targetNode = nodeById.get(edge.targetNodeId)
+    if (!targetNode) {
+      throw new Error(`Edge references missing target node: "${edge.targetNodeId}".`)
+    }
+
+    const sourceHasOutput = sourceNode.outputs.type === 'Some' && sourceNode.outputs.value.some((item) => item.id === edge.sourcePortId)
+    if (!sourceHasOutput) {
+      const sourceHasInputWithSameId = sourceNode.inputs.type === 'Some' && sourceNode.inputs.value.some((item) => item.id === edge.sourcePortId)
+      if (sourceHasInputWithSameId) {
+        throw new Error(`Edge source port "${edge.sourcePortId}" on node "${sourceNode.id}" is an input port. Edge source must bind an output port.`)
+      }
+      throw new Error(`Edge source port "${edge.sourcePortId}" not found in source node "${sourceNode.id}" outputs.`)
+    }
+
+    const targetHasInput = targetNode.inputs.type === 'Some' && targetNode.inputs.value.some((item) => item.id === edge.targetPortId)
+    if (!targetHasInput) {
+      const targetHasOutputWithSameId = targetNode.outputs.type === 'Some' && targetNode.outputs.value.some((item) => item.id === edge.targetPortId)
+      if (targetHasOutputWithSameId) {
+        throw new Error(`Edge target port "${edge.targetPortId}" on node "${targetNode.id}" is an output port. Edge target must bind an input port.`)
+      }
+      throw new Error(`Edge target port "${edge.targetPortId}" not found in target node "${targetNode.id}" inputs.`)
+    }
+  }
+}
+
+function validateAcyclicBoundary(flowRaw: FlowRaw): void {
+  const adjacency = new Map<string, Set<string>>()
+  for (const node of flowRaw.nodes) {
+    adjacency.set(node.id, new Set<string>())
+  }
+  for (const edge of flowRaw.edges) {
+    const next = adjacency.get(edge.sourceNodeId)
+    if (!next) continue
+    next.add(edge.targetNodeId)
+  }
+
+  const visiting = new Set<string>()
+  const visited = new Set<string>()
+  const stack: string[] = []
+
+  const dfs = (nodeId: string): void => {
+    if (visiting.has(nodeId)) {
+      const cycleStartIndex = stack.indexOf(nodeId)
+      const cyclePath = cycleStartIndex >= 0 ? stack.slice(cycleStartIndex).concat(nodeId) : [nodeId, nodeId]
+      throw new Error(`Flow "${flowRaw.name}" contains a cycle: ${cyclePath.join(' -> ')}.`)
+    }
+    if (visited.has(nodeId)) return
+
+    visiting.add(nodeId)
+    stack.push(nodeId)
+    const nextNodes = adjacency.get(nodeId)
+    if (nextNodes) {
+      for (const nextNodeId of nextNodes) {
+        dfs(nextNodeId)
+      }
+    }
+    stack.pop()
+    visiting.delete(nodeId)
+    visited.add(nodeId)
+  }
+
+  for (const node of flowRaw.nodes) {
+    if (!visited.has(node.id)) {
+      dfs(node.id)
+    }
+  }
+}
+
+function validateFlowBoundary(flowRaw: FlowRaw): void {
+  validateNodePortAndExecutorBoundary(flowRaw)
+  validateEdgeBoundary(flowRaw)
+  validateAcyclicBoundary(flowRaw)
+}
+
 function compileFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
   const parseRes = FlowConfigSchema.safeParse(flowConfig)
   if (!parseRes.success) {
@@ -152,29 +390,35 @@ function compileFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
     return flowRaw
   }
 
-  //TODO: Check boundary conditions
+  const flowRawForBoundaryCheck = buildFlowRaw()
+  validateFlowBoundary(flowRawForBoundaryCheck)
 
-  const buildFlow = (rawBuilder: () => FlowRaw): Flow => {
+  const buildFlow = (): Flow => {
+    let running = false
     const flow: Flow = {
       getName: function (): string {
         return validatedConfig.name
       },
       getRunningStatus: function (): boolean {
-        //TODO: impl in future
-        throw new Error('Function not implemented.')
+        return running
       },
       fork: function (): Flow {
-        return buildFlow(rawBuilder)
+        const forkedConfig = regenerateFlowConfigIds(validatedConfig)
+        return compileFlow(forkedConfig, registry)
       },
       run: async function (signal: AbortController): Promise<FlowRaw> {
         const flowRaw = buildFlowRaw()
         const startNode = findStartNode(flowRaw)
+        running = true
         await executeNode(startNode, flowRaw.nodes, flowRaw.edges, signal)
+        running = false
         return flowRaw
       },
     }
     return flow
   }
 
-  return buildFlow(buildFlowRaw)
+  return buildFlow()
 }
+
+export { compileFlow }
