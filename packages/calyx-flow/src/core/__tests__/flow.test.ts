@@ -250,6 +250,23 @@ describe('compileFlow', () => {
     expect(() => compileFlow(config, createRegistry())).toThrow(/Edge source port/)
   })
 
+  it('should throw when edge output/input schemas are incompatible', () => {
+    const config = createFlowConfig('schema-mismatch-flow')
+    config.nodes[1] = {
+      ...config.nodes[1]!,
+      inputs: [
+        {
+          id: 'port-transform-in',
+          name: 'transformIn',
+          description: 'transform input',
+          schema: { type: 'number' },
+        },
+      ],
+    }
+
+    expect(() => compileFlow(config, createRegistry())).toThrow(/Edge schema mismatch/)
+  })
+
   it('should throw at run-time when flow has no start node', async () => {
     const registry = createRegistry()
     const config = createFlowConfig('no-start-flow')

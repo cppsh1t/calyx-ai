@@ -290,8 +290,8 @@ function validateEdgeBoundary(flowRaw: FlowRaw): void {
       throw new Error(`Edge references missing target node: "${edge.targetNodeId}".`)
     }
 
-    const sourceHasOutput = sourceNode.outputs.type === 'Some' && sourceNode.outputs.value.some((item) => item.id === edge.sourcePortId)
-    if (!sourceHasOutput) {
+    const sourceOutputPort = sourceNode.outputs.type === 'Some' ? sourceNode.outputs.value.find((item) => item.id === edge.sourcePortId) : undefined
+    if (!sourceOutputPort) {
       const sourceHasInputWithSameId = sourceNode.inputs.type === 'Some' && sourceNode.inputs.value.some((item) => item.id === edge.sourcePortId)
       if (sourceHasInputWithSameId) {
         throw new Error(`Edge source port "${edge.sourcePortId}" on node "${sourceNode.id}" is an input port. Edge source must bind an output port.`)
@@ -299,13 +299,87 @@ function validateEdgeBoundary(flowRaw: FlowRaw): void {
       throw new Error(`Edge source port "${edge.sourcePortId}" not found in source node "${sourceNode.id}" outputs.`)
     }
 
-    const targetHasInput = targetNode.inputs.type === 'Some' && targetNode.inputs.value.some((item) => item.id === edge.targetPortId)
-    if (!targetHasInput) {
+    const targetInputPort = targetNode.inputs.type === 'Some' ? targetNode.inputs.value.find((item) => item.id === edge.targetPortId) : undefined
+    if (!targetInputPort) {
       const targetHasOutputWithSameId = targetNode.outputs.type === 'Some' && targetNode.outputs.value.some((item) => item.id === edge.targetPortId)
       if (targetHasOutputWithSameId) {
         throw new Error(`Edge target port "${edge.targetPortId}" on node "${targetNode.id}" is an output port. Edge target must bind an input port.`)
       }
       throw new Error(`Edge target port "${edge.targetPortId}" not found in target node "${targetNode.id}" inputs.`)
+    }
+  }
+}
+
+function validateEdgeSchemaCompatibilityBoundary(flowRaw: FlowRaw): void {
+  const isDeepEqual = (left: unknown, right: unknown): boolean => {
+    if (Object.is(left, right)) return true
+    if (typeof left !== typeof right) return false
+    if (left === null || right === null) return false
+
+    if (Array.isArray(left) && Array.isArray(right)) {
+      if (left.length !== right.length) return false
+      for (let index = 0; index < left.length; index += 1) {
+        if (!isDeepEqual(left[index], right[index])) return false
+      }
+      return true
+    }
+
+    if (typeof left === 'object' && typeof right === 'object') {
+      const leftRecord = left as Record<string, unknown>
+      const rightRecord = right as Record<string, unknown>
+      const leftKeys = Object.keys(leftRecord).sort()
+      const rightKeys = Object.keys(rightRecord).sort()
+      if (leftKeys.length !== rightKeys.length) return false
+
+      for (let index = 0; index < leftKeys.length; index += 1) {
+        const leftKey = leftKeys[index]
+        const rightKey = rightKeys[index]
+        if (!leftKey || !rightKey) return false
+        if (leftKey !== rightKey) return false
+        if (!isDeepEqual(leftRecord[leftKey], rightRecord[rightKey])) return false
+      }
+
+      return true
+    }
+
+    return false
+  }
+
+  const isSchemaCompatible = (sourceSchema: NodeOutputPort['schema'], targetSchema: NodeInputPort['schema']): boolean => {
+    if (sourceSchema === targetSchema) return true
+    return isDeepEqual(sourceSchema.def, targetSchema.def)
+  }
+
+  const nodeById = new Map<string, Node>()
+  for (const node of flowRaw.nodes) {
+    nodeById.set(node.id, node)
+  }
+
+  for (const edge of flowRaw.edges) {
+    const sourceNode = nodeById.get(edge.sourceNodeId)
+    if (!sourceNode) {
+      throw new Error(`Edge references missing source node: "${edge.sourceNodeId}".`)
+    }
+
+    const targetNode = nodeById.get(edge.targetNodeId)
+    if (!targetNode) {
+      throw new Error(`Edge references missing target node: "${edge.targetNodeId}".`)
+    }
+
+    const sourceOutputPort = sourceNode.outputs.type === 'Some' ? sourceNode.outputs.value.find((item) => item.id === edge.sourcePortId) : undefined
+    if (!sourceOutputPort) {
+      throw new Error(`Edge source port "${edge.sourcePortId}" not found in source node "${sourceNode.id}" outputs during schema compatibility validation.`)
+    }
+
+    const targetInputPort = targetNode.inputs.type === 'Some' ? targetNode.inputs.value.find((item) => item.id === edge.targetPortId) : undefined
+    if (!targetInputPort) {
+      throw new Error(`Edge target port "${edge.targetPortId}" not found in target node "${targetNode.id}" inputs during schema compatibility validation.`)
+    }
+
+    if (!isSchemaCompatible(sourceOutputPort.schema, targetInputPort.schema)) {
+      throw new Error(
+        `Edge schema mismatch: source "${sourceNode.id}.${sourceOutputPort.name}" is incompatible with target "${targetNode.id}.${targetInputPort.name}".`
+      )
     }
   }
 }
@@ -356,6 +430,7 @@ function validateAcyclicBoundary(flowRaw: FlowRaw): void {
 function validateFlowBoundary(flowRaw: FlowRaw): void {
   validateNodePortAndExecutorBoundary(flowRaw)
   validateEdgeBoundary(flowRaw)
+  validateEdgeSchemaCompatibilityBoundary(flowRaw)
   validateAcyclicBoundary(flowRaw)
 }
 
