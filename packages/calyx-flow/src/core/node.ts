@@ -1,4 +1,4 @@
-import type { Node, NodeInputPort, NodeInputPortData, NodeOutputPort, NodeOutputPortData, NodeParameter, NodeParameterData } from '@/types/core/node.ts'
+import type { Node, NodeData, NodeInputPort, NodeInputPortData, NodeOutputPort, NodeOutputPortData, NodeParameter, NodeParameterData } from '@/types/core/node.ts'
 import {
   NodeDataSchema,
   NodeInputPortDataSchema,
@@ -237,14 +237,7 @@ function createNodeOutputPortBuilder(data?: Partial<NodeOutputPortData>) {
   }
 }
 
-type NodeData = {
-  id: string
-  key: `${string}/${string}`
-  name: string
-  parameters?: NodeParameterData[]
-  inputs?: NodeInputPortData[]
-  outputs?: NodeOutputPortData[]
-}
+
 
 function createNodeBuilder(data?: Partial<NodeData>) {
   let state: Partial<NodeData> = {
@@ -361,9 +354,10 @@ function createNodeBuilder(data?: Partial<NodeData>) {
         parameters: optionParameters,
         inputs: optionInputs,
         outputs: optionOutputs,
+        type: definition.type,
         executors: definition.executors.map((executor) => ({
           ...executor,
-          state: 'wait',
+          used: false,
         })),
       }
 

@@ -418,6 +418,7 @@ describe('createNodeBuilder', () => {
     description: `Description for ${name}`,
     docs: `# ${name}\nDocumentation`,
     group: 'test-group',
+    type: ['test'],
     parameters: { type: 'None' },
     inputs: { type: 'None' },
     outputs: { type: 'None' },

@@ -5,7 +5,7 @@ type Flow = {
   getName: () => string
   getRunningStatus: () => boolean
   fork: () => Flow
-  run: (signal: AbortController) => Promise<void>
+  run: (signal: AbortController) => Promise<FlowRaw>
 }
 
 type FlowRaw = {

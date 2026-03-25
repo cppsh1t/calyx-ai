@@ -2,6 +2,7 @@ import type { Edge, Flow, FlowConfig, FlowRaw, Node, NodeExecuteContext, NodeExe
 import { FlowConfigSchema } from '@/types/core/flow'
 import { catchPromise } from '@/utils/promise'
 import { None, Some } from '@/utils/structure'
+import { isEmpty } from 'radash'
 import { createNodeBuilder } from './node'
 import type { NodeRegistry } from './registry'
 
@@ -23,11 +24,11 @@ function checkExecutorAvailable(executor: NodeExecutor, inputs: Option<NodeInput
   return true
 }
 
-function makeExecutorContext(node: Node): NodeExecuteContext {
-  return { inputs: node.inputs, parameters: node.parameters, abort: new AbortController() }
+function makeExecutorContext(node: Node, signal: AbortController): NodeExecuteContext {
+  return { inputs: node.inputs, parameters: node.parameters, abort: signal }
 }
 
-async function executeNode(node: Node, nodes: Node[], edges: Edge[]) {
+async function executeNode(node: Node, nodes: Node[], edges: Edge[], signal: AbortController) {
   const remainExecutors = node.executors.filter((item) => !item.used)
   if (node.outputs.type === 'None') return
   const outputs = node.outputs.value
@@ -36,13 +37,13 @@ async function executeNode(node: Node, nodes: Node[], edges: Edge[]) {
       const targetOutput = outputs.find((item) => item.name === executor.outputName)
       if (!targetOutput) return
       if (checkExecutorAvailable(executor, node.inputs, targetOutput)) {
-        const ctx = makeExecutorContext(node)
+        const ctx = makeExecutorContext(node, signal)
         executor.used = true
         node.runningTimes += 1
         const result = await catchPromise(executor.func(ctx))
         node.runningTimes -= 1
         if (result.type === 'success') {
-          if (result.value.continue) await setNodeOutput(targetOutput, nodes, edges, result.value.data)
+          if (result.value.continue) await setNodeOutput(targetOutput, nodes, edges, result.value.data, signal)
         } else {
           //TODO: impl error handle in future
         }
@@ -67,7 +68,7 @@ function findNodeByInputPortId(portId: string, nodes: Node[]): Option<Node> {
   return node ? Some(node) : None
 }
 
-async function setNodeInput(nodeInput: NodeInputPort, nodes: Node[], edges: Edge[], value: any) {
+async function setNodeInput(nodeInput: NodeInputPort, nodes: Node[], edges: Edge[], value: any, signal: AbortController) {
   const valParse = nodeInput.schema.safeParse(value)
   if (!valParse.success) {
     throw new Error(`Input port "${nodeInput.name}" (id: ${nodeInput.id}) schema validation failed: ${valParse.error.message}`)
@@ -75,10 +76,10 @@ async function setNodeInput(nodeInput: NodeInputPort, nodes: Node[], edges: Edge
   nodeInput.value = Some(valParse.data)
   const node = findNodeByInputPortId(nodeInput.id, nodes)
   if (node.type === 'None') return
-  await executeNode(node.value, nodes, edges)
+  await executeNode(node.value, nodes, edges, signal)
 }
 
-async function setNodeOutput(nodeOutput: NodeOutputPort, nodes: Node[], edges: Edge[], value: any) {
+async function setNodeOutput(nodeOutput: NodeOutputPort, nodes: Node[], edges: Edge[], value: any, signal: AbortController) {
   const valParse = nodeOutput.schema.safeParse(value)
   if (!valParse.success) {
     throw new Error(`Output port "${nodeOutput.name}" (id: ${nodeOutput.id}) schema validation failed: ${valParse.error.message}`)
@@ -95,9 +96,29 @@ async function setNodeOutput(nodeOutput: NodeOutputPort, nodes: Node[], edges: E
       if (targetInputOpt.type === 'None') return
 
       const targetInput = targetInputOpt.value
-      await setNodeInput(targetInput, nodes, edges, valParse.data)
+      await setNodeInput(targetInput, nodes, edges, valParse.data, signal)
     })
   )
+}
+
+function findStartNode(flowRaw: FlowRaw): Node {
+  const startNodes = flowRaw.nodes.filter((item) => item.type.includes('start-node'))
+  if (isEmpty(startNodes)) {
+    throw new Error(`Flow "${flowRaw.name}" has no start node. Expected exactly one node whose type includes "start-node".`)
+  }
+  if (startNodes.length > 1) {
+    throw new Error(`Flow "${flowRaw.name}" has multiple start nodes: ${startNodes.map((item) => item.id).join(', ')}. Expected exactly one start node.`)
+  }
+  const startNode = startNodes[0]!
+
+  if (startNode.inputs.type === 'Some') {
+    throw new Error(`Start node "${startNode.id}" must not define input ports.`)
+  }
+
+  if (startNode.outputs.type === 'None') {
+    throw new Error(`Start node "${startNode.id}" must define at least one output port.`)
+  }
+  return startNode
 }
 
 function compileFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
@@ -108,27 +129,52 @@ function compileFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
 
   const validatedConfig = parseRes.data
 
-  // Build nodes from NodeData using the registry
-  const nodes: Node[] = validatedConfig.nodes.map((nodeData) => {
-    return createNodeBuilder()
-      .setId(nodeData.id)
-      .setKey(nodeData.key)
-      .setName(nodeData.name)
-      .setParameters(nodeData.parameters)
-      .setInputs(nodeData.inputs)
-      .setOutputs(nodeData.outputs)
-      .setRegistry(registry)
-      .build()
-  })
+  const buildFlowRaw = () => {
+    const nodes: Node[] = validatedConfig.nodes.map((nodeData) => {
+      return createNodeBuilder()
+        .setId(nodeData.id)
+        .setKey(nodeData.key)
+        .setName(nodeData.name)
+        .setParameters(nodeData.parameters)
+        .setInputs(nodeData.inputs)
+        .setOutputs(nodeData.outputs)
+        .setRegistry(registry)
+        .build()
+    })
 
-  // Build FlowRaw
-  const flowRaw: FlowRaw = {
-    name: validatedConfig.name,
-    nodes,
-    edges: validatedConfig.edges,
+    const edges: Edge[] = validatedConfig.edges.map((edge) => ({ ...edge }))
+
+    const flowRaw: FlowRaw = {
+      name: validatedConfig.name,
+      nodes,
+      edges,
+    }
+    return flowRaw
   }
 
+  //TODO: Check boundary conditions
 
+  const buildFlow = (rawBuilder: () => FlowRaw): Flow => {
+    const flow: Flow = {
+      getName: function (): string {
+        return validatedConfig.name
+      },
+      getRunningStatus: function (): boolean {
+        //TODO: impl in future
+        throw new Error('Function not implemented.')
+      },
+      fork: function (): Flow {
+        return buildFlow(rawBuilder)
+      },
+      run: async function (signal: AbortController): Promise<FlowRaw> {
+        const flowRaw = buildFlowRaw()
+        const startNode = findStartNode(flowRaw)
+        await executeNode(startNode, flowRaw.nodes, flowRaw.edges, signal)
+        return flowRaw
+      },
+    }
+    return flow
+  }
 
-  return {} as unknown as Flow
+  return buildFlow(buildFlowRaw)
 }

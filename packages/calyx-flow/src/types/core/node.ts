@@ -106,6 +106,7 @@ type Node = {
   id: string
   name: string
   description: string
+  type: string[]
   docs: string //markdown
   runningTimes: number
   group: string
@@ -125,6 +126,8 @@ const NodeDataSchema = z.object({
   inputs: z.array(NodeInputPortDataSchema).optional(),
   outputs: z.array(NodeOutputPortDataSchema).optional(),
 })
+
+type NodeData = z.infer<typeof NodeDataSchema>
 
 const EdgeSchema = z.object({
   sourceNodeId: z.string(),
@@ -159,5 +162,6 @@ export type {
   NodeParameterData,
   NodeExecuteResult,
   Position,
+  NodeData,
   Edge
 }
