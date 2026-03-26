@@ -11,16 +11,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
-    },
-    "./style.css": "./style.css"
+    }
   },
   "files": [
-    "dist",
-    "style.css"
+    "dist"
   ],
   "scripts": {
+    "preview": "bun ./preview/index.html",
     "build": "bun run build.ts",
-    "dev": "bun run dev-server.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
