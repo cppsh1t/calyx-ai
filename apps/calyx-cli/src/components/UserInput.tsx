@@ -1,6 +1,6 @@
 import logger from '@/utils/logger'
 import type { InputRenderable, SubmitEvent } from '@opentui/core'
-import { createMemo, createSignal, type JSX } from 'solid-js'
+import { createMemo, createSignal, Show, type JSX } from 'solid-js'
 
 type Props = {
   onSubmit?: (value: string) => void
@@ -68,28 +68,26 @@ export function UserInput(props: Props): JSX.Element {
           marginBottom={1}
           onSubmit={handleSubmit}
         />
-        <text>
-          <span style={{ fg: '#3b82f6' }}>Flow(test)</span>
-          <span> {props.running ? 'Running...' : ''}</span>
-        </text>
+        <box flexDirection="row" gap={1}>
+          <text fg="#3b82f6">Flow(test)</text>
+          <Show when={props.running}>
+            <text>Running...</text>
+          </Show>
+        </box>
       </box>
 
       {/* Footer */}
       <box gap={2} flexDirection="row-reverse">
-        <text flexShrink={0}>
-          <span style={{ fg: 'white' }}>ctrl+p</span>
-          <span style={{ fg: '#888' }}> commands</span>
-        </text>
-        <text flexShrink={0}>
-          <span style={{ fg: 'white' }}>tab</span>
-          <span style={{ fg: '#888' }}> flows</span>
-        </text>
-        <text flexGrow={1} flexWrap="no-wrap" truncate wrapMode="none">
-          {lastLog() && (
-            <span style={{ fg: logColor() }}>
-              [{lastLog()?.level}] {lastLog()?.message}
-            </span>
-          )}
+        <box flexShrink={0} flexDirection="row">
+          <text fg="white">ctrl+p</text>
+          <text fg="#888"> commands</text>
+        </box>
+        <box flexShrink={0} flexDirection="row">
+          <text fg="white">tab</text>
+          <text fg="#888"> flows</text>
+        </box>
+        <text flexGrow={1} flexWrap="no-wrap" truncate wrapMode="none" fg={logColor()}>
+          {lastLog() ? `[${lastLog()?.level}] ${lastLog()?.message}` : ' '}
         </text>
       </box>
     </box>

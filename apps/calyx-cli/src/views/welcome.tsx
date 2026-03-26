@@ -1,6 +1,6 @@
 import UserInput from '@/components/UserInput'
 import logger from '@/utils/logger'
-import { chat } from '@/utils/message'
+// import { chat } from '@/utils/message'
 import { useRouter } from '@/views/router.tsx'
 import { type JSX } from 'solid-js'
 
@@ -8,7 +8,7 @@ export function WelcomeView(): JSX.Element {
   const { navigate, state } = useRouter()
 
   function handleUserInputSubmit(prompt: string) {
-    chat(prompt)
+    // chat(prompt)
     navigate('chat')
   }
 

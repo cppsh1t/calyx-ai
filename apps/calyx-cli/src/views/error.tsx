@@ -1,3 +1,4 @@
+import { TextAttributes } from '@opentui/core'
 import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
 
@@ -19,8 +20,8 @@ export function ErrorView(props: { error: Error | null; message: string }): JSX.
       {/* Central error display */}
       <box flexDirection="column" flexGrow={1} justifyContent="center" alignItems="center">
         {/* Error icon and title */}
-        <text fg="red">
-          <strong>⚠ Error</strong>
+        <text fg="red" attributes={TextAttributes.BOLD}>
+          ⚠ Error
         </text>
 
         {/* Error message */}

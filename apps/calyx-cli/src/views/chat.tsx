@@ -1,13 +1,13 @@
 import BotMessage from '@/components/BotMessage'
 import UserInput from '@/components/UserInput'
 import UserMessage from '@/components/UserMessage'
-import { chat, combinedMessages, pending } from '@/utils/message'
+// import { chat, combinedMessages, pending } from '@/utils/message'
 import type { JSX } from 'solid-js'
 import { For } from 'solid-js'
 
 export function ChatView(): JSX.Element {
   async function handleUserInputSubmit(value: string) {
-    await chat(value)
+    // await chat(value)
   }
 
   return (
@@ -26,7 +26,7 @@ export function ChatView(): JSX.Element {
       </box>
 
       <scrollbox width="100%" flexGrow={1} paddingTop={1} stickyScroll={true} stickyStart="bottom" viewportCulling>
-        <For each={combinedMessages()}>
+        {/* <For each={combinedMessages()}>
           {(message) => (
             <box width="100%">
               {message.role === 'user' ? (
@@ -36,11 +36,11 @@ export function ChatView(): JSX.Element {
               )}
             </box>
           )}
-        </For>
+        </For> */}
       </scrollbox>
 
       <box width="100%" flexShrink={0} paddingLeft={2} paddingRight={2} marginTop={2}>
-        <UserInput onSubmit={handleUserInputSubmit} running={pending()} />
+        <UserInput onSubmit={handleUserInputSubmit} running={false} />
       </box>
     </box>
   )

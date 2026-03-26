@@ -196,14 +196,14 @@ export function BotMessage({ content, reason, streaming, usage }: { content: str
     <box paddingLeft={2} paddingRight={2} paddingTop={1} paddingBottom={1} width="100%">
       <Show when={reason}>
         <box width="100%" marginBottom={1}>
-          <text >
-            <span style={{ fg: '#909399' }}>Thinking: </span>
-            <span style={{ fg: '#888' }}>{reason}</span>
-          </text>
+          <box flexDirection="row">
+            <text fg="#909399">Thinking: </text>
+            <text fg="#888">{reason}</text>
+          </box>
         </box>
       </Show>
       <markdown syntaxStyle={markdownSyntaxStyle} content={content} streaming={streaming} />
-      <Show when={usage !== null}> 
+      <Show when={usage !== null}>
         <box>
           <text style={{ fg: '#888' }}>{getTokenDisplay(usage)}</text>
         </box>
