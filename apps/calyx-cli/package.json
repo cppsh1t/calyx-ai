@@ -1,6 +1,7 @@
 {
   "name": "calyx-cli",
   "version": "0.0.3",
+  "license": "AGPL-3.0",
   "type": "module",
   "private": false,
   "bin": {

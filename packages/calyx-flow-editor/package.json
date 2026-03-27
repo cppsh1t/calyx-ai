@@ -1,6 +1,7 @@
 {
   "name": "calyx-flow-editor",
   "version": "1.0.0",
+  "license": "AGPL-3.0",
   "description": "A minimal React library example",
   "type": "module",
   "main": "./dist/index.js",

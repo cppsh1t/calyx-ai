@@ -1,6 +1,7 @@
 {
   "name": "test-wrapper",
   "version": "0.1.0",
+  "license": "AGPL-3.0",
   "private": true,
   "type": "module",
   "description": "A React development server that can be used as a CLI tool or programmatically",

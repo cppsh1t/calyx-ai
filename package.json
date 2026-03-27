@@ -1,5 +1,6 @@
 {
   "name": "calyx-ai",
+  "license": "AGPL-3.0",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",

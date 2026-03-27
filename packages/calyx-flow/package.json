@@ -1,6 +1,7 @@
 {
   "name": "calyx-flow",
   "version": "0.1.0",
+  "license": "AGPL-3.0",
   "module": "./index.ts",
   "types": "./dist/src/core/flow.d.ts",
   "type": "module",
