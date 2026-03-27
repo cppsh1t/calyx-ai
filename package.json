@@ -25,7 +25,15 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "check-types": "turbo run check-types",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "build:cli": "turbo run build --filter=calyx-cli",
+    "build:worker": "turbo run build --filter=calyx-worker",
+    "build:flow": "turbo run build --filter=calyx-flow",
+    "build:flow-editor": "turbo run build --filter=calyx-flow-editor",
+    "dev:cli": "turbo run dev --filter=calyx-cli",
+    "dev:worker": "turbo run dev --filter=calyx-worker",
+    "dev:flow": "turbo run dev --filter=calyx-flow",
+    "dev:flow-editor": "turbo run dev --filter=calyx-flow-editor"
   },
   "type": "module",
   "workspaces": [
