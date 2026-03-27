@@ -12,13 +12,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./uno.css": {
+      "default": "./dist/uno.css"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "preview": "bun ./preview/index.html",
+    "dev": "bun run build && bun --port 3132 ./preview/index.html",
     "build": "bun run build.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"

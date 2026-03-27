@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client'
+import '../dist/uno.css'
 import { FlowEditor } from '../src/index.ts'
 
 function App() {
