@@ -1,1 +1,3 @@
-export { FlowEditor } from './FlowEditor.tsx'
+import 'virtual:uno.css'
+
+export { FlowEditor } from '@/FlowEditor.tsx'

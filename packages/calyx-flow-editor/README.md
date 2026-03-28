@@ -1,85 +1,73 @@
-# calyx-flow-editor
+# React + TypeScript + Vite
 
-A minimal React library using UnoCSS for styling.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Installation
+Currently, two official plugins are available:
 
-```bash
-bun install
-```
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Development
+## React Compiler
 
-### Library Development (Build Mode)
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-Used for developing and building the component library itself:
+## Expanding the ESLint configuration
 
-```bash
-# Development mode (watch and build library)
-bun dev
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-# Build production version
-bun run build
-```
-
-### Demo Development (Preview Mode)
-
-Used for previewing and debugging components in the browser:
-
-```bash
-# Start demo server
-bun run dev:demo
-```
-
-Then open http://localhost:3103 to view the component demo page.
-
-Demo mode features:
-
-- Real-time component preview
-- Hot reload support (refresh browser after code changes)
-- Multiple component showcase cases
-- Does not affect library build output
-
-## Adding Components to Demo
-
-Add new demo cases to the `components` array in `demo/App.tsx`:
-
-```tsx
-const components: ComponentDemo[] = [
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
   {
-    name: 'YourComponent',
-    description: 'Component description',
-    component: <YourComponent prop="value" />,
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
   },
-]
+])
 ```
 
-## Styling
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-This project uses [UnoCSS](https://unocss.dev/) for utility-first CSS. It includes the Tailwind-compatible preset (`preset-wind3`), so you can use familiar Tailwind class names.
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-### UnoCSS Configuration
-
-- Config file: `uno.config.ts`
-- PostCSS config: `postcss.config.ts`
-- Preset: `@unocss/preset-wind3` (Tailwind CSS compatible)
-
-## Project Structure
-
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-.
-├── demo/              # Demo pages
-│   ├── index.html     # HTML entry
-│   ├── main.tsx       # React app entry
-│   └── App.tsx        # Demo component page
-├── src/               # Component library source
-│   ├── HelloWorld.tsx
-│   └── index.ts
-├── build.ts           # Library build script
-├── dev-server.ts      # Demo server script
-└── package.json
-```
-
----
-
-This project was created using `bun init` in bun v1.3.6. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

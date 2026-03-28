@@ -1,8 +1,8 @@
 {
   "name": "calyx-flow-editor",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "license": "AGPL-3.0",
-  "description": "A minimal React library example",
+  "description": "A React flow editor component library",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -10,8 +10,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js"
     },
     "./uno.css": {
       "default": "./dist/uno.css"
@@ -21,27 +20,37 @@
     "dist"
   ],
   "scripts": {
-    "dev": "bun run build && bun --port 3132 ./preview/index.html",
-    "build": "bun run build.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "check-types": "tsc -b",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "peerDependencies": {
     "@xyflow/react": ">=12.10.1",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@unocss/postcss": "^66.6.6",
-    "@unocss/preset-wind3": "^66.6.6",
-    "@xyflow/react": "^12.10.1",
-    "typescript": "^5.0.0",
-    "unocss": "^66.6.6"
-  },
   "dependencies": {
     "calyx-flow": "workspace:*"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@unocss/postcss": "^66.6.7",
+    "@unocss/preset-wind3": "^66.6.7",
+    "@xyflow/react": "^12.10.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.57.0",
+    "unocss": "^66.6.7",
+    "vite": "^8.0.1",
+    "vite-plugin-dts": "^4.5.4"
   }
 }

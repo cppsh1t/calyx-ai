@@ -1,8 +1,24 @@
-import { Background, Controls, ReactFlow, addEdge, applyEdgeChanges, applyNodeChanges, type EdgeChange, type NodeChange } from '@xyflow/react'
+import {
+  Background,
+  Controls,
+  ReactFlow,
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  type Connection,
+  type Edge,
+  type EdgeChange,
+  type Node,
+  type NodeChange,
+} from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type ChangeEvent } from 'react'
 
-const initialNodes = [
+type TextUpdaterNodeData = {
+  value: number
+}
+
+const initialNodes: Node<TextUpdaterNodeData>[] = [
   {
     id: 'node-1',
     type: 'textUpdater',
@@ -12,27 +28,29 @@ const initialNodes = [
   {
     id: 'n2',
     position: { x: 100, y: 100 },
-    data: { label: 'Node 2' },
+    data: { value: 456 },
   },
 ]
 
-const initialEdges = [
+const initialEdges: Edge[] = [
   {
     id: 'n1-n2',
-    source: 'n1',
+    source: 'node-1',
     target: 'n2',
   },
 ]
 
 export function TextUpdaterNode() {
-  const onChange = useCallback((evt: any) => {
+  const onChange = useCallback((evt: ChangeEvent<HTMLInputElement>) => {
     console.log(evt.target.value)
   }, [])
 
   return (
     <div className="h-50px p-5px rounded-5px bg-#fff border-solid border-#888 border-1">
       <div>
-        <label className="block text-#777 text-12px" htmlFor="text">Text:</label>
+        <label className="block text-#777 text-12px" htmlFor="text">
+          Text:
+        </label>
         <input id="text" name="text" onChange={onChange} className="nodrag" />
       </div>
     </div>
@@ -47,13 +65,15 @@ export function FlowEditor() {
   const [nodes, setNodes] = useState(initialNodes)
   const [edges, setEdges] = useState(initialEdges)
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange<any>[]) =>
-      setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
-    []
-  )
-  const onEdgesChange = useCallback((changes: EdgeChange<any>[]) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)), [])
-  const onConnect = useCallback((params: any) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)), [])
+  const onNodesChange = useCallback((changes: NodeChange<Node<TextUpdaterNodeData>>[]) => {
+    setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot))
+  }, [])
+  const onEdgesChange = useCallback((changes: EdgeChange<Edge>[]) => {
+    setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot))
+  }, [])
+  const onConnect = useCallback((params: Edge | Connection) => {
+    setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot))
+  }, [])
 
   return (
     <div style={{ width: '100%', height: '100%' }}>

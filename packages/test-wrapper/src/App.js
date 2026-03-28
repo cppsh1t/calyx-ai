@@ -1,5 +1,6 @@
+import { FlowEditor } from 'calyx-flow-editor'
+import 'calyx-flow-editor/uno.css'
 import React from 'react'
-import FlowEditor from 'calyx-flow-editor'
 import './index.css'
 
 export function App() {
