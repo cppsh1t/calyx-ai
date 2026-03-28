@@ -46,9 +46,9 @@ export function TextUpdaterNode() {
   }, [])
 
   return (
-    <div className="h-50px p-5px rounded-5px bg-#fff border-solid border-#888 border-1">
+    <div className="h-[50px] rounded-[5px] border border-solid border-[#888] bg-[#fff] p-[5px]">
       <div>
-        <label className="block text-#777 text-12px" htmlFor="text">
+        <label className="block text-[12px] text-[#777]" htmlFor="text">
           Text:
         </label>
         <input id="text" name="text" onChange={onChange} className="nodrag" />

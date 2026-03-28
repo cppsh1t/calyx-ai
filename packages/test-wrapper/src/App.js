@@ -1,5 +1,5 @@
 import { FlowEditor } from 'calyx-flow-editor'
-import 'calyx-flow-editor/uno.css'
+import 'calyx-flow-editor/tailwind.css'
 import React from 'react'
 import './index.css'
 

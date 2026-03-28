@@ -1,6 +1,6 @@
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
-import UnoCSS from 'unocss/vite'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 
@@ -14,7 +14,7 @@ export default defineConfig({
       insertTypesEntry: true,
       include: ['src'],
     }),
-    UnoCSS(),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
@@ -26,7 +26,7 @@ export default defineConfig({
       entry: resolve(__dirname, './src/index.ts'),
       formats: ['es'],
       fileName: 'index',
-      cssFileName: 'uno',
+      cssFileName: 'tailwind',
     },
     rollupOptions: {
       external: ['react', 'react-dom', 'react/jsx-runtime', '@xyflow/react', 'calyx-flow'],
