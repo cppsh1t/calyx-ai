@@ -5,6 +5,7 @@ import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
+  Position, Handle,
   type Connection,
   type Edge,
   type EdgeChange,
@@ -34,11 +35,11 @@ const initialNodes: Node<TextUpdaterNodeData>[] = [
 ]
 
 const initialEdges: Edge[] = [
-  {
-    id: 'n1-n2',
-    source: 'node-1',
-    target: 'n2',
-  },
+  // {
+  //   id: 'n1-n2',
+  //   source: 'node-1',
+  //   target: 'n2',
+  // },
 ]
 
 export function TextUpdaterNode() {
@@ -47,7 +48,7 @@ export function TextUpdaterNode() {
   }, [])
 
   return (
-    <div className="h-[50px] rounded-[5px] border border-solid border-[#888] bg-[#fff] p-[5px]">
+    <div className="h-12.5 rounded-[5px] border border-solid border-[#888] bg-white p-1.25">
       <div>
         <label className="block text-[12px] text-[#777]" htmlFor="text">
           Text:
@@ -59,8 +60,44 @@ export function TextUpdaterNode() {
   )
 }
 
+function TestHandleNode() {
+  const leftHandles = [
+    { id: 'source', type: 'source' as const, position: Position.Left },
+  ]
+
+  const rightHandles = [
+    { id: 'a', type: 'target' as const, position: Position.Right },
+    { id: 'b', type: 'target' as const, position: Position.Right },
+  ]
+
+  return (
+    <div className="custom-node" style={{ padding: '10px 20px', position: 'relative' }}>
+      <div>Custom Node Content</div>
+      {leftHandles.map((h, i) => (
+        <Handle
+          key={h.id}
+          type={h.type}
+          position={h.position}
+          id={h.id}
+          style={{ top: `${(100 * (i + 1)) / (leftHandles.length + 1)}%` }}
+        />
+      ))}
+      {rightHandles.map((h, i) => (
+        <Handle
+          key={h.id}
+          type={h.type}
+          position={h.position}
+          id={h.id}
+          style={{ top: `${(100 * (i + 1)) / (rightHandles.length + 1)}%` }}
+        />
+      ))}
+    </div>
+  )
+}
+
 const nodeTypes = {
   textUpdater: TextUpdaterNode,
+  testHandle: TestHandleNode,
 }
 
 export function FlowEditor() {
