@@ -13,6 +13,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useCallback, useState, type ChangeEvent } from 'react'
+import { Button } from '@/components/ui/button'
 
 type TextUpdaterNodeData = {
   value: number
@@ -51,6 +52,7 @@ export function TextUpdaterNode() {
         <label className="block text-[12px] text-[#777]" htmlFor="text">
           Text:
         </label>
+        <Button variant={'secondary'}>Click me</Button>
         <input id="text" name="text" onChange={onChange} className="nodrag" />
       </div>
     </div>
