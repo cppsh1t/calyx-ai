@@ -30,6 +30,7 @@
         "ai": "^6.0.105",
         "babel-preset-solid": "1.9.9",
         "calyx-flow": "workspace:*",
+        "calyx-flow-editor-wrapper": "workspace:*",
         "commander": "^14.0.3",
         "dayjs": "^1.11.19",
         "env-paths": "^4.0.0",
@@ -37,7 +38,6 @@
         "partial-xml-stream-parser": "^1.9.2",
         "radash": "^12.1.1",
         "solid-js": "1.9.9",
-        "test-wrapper": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
@@ -147,11 +147,11 @@
         "react-dom": ">=18.0.0",
       },
     },
-    "packages/test-wrapper": {
-      "name": "test-wrapper",
+    "packages/calyx-flow-editor-wrapper": {
+      "name": "calyx-flow-editor-wrapper",
       "version": "0.1.0",
       "bin": {
-        "test-wrapper": "./src/index.ts",
+        "calyx-flow-editor-wrapper": "./src/index.ts",
       },
       "dependencies": {
         "calyx-flow-editor": "workspace:*",
@@ -1070,6 +1070,8 @@
 
     "calyx-flow-editor": ["calyx-flow-editor@workspace:packages/calyx-flow-editor"],
 
+    "calyx-flow-editor-wrapper": ["calyx-flow-editor-wrapper@workspace:packages/calyx-flow-editor-wrapper"],
+
     "calyx-worker": ["calyx-worker@workspace:apps/calyx-worker"],
 
     "caniuse-lite": ["caniuse-lite@1.0.30001766", "https://registry.npmmirror.com/caniuse-lite/-/caniuse-lite-1.0.30001766.tgz", {}, "sha512-4C0lfJ0/YPjJQHagaE9x2Elb69CIqEPZeG0anQt9SIvIoOH4a4uaRl73IavyO+0qZh6MDLH//DrXThEYKHkmYA=="],
@@ -1963,8 +1965,6 @@
     "tailwindcss": ["tailwindcss@4.2.2", "", {}, "sha512-KWBIxs1Xb6NoLdMVqhbhgwZf2PGBpPEiwOqgI4pFIYbNTfBXiKYyWoTsXgBQ9WFg/OlhnvHaY+AEpW7wSmFo2Q=="],
 
     "tapable": ["tapable@2.3.2", "", {}, "sha512-1MOpMXuhGzGL5TTCZFItxCc0AARf1EZFQkGqMm7ERKj8+Hgr5oLvJOVFcC+lRmR8hCe2S3jC4T5D7Vg/d7/fhA=="],
-
-    "test-wrapper": ["test-wrapper@workspace:packages/test-wrapper"],
 
     "text-hex": ["text-hex@1.0.0", "https://registry.npmmirror.com/text-hex/-/text-hex-1.0.0.tgz", {}, "sha512-uuVGNWzgJ4yhRaNSiubPY7OjISw4sw4E5Uv0wbjp+OzcbmVU/rsT8ujgcXJhn9ypzsgr5vlzpPqP+MBBKcGvbg=="],
 

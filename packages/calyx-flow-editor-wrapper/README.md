@@ -1,11 +1,11 @@
-# test-wrapper
+# calyx-flow-editor-wrapper
 
-A React development server that can be used as a CLI tool or programmatically via API.
+Flow editor wrapper for calyx-cli — provides a React-based flow editor that can be launched from the CLI.
 
 ## Installation
 
 ```bash
-bun add test-wrapper
+bun add calyx-flow-editor-wrapper
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ bun add test-wrapper
 bun run dev
 
 # Or run directly
-bun test-wrapper
+bun calyx-flow-editor-wrapper
 
 # Production mode
 bun run start
@@ -26,7 +26,7 @@ bun run start
 ### As Programmatic API
 
 ```typescript
-import { host, stop } from 'test-wrapper'
+import { host, stop } from 'calyx-flow-editor-wrapper'
 
 // Start the server
 const { url, stop: stopServer } = await host({
@@ -70,7 +70,7 @@ Check if the server is currently running.
 ### Example: Integration Test
 
 ```typescript
-import { host, stop } from 'test-wrapper'
+import { host, stop } from 'calyx-flow-editor-wrapper'
 import { test, beforeAll, afterAll } from 'bun:test'
 
 let serverUrl: string
@@ -103,4 +103,4 @@ bun run dev
 
 ## License
 
-MIT
+AGPL-3.0

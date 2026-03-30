@@ -1,10 +1,10 @@
 {
-  "name": "test-wrapper",
+  "name": "calyx-flow-editor-wrapper",
   "version": "0.1.0",
   "license": "AGPL-3.0",
   "private": true,
   "type": "module",
-  "description": "A React development server that can be used as a CLI tool or programmatically",
+  "description": "Flow editor wrapper for calyx-cli - provides a React-based flow editor that can be launched from the CLI",
   "main": "./src/server.ts",
   "module": "./src/server.ts",
   "types": "./src/server.ts",
@@ -20,7 +20,7 @@
     "dist"
   ],
   "bin": {
-    "test-wrapper": "./src/index.ts"
+    "calyx-flow-editor-wrapper": "./src/index.ts"
   },
   "scripts": {
     "dev": "bun --hot src/index.ts",
@@ -42,8 +42,9 @@
   },
   "keywords": [
     "react",
-    "development",
-    "server",
+    "flow-editor",
+    "calyx",
+    "wrapper",
     "bun"
   ]
 }
