@@ -1,0 +1,55 @@
+{
+  "name": "calyx-app",
+  "version": "0.0.0",
+  "license": "AGPL-3.0",
+  "description": "Portable core library — application bootstrap, config, auth, providers, logging, and CLI utilities",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./auth": {
+      "types": "./dist/auth.d.ts",
+      "import": "./dist/auth.js"
+    },
+    "./providers": {
+      "types": "./dist/providers.d.ts",
+      "import": "./dist/providers.js"
+    },
+    "./logging": {
+      "types": "./dist/logging.d.ts",
+      "import": "./dist/logging.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "check-types": "tsc -b",
+    "verify": "bun run check-types && bun run build",
+    "audit:exports": "bun run scripts/audit-exports.ts",
+    "scan:boundaries": "bun run scripts/scan-boundaries.ts",
+    "dev": "vite build --watch"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

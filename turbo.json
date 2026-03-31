@@ -17,6 +17,15 @@
       "dependsOn": ["^test"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"]
     },
+    "verify": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**"]
+    },
+    "audit:exports": {
+      "dependsOn": ["^build", "build"],
+      "inputs": ["package.json", "dist/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
