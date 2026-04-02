@@ -1,0 +1,33 @@
+{
+  "name": "fish-memo",
+  "version": "0.1.0",
+  "license": "AGPL-3.0",
+  "description": "Lightweight memory system for programming agents",
+  "module": "./index.ts",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "private": true,
+  "files": [
+    "dist/**/*",
+    "index.ts",
+    "src/**/*"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "test": "bun test",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsc-alias": "^1.8.16"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

@@ -176,6 +176,17 @@
         "@types/react-dom": "^19",
       },
     },
+    "packages/fish-memo": {
+      "name": "fish-memo",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/bun": "latest",
+        "tsc-alias": "^1.8.16",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
   },
   "packages": {
     "@ai-sdk/amazon-bedrock": ["@ai-sdk/amazon-bedrock@4.0.72", "https://registry.npmmirror.com/@ai-sdk/amazon-bedrock/-/amazon-bedrock-4.0.72.tgz", { "dependencies": { "@ai-sdk/anthropic": "3.0.53", "@ai-sdk/provider": "3.0.8", "@ai-sdk/provider-utils": "4.0.17", "@smithy/eventstream-codec": "^4.0.1", "@smithy/util-utf8": "^4.0.0", "aws4fetch": "^1.0.20" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-NdfpK7wufq+NM7NrTRM06ify4rFfXf9+tSEvwuHv/kB/CvajUoNprTyJLpgQmy4hyMZd59bp1WlFBn7H6aROQA=="],
@@ -1335,6 +1346,8 @@
     "find-babel-config": ["find-babel-config@2.1.2", "https://registry.npmmirror.com/find-babel-config/-/find-babel-config-2.1.2.tgz", { "dependencies": { "json5": "^2.2.3" } }, "sha512-ZfZp1rQyp4gyuxqt1ZqjFGVeVBvmpURMqdIWXbPRfB97Bf6BzdK/xSIbylEINzQ0kB5tlDQfn9HkNXXWsqTqLg=="],
 
     "find-up": ["find-up@5.0.0", "https://registry.npmmirror.com/find-up/-/find-up-5.0.0.tgz", { "dependencies": { "locate-path": "^6.0.0", "path-exists": "^4.0.0" } }, "sha512-78/PXT1wlLLDgTzDs7sjq9hzz0vXD+zn+7wypEe4fXQxCmdmqfGsEPQxmiCSQI3ajFV91bVSsvNtrJRiW6nGng=="],
+
+    "fish-memo": ["fish-memo@workspace:packages/fish-memo"],
 
     "flat-cache": ["flat-cache@4.0.1", "https://registry.npmmirror.com/flat-cache/-/flat-cache-4.0.1.tgz", { "dependencies": { "flatted": "^3.2.9", "keyv": "^4.5.4" } }, "sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw=="],
 
