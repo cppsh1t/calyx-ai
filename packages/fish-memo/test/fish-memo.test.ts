@@ -609,40 +609,49 @@ describe('deepClone', () => {
 // ============================================================
 
 describe('formatToString', () => {
-  test('formats a tree with box-drawing characters', () => {
+  test('formats a tree with box-drawing characters and id prefix', () => {
     const result = memo.formatToString(rootNode)
     const lines = result.split('\n')
 
-    // First line is the root with full format
-    expect(lines[0]).toBe('[project]<root><constant>(the project)')
+    // First line is the root with full format, starting with {id}
+    expect(lines[0]).toMatch(/^\{[a-zA-Z0-9_-]+\}\[project\]<root><constant>\(the project\)$/)
 
     // Should contain box-drawing characters for children
     const fullOutput = lines.join('\n')
     expect(fullOutput).toContain('├─')
     expect(fullOutput).toContain('└─')
     expect(fullOutput).toContain('│')
+
+    // Child lines should also contain id prefix wrapped in {}
+    expect(lines[1]!.includes('[')).toBe(true)
+    expect(lines[2]!.includes('[')).toBe(true)
+    // Verify id pattern appears in child lines (between box-drawing and name)
+    expect(/\{[a-zA-Z0-9_-]+\}\[/.test(lines[1]!)).toBe(true)
+    expect(/\{[a-zA-Z0-9_-]+\}\[/.test(lines[2]!)).toBe(true)
   })
 
-  test('formats node with type tags and description', () => {
+  test('formats node with type tags, description and id', () => {
     const result = memo.formatToString(childA)
     const lines = result.split('\n')
 
-    // First line: childA name with full format
-    expect(lines[0]).toBe('[plan]<plan><running>(the plan)')
+    // First line: childA name with full format and id
+    expect(lines[0]).toMatch(/^\{[a-zA-Z0-9_-]+\}\[plan\]<plan><running>\(the plan\)$/)
 
-    // Second line: grandchildA1 formatted with type tags and description
+    // Second line: grandchildA1 formatted with type tags, description and id
+    expect(lines[1]).toContain('{')
+    expect(lines[1]).toContain('}')
     expect(lines[1]).toContain('task-1')
     expect(lines[1]).toContain('<task>')
     expect(lines[1]).toContain('<pending>')
     expect(lines[1]).toContain('(first task)')
   })
 
-  test('formats a leaf node with no children as just its name', () => {
+  test('formats a leaf node with no children with id', () => {
     const result = memo.formatToString(grandchildA1)
-    expect(result).toBe('[task-1]<task><pending>(first task)')
+    expect(result).toMatch(/^\{[a-zA-Z0-9_-]+\}\[task-1\]<task><pending>\(first task\)$/)
   })
 
-  test('formats node without description without parentheses', () => {
+  test('formats node without description without parentheses but with id', () => {
     const leafNoDesc = createFishMemoTree({
       name: 'no-desc',
       type: ['x'],
@@ -667,7 +676,8 @@ describe('formatToString', () => {
     const result = m.formatToString(parent)
     const lines = result.split('\n')
 
-    expect(lines[1]).toContain('[no-desc]<x>')
+    expect(lines[1]!.startsWith('└─{')).toBe(true)
+    expect(lines[1]!.endsWith('[no-desc]<x>')).toBe(true)
     expect(lines[1]).not.toContain('(')
   })
 })

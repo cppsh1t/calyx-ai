@@ -1,7 +1,7 @@
 import type { FishMemo, FishMemoTree } from '@/types.ts'
 import dayjs from 'dayjs'
+import { nanoid } from 'nanoid'
 import rfdc from 'rfdc'
-import { v4 as uuidv4 } from 'uuid'
 
 const clone = rfdc()
 
@@ -66,7 +66,7 @@ function createFishMemo(root: FishMemoTree): FishMemo {
   function formatNodeLines(node: FishMemoTree, prefix: string = '', isLast: boolean = true, isRoot: boolean = true): string[] {
     const typeTags = node.type.map((t) => `<${t}>`).join('')
     const desc = node.description ? `(${node.description})` : ''
-    const header = isRoot ? `[${node.name}]${typeTags}${desc}` : `${isLast ? '└─' : '├─'}[${node.name}]${typeTags}${desc}`
+    const header = isRoot ? `{${node.id}}[${node.name}]${typeTags}${desc}` : `${isLast ? '└─' : '├─'}{${node.id}}[${node.name}]${typeTags}${desc}`
 
     const lines: string[] = [prefix + header]
     const childPrefix = isRoot ? '' : prefix + (isLast ? '   ' : '│  ')
@@ -202,7 +202,7 @@ function createFishMemoTree(params: Omit<FishMemoTree, 'id' | 'createdAt' | 'upd
     type: [...params.type],
     data: clone(params.data),
     subTrees: [...params.subTrees],
-    id: uuidv4(),
+    id: nanoid(6),
     createdAt: now,
     updatedAt: now,
   }
