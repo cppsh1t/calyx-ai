@@ -2,42 +2,48 @@
   "name": "calyx-flow",
   "version": "0.1.0",
   "license": "AGPL-3.0",
-  "module": "./index.ts",
-  "types": "./dist/src/core/flow.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "module",
-  "private": true,
   "files": [
-    "dist/**/*",
-    "index.ts",
-    "src/**/*"
+    "dist/**/*"
   ],
   "exports": {
     ".": {
-      "types": "./dist/src/core/flow.d.ts",
-      "import": "./index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
     "./types": {
-      "types": "./dist/src/types/index.d.ts",
-      "import": "./src/types/index.ts"
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.cjs",
+      "default": "./dist/types.js"
     },
     "./core": {
-      "types": "./dist/src/core/flow.d.ts",
-      "import": "./src/core/index.ts"
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs",
+      "default": "./dist/core.js"
     },
     "./services": {
-      "types": "./dist/src/services/index.d.ts",
-      "import": "./src/services/index.ts"
+      "types": "./dist/services.d.ts",
+      "import": "./dist/services.js",
+      "require": "./dist/services.cjs",
+      "default": "./dist/services.js"
     }
   },
   "scripts": {
-    "build": "tsc && tsc-alias",
+    "build": "tsup --config tsup.config.ts",
     "test": "bun test || true",
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/uuid": "^11.0.0",
-    "tsc-alias": "^1.8.16"
+    "tsup": "^8.5.0"
   },
   "peerDependencies": {
     "typescript": "^5"
