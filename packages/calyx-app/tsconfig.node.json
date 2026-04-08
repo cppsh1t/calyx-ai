@@ -16,5 +16,5 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["tsup.config.ts", "vite.config.ts"]
 }
