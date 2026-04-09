@@ -1,15 +1,29 @@
 # calyx-app
 
-To install dependencies:
+`calyx-app` is built with Bun and published to npm for projects that also run on Bun.
+
+## Install dependencies
 
 ```bash
 bun install
 ```
 
-To run:
+## Build the package
 
 ```bash
-bun run index.ts
+bun run build
 ```
 
-This project was created using `bun init` in bun v1.3.6. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+This produces Bun-targeted ESM output in `dist/` and emits `.d.ts` files for npm consumers.
+
+## Type-check the source
+
+```bash
+bun run check-types
+```
+
+## Consumer expectation
+
+- Requires Bun `>=1.3.6`
+- Published artifacts live in `dist/`
+- Package exports are Bun-oriented ESM outputs, not CommonJS/Node bundler targets
