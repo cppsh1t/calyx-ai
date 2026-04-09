@@ -1,14 +1,16 @@
 ﻿import { ZodType, z } from 'zod'
 import { optionSchema, type Option } from '../structure'
 
-type Position = {
-  x: number
-  y: number
-}
+const PositionSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+})
+
+type Position = z.infer<typeof PositionSchema>
 
 const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.string().min(1)])
 
-type NodeExecuteContext = { inputs: Option<NodeInputPortInstance[]>; parameters: Option<NodeOutputPortInstance[]>; abort: AbortController }
+type NodeExecuteContext = { inputs: Option<NodeInputPortInstance[]>; parameters: Option<NodeParameterInstance[]> }
 type NodeExecuteResult<T = any> = {
   continue: boolean
   data: T | null
@@ -137,6 +139,9 @@ const NodeInstanceSchema = z.object({
   name: z.string().meta({
     description: '[Definition] Name of the node instance',
   }),
+  position: PositionSchema.meta({
+    description: '[Runtime] Position of the node instance in the editor/canvas',
+  }),
   description: z.string().meta({
     description: '[Definition] Description of the node instance',
   }),
@@ -173,7 +178,7 @@ const NodeDefinitionSchema = NodeInstanceSchema.pick({ name: true, description: 
   }),
 })
 
-const NodeDataSchema = NodeInstanceSchema.pick({ id: true, name: true }).extend({
+const NodeDataSchema = NodeInstanceSchema.pick({ id: true, name: true, position: true }).extend({
   key: NodeRegistryKeySchema.meta({
     description: '[Runtime] Registry key of the node instance, used to look up its corresponding definition',
   }),
@@ -225,4 +230,5 @@ export {
   NodeDataSchema,
   NodeInstanceSchema,
   NodeDefinitionSchema,
+  PositionSchema
 }

@@ -7,7 +7,6 @@ type NodeRegistryKey = `${string}/${string}`
 type NodeRegistryEntry = {
   key: NodeRegistryKey
   namespace: string
-  group: string
   definition: NodeDefinition
 }
 
@@ -29,7 +28,6 @@ class NodeRegistry {
     const entry: NodeRegistryEntry = {
       key,
       namespace,
-      group,
       definition,
     }
 
@@ -78,15 +76,6 @@ class NodeRegistry {
    */
   getByNamespace(namespace: string): NodeRegistryEntry[] {
     return this.getAll().filter((entry) => entry.namespace === namespace)
-  }
-
-  /**
-   * Get all entries for a specific group
-   * @param group - Group name
-   * @returns Array of entries in the group
-   */
-  getByGroup(group: string): NodeRegistryEntry[] {
-    return this.getAll().filter((entry) => entry.group === group)
   }
 
   /**

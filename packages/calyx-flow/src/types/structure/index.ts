@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
-export type Option<T> = { type: 'Some'; value: T } | { type: 'None' }
+export type TypeSome<T> = {type: 'Some'; value: T} 
+export type TypeNone = {type: 'None'}
+export type Option<T> = TypeSome<T> | TypeNone
 
 export const optionSchema = <T extends z.ZodTypeAny>(inner: T) =>
   z.discriminatedUnion('type', [
