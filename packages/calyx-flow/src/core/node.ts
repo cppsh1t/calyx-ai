@@ -1,3 +1,11 @@
+import {
+  validateNodeDataNamesAreUnique,
+  validateNodeDefinitionNamesAreUnique,
+  validateNodePortIdsAreUnique,
+  validateOutputRequiredInputsAreUnique,
+  validateOutputRequiredInputsReferenceExistingInputs,
+  validateRequiredInputsDoNotExistWithoutInputs,
+} from '@/core/node-validation.ts'
 import type {
   NodeInputPortDefinition,
   NodeInputPortInstance,
@@ -9,7 +17,14 @@ import type {
   Option,
   TypeSome,
 } from '@/types'
-import { NodeDataSchema, NodeInputPortDataSchema, NodeOutputPortDataSchema, NodeParameterDataSchema } from '@/types/core/node'
+import {
+  NodeDataSchema,
+  NodeInputPortDataSchema,
+  NodeInputPortInstanceSchema,
+  NodeOutputPortDataSchema,
+  NodeOutputPortInstanceSchema,
+  NodeParameterDataSchema,
+} from '@/types/core/node'
 import { None, Some } from '@/utils/structure'
 import type { NodeRegistry } from './registry'
 
@@ -54,7 +69,7 @@ function buildNodeInputPortInstance(definition: NodeInputPortDefinition, data: u
     throw new Error(`Input port name mismatch: expected "${definition.name}", got "${nodeInputPortData.name}"`)
   }
 
-  const instance: NodeInputPortInstance = {
+  let instance: NodeInputPortInstance = {
     id: nodeInputPortData.id,
     name: definition.name,
     description: definition.description,
@@ -63,7 +78,15 @@ function buildNodeInputPortInstance(definition: NodeInputPortDefinition, data: u
     value: None,
   }
 
-  return definition.postCompile.type === 'Some' ? definition.postCompile.value(instance) : instance
+  if (definition.postCompile.type === 'Some') {
+    instance = definition.postCompile.value(instance)
+    const instanceParseResult = NodeInputPortInstanceSchema.safeParse(instance)
+    if (!instanceParseResult.success) {
+      throw new Error(`Invalid input port instance after postCompile for input port "${definition.name}": ${instanceParseResult.error.message}`)
+    }
+  }
+
+  return instance
 }
 
 function buildNodeOutputPortInstance(definition: NodeOutputPortDefinition, data: unknown): NodeOutputPortInstance {
@@ -77,7 +100,7 @@ function buildNodeOutputPortInstance(definition: NodeOutputPortDefinition, data:
     throw new Error(`Output port name mismatch: expected "${definition.name}", got "${nodeOutputPortData.name}"`)
   }
 
-  const instance: NodeOutputPortInstance = {
+  let instance: NodeOutputPortInstance = {
     id: nodeOutputPortData.id,
     name: definition.name,
     description: definition.description,
@@ -88,7 +111,15 @@ function buildNodeOutputPortInstance(definition: NodeOutputPortDefinition, data:
     executor: definition.executor,
   }
 
-  return definition.postCompile.type === 'Some' ? definition.postCompile.value(instance) : instance
+  if (definition.postCompile.type === 'Some') {
+    instance = definition.postCompile.value(instance)
+    const instanceParseResult = NodeOutputPortInstanceSchema.safeParse(instance)
+    if (!instanceParseResult.success) {
+      throw new Error(`Invalid output port instance after postCompile for output port "${definition.name}": ${instanceParseResult.error.message}`)
+    }
+  }
+
+  return instance
 }
 
 function buildNodeInstance(registry: NodeRegistry, data: unknown): NodeInstance {
@@ -108,6 +139,9 @@ function buildNodeInstance(registry: NodeRegistry, data: unknown): NodeInstance 
   if (definition.name !== nodeInstanceData.name) {
     throw new Error(`Node name mismatch: expected "${definition.name}", got "${nodeInstanceData.name}"`)
   }
+
+  validateNodeDefinitionNamesAreUnique(definition)
+  validateNodeDataNamesAreUnique(definition.name, nodeInstanceData)
 
   let parameters: Option<NodeParameterInstance[]> = None
   if (definition.parameters.type === 'Some') {
@@ -153,6 +187,11 @@ function buildNodeInstance(registry: NodeRegistry, data: unknown): NodeInstance 
       outputs.value.push(buildNodeOutputPortInstance(outputDef, outputData))
     }
   }
+
+  validateNodePortIdsAreUnique(definition.name, inputs, outputs)
+  validateOutputRequiredInputsAreUnique(definition.name, outputs)
+  validateRequiredInputsDoNotExistWithoutInputs(definition.name, inputs, outputs)
+  validateOutputRequiredInputsReferenceExistingInputs(definition.name, inputs, outputs)
 
   return {
     id: nodeInstanceData.id,
