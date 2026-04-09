@@ -159,3 +159,8 @@ AegentUsage 接受Agent对象，调用agent
 Agent 独立的一个Agent节点
 解构节点 支持将复杂结构拆分
 类型断言节点 支持将schema断言成另一种
+
+编译边界:
+1.port definition和data依靠name拼凑，所以不能有同名
+2.输入端口重入
+3.requiredInputs的name不存在
