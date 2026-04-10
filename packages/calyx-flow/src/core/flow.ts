@@ -4,6 +4,7 @@ import {
   validateEdgeSchemasAreCompatible,
   validateEdgeSourcePortsBelongToSourceOutputs,
   validateEdgeTargetPortsBelongToTargetInputs,
+  validateFlowStructure,
   validateGraphIsAcyclic,
   validateInputPortsHaveSingleIncomingEdge,
   validateNodeIdsAreUnique,
@@ -147,20 +148,6 @@ function findStartNodes(nodes: NodeInstance[]): NodeInstance[] {
   return nodes.filter((node) => node.type.includes('start-node'))
 }
 
-function validateFlowBoundaries(nodes: NodeInstance[], edges: Edge[]): void {
-  validateNodeIdsAreUnique(nodes)
-  validateEdgeNodesExist(nodes, edges)
-  validateEdgeSourcePortsBelongToSourceOutputs(nodes, edges)
-  validateEdgeTargetPortsBelongToTargetInputs(nodes, edges)
-  validateInputPortsHaveSingleIncomingEdge(nodes, edges)
-  validateAtLeastOneStartNode(nodes)
-  validateStartNodesHaveNoIncomingEdges(nodes, edges)
-  validateStartNodesHaveOutputs(nodes)
-  validateNoSelfLoops(nodes, edges)
-  validateEdgeSchemasAreCompatible(nodes, edges)
-  validateGraphIsAcyclic(nodes, edges)
-}
-
 function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
   const parseRes = FlowConfigSchema.safeParse(flowConfig)
   if (!parseRes.success) {
@@ -171,7 +158,7 @@ function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
 
   const validationNodes: NodeInstance[] = validatedConfig.nodes.map((nodeData) => buildNodeInstance(registry, nodeData))
   const validationEdges: Edge[] = validatedConfig.edges.map((edge) => ({ ...edge }))
-  validateFlowBoundaries(validationNodes, validationEdges)
+  validateFlowStructure(validationNodes, validationEdges)
 
   const buildFlowRaw = () => {
     const nodes: NodeInstance[] = validatedConfig.nodes.map((nodeData) => {
@@ -198,6 +185,9 @@ function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
       return running
     },
     run: async function (abort?: AbortController): Promise<FlowInstance> {
+      if (running) {
+        throw new Error('Flow is already running')
+      }
       abort ??= new AbortController()
       const flowRaw = buildFlowRaw()
       const startNodes = findStartNodes(flowRaw.nodes)

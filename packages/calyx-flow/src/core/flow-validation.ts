@@ -139,6 +139,15 @@ function validateAtLeastOneStartNode(nodes: NodeInstance[]): void {
   }
 }
 
+function validateStartNodesHaveNoInputs(nodes: NodeInstance[]): void {
+  const startNodes = nodes.filter((node) => node.type.includes('start-node'))
+
+  for (const startNode of startNodes) {
+    if (getNodeInputs(startNode).length === 0) continue
+    throw new Error(`Start node "${startNode.name}" (id: ${startNode.id}) cannot declare input ports`)
+  }
+}
+
 function validateStartNodesHaveNoIncomingEdges(nodes: NodeInstance[], edges: Edge[]): void {
   const startNodeIds = new Set(nodes.filter((node) => node.type.includes('start-node')).map((node) => node.id))
 
@@ -153,6 +162,17 @@ function validateStartNodesHaveOutputs(nodes: NodeInstance[]): void {
   for (const startNode of startNodes) {
     if (getNodeOutputs(startNode).length > 0) continue
     throw new Error(`Start node "${startNode.name}" (id: ${startNode.id}) must declare at least one output port`)
+  }
+}
+
+function validateStartNodeOutputsHaveNoRequiredInputs(nodes: NodeInstance[]): void {
+  const startNodes = nodes.filter((node) => node.type.includes('start-node'))
+
+  for (const startNode of startNodes) {
+    for (const output of getNodeOutputs(startNode)) {
+      if (output.requiredInputs.type === 'None' || output.requiredInputs.value.length === 0) continue
+      throw new Error(`Start node output port "${output.name}" (id: ${output.id}) cannot declare requiredInputs`)
+    }
   }
 }
 
@@ -443,8 +463,10 @@ function validateFlowStructure(nodes: NodeInstance[], edges: Edge[]): void {
   validateEdgeTargetPortsBelongToTargetInputs(nodes, edges)
   validateInputPortsHaveSingleIncomingEdge(nodes, edges)
   validateAtLeastOneStartNode(nodes)
-  validateStartNodesHaveNoIncomingEdges(nodes, edges)
   validateStartNodesHaveOutputs(nodes)
+  validateStartNodeOutputsHaveNoRequiredInputs(nodes)
+  validateStartNodesHaveNoInputs(nodes)
+  validateStartNodesHaveNoIncomingEdges(nodes, edges)
   validateNoSelfLoops(nodes, edges)
   validateEdgeSchemasAreCompatible(nodes, edges)
   validateGraphIsAcyclic(nodes, edges)
@@ -462,6 +484,8 @@ export {
   validateInputPortsHaveSingleIncomingEdge,
   validateNodeIdsAreUnique,
   validateNoSelfLoops,
+  validateStartNodeOutputsHaveNoRequiredInputs,
   validateStartNodesHaveNoIncomingEdges,
+  validateStartNodesHaveNoInputs,
   validateStartNodesHaveOutputs,
 }
