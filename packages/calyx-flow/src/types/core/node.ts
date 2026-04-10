@@ -10,7 +10,7 @@ type Position = z.infer<typeof PositionSchema>
 
 const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.string().min(1)])
 
-type NodeExecuteContext = { inputs: Option<NodeInputPortInstance[]>; parameters: Option<NodeParameterInstance[]> }
+type NodeExecuteContext = { currentNode: NodeInstance, inputs: Option<NodeInputPortInstance[]>; parameters: Option<NodeParameterInstance[]>; signal: AbortSignal }
 type NodeExecuteResult<T = any> = {
   continue: boolean
   data: T | null
@@ -164,6 +164,9 @@ const NodeInstanceSchema = z.object({
   outputs: optionSchema(z.array(NodeOutputPortInstanceSchema)).meta({
     description: '[Runtime] List of output port instances for this node instance (optional)',
   }),
+  runningTimes: z.number().meta({
+    description: '[Runtime] Number of times this node instance has been executed; used for tracking execution and debugging',
+  }),
 })
 
 const NodeDefinitionSchema = NodeInstanceSchema.pick({ name: true, description: true, type: true, docs: true, group: true }).extend({
@@ -197,7 +200,17 @@ type NodeInstance = z.infer<typeof NodeInstanceSchema>
 type NodeDefinition = z.infer<typeof NodeDefinitionSchema>
 type NodeData = z.infer<typeof NodeDataSchema>
 
+const EdgeSchema = z.object({
+  sourceNodeId: z.string(),
+  targetNodeId: z.string(),
+  sourcePortId: z.string(),
+  targetPortId: z.string()
+})
+
+type Edge = z.infer<typeof EdgeSchema>
+
 export type {
+  Edge,
   NodeData,
   NodeDefinition,
   NodeExecuteContext,
@@ -230,5 +243,6 @@ export {
   NodeDataSchema,
   NodeInstanceSchema,
   NodeDefinitionSchema,
-  PositionSchema
+  PositionSchema,
+  EdgeSchema
 }
