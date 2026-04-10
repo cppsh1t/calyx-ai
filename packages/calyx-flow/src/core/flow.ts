@@ -1,4 +1,17 @@
 import {
+  validateAtLeastOneStartNode,
+  validateEdgeNodesExist,
+  validateEdgeSchemasAreCompatible,
+  validateEdgeSourcePortsBelongToSourceOutputs,
+  validateEdgeTargetPortsBelongToTargetInputs,
+  validateGraphIsAcyclic,
+  validateInputPortsHaveSingleIncomingEdge,
+  validateNodeIdsAreUnique,
+  validateNoSelfLoops,
+  validateStartNodesHaveNoIncomingEdges,
+  validateStartNodesHaveOutputs,
+} from '@/core/flow-validation.ts'
+import {
   type Edge,
   type FlowConfig,
   type NodeExecuteContext,
@@ -134,6 +147,20 @@ function findStartNodes(nodes: NodeInstance[]): NodeInstance[] {
   return nodes.filter((node) => node.type.includes('start-node'))
 }
 
+function validateFlowBoundaries(nodes: NodeInstance[], edges: Edge[]): void {
+  validateNodeIdsAreUnique(nodes)
+  validateEdgeNodesExist(nodes, edges)
+  validateEdgeSourcePortsBelongToSourceOutputs(nodes, edges)
+  validateEdgeTargetPortsBelongToTargetInputs(nodes, edges)
+  validateInputPortsHaveSingleIncomingEdge(nodes, edges)
+  validateAtLeastOneStartNode(nodes)
+  validateStartNodesHaveNoIncomingEdges(nodes, edges)
+  validateStartNodesHaveOutputs(nodes)
+  validateNoSelfLoops(nodes, edges)
+  validateEdgeSchemasAreCompatible(nodes, edges)
+  validateGraphIsAcyclic(nodes, edges)
+}
+
 function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
   const parseRes = FlowConfigSchema.safeParse(flowConfig)
   if (!parseRes.success) {
@@ -141,6 +168,10 @@ function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
   }
 
   const validatedConfig = parseRes.data
+
+  const validationNodes: NodeInstance[] = validatedConfig.nodes.map((nodeData) => buildNodeInstance(registry, nodeData))
+  const validationEdges: Edge[] = validatedConfig.edges.map((edge) => ({ ...edge }))
+  validateFlowBoundaries(validationNodes, validationEdges)
 
   const buildFlowRaw = () => {
     const nodes: NodeInstance[] = validatedConfig.nodes.map((nodeData) => {
@@ -172,13 +203,14 @@ function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
       const startNodes = findStartNodes(flowRaw.nodes)
       running = true
       try {
-        Promise.all(startNodes.map((startNode) => checkNodeAndExecute(flowRaw.nodes, flowRaw.edges, startNode, abort)))
+        await Promise.all(startNodes.map((startNode) => checkNodeAndExecute(flowRaw.nodes, flowRaw.edges, startNode, abort)))
       } catch (error) {
         throw error
       } finally {
         running = false
-        return flowRaw
       }
+
+      return flowRaw
     },
   }
 
