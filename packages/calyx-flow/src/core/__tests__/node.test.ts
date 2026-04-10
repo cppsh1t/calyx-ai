@@ -3,6 +3,7 @@ import { NodeRegistry } from '@/core/registry.ts'
 import type { NodeData, NodeDefinition, NodeExecutor, NodeInputPortDefinition, NodeOutputPortDefinition, NodeParameterDefinition, Option } from '@/types'
 import { None, Some } from '@/utils/structure.ts'
 import { describe, expect, test } from 'bun:test'
+import { isEmpty } from 'radash'
 import z from 'zod'
 
 const registryKey = 'demo/test'
