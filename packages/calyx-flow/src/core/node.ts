@@ -204,6 +204,7 @@ function buildNodeInstance(registry: NodeRegistry, data: unknown): NodeInstance 
     parameters,
     inputs,
     outputs,
+    runningTimes: 0,
   }
 }
 
