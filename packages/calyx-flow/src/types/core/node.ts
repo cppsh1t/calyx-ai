@@ -13,7 +13,7 @@ const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.strin
 type NodeExecuteContext = { currentNode: NodeInstance, inputs: Option<NodeInputPortInstance[]>; parameters: Option<NodeParameterInstance[]>; signal: AbortSignal }
 type NodeExecuteResult<T = any> = {
   continue: boolean
-  data: T | null
+  data: T 
 }
 type NodeExecutor<T = any> = (ctx: NodeExecuteContext) => Promise<NodeExecuteResult<T>>
 
