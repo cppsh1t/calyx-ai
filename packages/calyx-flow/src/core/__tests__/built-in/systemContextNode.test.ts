@@ -27,7 +27,6 @@ function createContextStartDef(contextData: Record<string, unknown>): NodeDefini
         schema: z.record(z.string(), z.unknown()),
         requiredInputs: None,
         executor: async () => ({ continue: true, data: contextData }),
-        postCompile: None,
       },
     ]),
   }
@@ -47,7 +46,6 @@ function createEndNodeDef(): NodeDefinition {
         name: 'promptIn',
         description: 'The rendered system prompt.',
         schema: z.string(),
-        postCompile: None,
       },
     ]),
     outputs: None,

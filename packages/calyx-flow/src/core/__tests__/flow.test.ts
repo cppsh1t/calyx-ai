@@ -1,6 +1,6 @@
 import { buildFlow } from '@/core/flow.ts'
 import { NodeRegistry } from '@/core/registry.ts'
-import type { FlowConfig, NodeData, NodeDefinition, NodeExecutor, NodeInputPortDefinition, NodeOutputPortDefinition } from '@/types'
+import type { FlowConfig, NodeData, NodeDefinition, NodeExecuteContext, NodeExecutor, NodeInputPortDefinition, NodeOutputPortDefinition } from '@/types'
 import { None, Some } from '@/utils/structure.ts'
 import { describe, expect, test } from 'bun:test'
 import z from 'zod'
@@ -12,7 +12,6 @@ function createInputDefinition(name: string, schema: z.ZodType = z.string(), ove
     name,
     description: `Input ${name}`,
     schema,
-    postCompile: None,
     ...overrides,
   }
 }
@@ -24,7 +23,6 @@ function createOutputDefinition(name: string, schema: z.ZodType = z.string(), ov
     schema,
     requiredInputs: None,
     executor: noopExecutor,
-    postCompile: None,
     ...overrides,
   }
 }
@@ -310,7 +308,8 @@ describe('buildFlow runtime execution', () => {
         outputs: Some([
           createOutputDefinition('middleOut', z.string(), {
             executor: async (ctx) => {
-              const value = ctx.inputs.type === 'Some' ? ctx.inputs.value[0]?.value : None
+              const input = ctx.inputs.type === 'Some' ? ctx.inputs.value[0] : undefined
+              const value = input ? input.value : None
               return {
                 continue: true,
                 data: value.type === 'Some' ? `${value.value}-middle` : 'missing',
@@ -371,7 +370,8 @@ describe('buildFlow runtime execution', () => {
 
   test('passes runtime context into executors', async () => {
     const registry = new NodeRegistry()
-    let capturedContext: NodeExecuteContext | null = null
+    let capturedContext!: NodeExecuteContext
+    let didCaptureContext = false
 
     registry.register(
       'runtime/context-start',
@@ -383,6 +383,7 @@ describe('buildFlow runtime execution', () => {
           createOutputDefinition('startOut', z.string(), {
             executor: async (ctx) => {
               capturedContext = ctx
+              didCaptureContext = true
               return { continue: true, data: 'context-value' }
             },
           }),
@@ -404,12 +405,17 @@ describe('buildFlow runtime execution', () => {
     const flow = buildFlow(config, registry)
     await flow.run()
 
-    expect(capturedContext?.currentNode.id).toBe('start-1')
-    expect(capturedContext?.currentNode.name).toBe('Context Start')
-    expect(capturedContext?.signal.aborted).toBe(false)
-    expect(capturedContext?.inputs.type).toBe('None')
-    expect(capturedContext?.parameters.type).toBe('Some')
-    expect(capturedContext?.parameters.type === 'Some' ? capturedContext.parameters.value[0]?.value : None).toEqual(Some('hello'))
+    expect(didCaptureContext).toBe(true)
+    if (!didCaptureContext) throw new Error('Expected executor context to be captured')
+
+    const context = capturedContext
+
+    expect(context.currentNode.id).toBe('start-1')
+    expect(context.currentNode.name).toBe('Context Start')
+    expect(context.signal.aborted).toBe(false)
+    expect(context.inputs.type).toBe('None')
+    expect(context.parameters.type).toBe('Some')
+    expect(context.parameters.type === 'Some' ? context.parameters.value[0]?.value : None).toEqual(Some('hello'))
   })
 
   test('stops propagation when executor returns continue false', async () => {
@@ -658,8 +664,10 @@ describe('buildFlow runtime execution', () => {
           createOutputDefinition('joinedOut', z.string(), {
             requiredInputs: Some(['leftIn', 'rightIn']),
             executor: async (ctx) => {
-              const left = ctx.inputs.type === 'Some' ? ctx.inputs.value[0]?.value : None
-              const right = ctx.inputs.type === 'Some' ? ctx.inputs.value[1]?.value : None
+              const leftInput = ctx.inputs.type === 'Some' ? ctx.inputs.value[0] : undefined
+              const rightInput = ctx.inputs.type === 'Some' ? ctx.inputs.value[1] : undefined
+              const left = leftInput ? leftInput.value : None
+              const right = rightInput ? rightInput.value : None
               return {
                 continue: true,
                 data: left.type === 'Some' && right.type === 'Some' ? `${left.value}+${right.value}` : 'missing',
