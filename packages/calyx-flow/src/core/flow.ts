@@ -135,7 +135,7 @@ function findStartNodes(nodes: NodeInstance[]): NodeInstance[] {
   return nodes.filter((node) => node.type.includes('start-node'))
 }
 
-function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
+function buildFlow<T>(flowConfig: FlowConfig, registry: NodeRegistry, meta: T): Flow<T> {
   const parseRes = FlowConfigSchema.safeParse(flowConfig)
   if (!parseRes.success) {
     throw new Error(`FlowConfig validation failed: ${parseRes.error.message}`)
@@ -154,24 +154,25 @@ function buildFlow(flowConfig: FlowConfig, registry: NodeRegistry): Flow {
 
     const edges: Edge[] = validatedConfig.edges.map((edge) => ({ ...edge }))
 
-    const flowRaw: FlowInstance = {
+    const flowRaw: FlowInstance<T> = {
       id: uuid(),
       name: validatedConfig.name,
       nodes,
       edges,
+      meta,
     }
     return flowRaw
   }
 
   let running = false
-  const flow: Flow = {
+  const flow: Flow<T> = {
     getName: function (): string {
       return validatedConfig.name
     },
     getRunningStatus: function (): boolean {
       return running
     },
-    run: async function (abort?: AbortController): Promise<FlowInstance> {
+    run: async function (abort?: AbortController): Promise<FlowInstance<T>> {
       if (running) {
         throw new Error('Flow is already running')
       }

@@ -1,11 +1,12 @@
 import { EdgeSchema, NodeDataSchema, type Edge, type NodeInstance } from "./node"
 import { z } from "zod"
 
-type FlowInstance = {
+type FlowInstance<T> = {
   id: string
   name: string
   nodes: NodeInstance[]
   edges: Edge[]
+  meta: T
 }
 
 const FlowConfigSchema = z.object({
@@ -16,10 +17,10 @@ const FlowConfigSchema = z.object({
 
 type FlowConfig = z.infer<typeof FlowConfigSchema>
 
-type Flow = {
+type Flow<T> = {
   getName: () => string
   getRunningStatus: () => boolean
-  run: (abort?: AbortController) => Promise<FlowInstance>
+  run: (abort?: AbortController) => Promise<FlowInstance<T>>
 }
 
 export type {  Flow, FlowConfig, FlowInstance }
