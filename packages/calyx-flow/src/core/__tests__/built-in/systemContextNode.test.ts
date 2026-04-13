@@ -110,7 +110,7 @@ async function runSystemContextFlow(contextData: Record<string, unknown>, templa
     ],
   }
 
-  const flow = buildFlow(config, registry)
+  const flow = buildFlow(config, registry, undefined)
   const instance = await flow.run(abort)
 
   const systemContextNodeInst = instance.nodes.find((n) => n.id === 'system-context-1')
@@ -252,7 +252,7 @@ describe('systemContextNode flow execution', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const run1 = await flow.run()
     const run2 = await flow.run()
 
@@ -284,7 +284,7 @@ describe('systemContextNode flow execution', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const abort = new AbortController()
     abort.abort()
 

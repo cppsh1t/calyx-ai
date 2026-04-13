@@ -123,7 +123,7 @@ function createDeferred(): { promise: Promise<void>; resolve: () => void } {
 
 describe('buildFlow flow-level validation', () => {
   test('accepts a valid DAG flow', () => {
-    const flow = buildFlow(createValidFlowConfig(), createRegistry())
+    const flow = buildFlow(createValidFlowConfig(), createRegistry(), undefined)
 
     expect(flow.getName()).toBe('valid-flow')
     expect(flow.getRunningStatus()).toBe(false)
@@ -136,14 +136,14 @@ describe('buildFlow flow-level validation', () => {
       outputs: Some([{ id: 'middle-out-1', name: 'middleOut' }]),
     })
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Duplicate node ids found in flow: "start-1"/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Duplicate node ids found in flow: "start-1"/)
   })
 
   test('rejects edges that reference missing nodes', () => {
     const config = createValidFlowConfig()
     config.edges = [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'missing-node', targetPortId: 'middle-in-1' }]
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Edge references missing target node "missing-node"/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Edge references missing target node "missing-node"/)
   })
 
   test('rejects source ports that are actually inputs', () => {
@@ -156,7 +156,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [{ sourceNodeId: 'source-1', sourcePortId: 'bad-input-id', targetNodeId: 'end-1', targetPortId: 'end-in-1' }],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/source ports must be outputs/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/source ports must be outputs/)
   })
 
   test('rejects target ports that are actually outputs', () => {
@@ -169,7 +169,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'target-1', targetPortId: 'bad-output-id' }],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/target ports must be inputs/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/target ports must be inputs/)
   })
 
   test('rejects multiple edges feeding the same input port', () => {
@@ -177,7 +177,7 @@ describe('buildFlow flow-level validation', () => {
     config.nodes.unshift(createNodeData('start-2', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-2', name: 'startOut' }]) }))
     config.edges.unshift({ sourceNodeId: 'start-2', sourcePortId: 'start-out-2', targetNodeId: 'middle-1', targetPortId: 'middle-in-1' })
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/is connected by multiple edges, but inputs are consume-once/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/is connected by multiple edges, but inputs are consume-once/)
   })
 
   test('rejects missing start nodes', () => {
@@ -187,7 +187,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Flow must contain at least one start node/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Flow must contain at least one start node/)
   })
 
   test('rejects start nodes with inputs', () => {
@@ -202,7 +202,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Start node "Start With Input Node" \(id: start-1\) cannot declare input ports/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Start node "Start With Input Node" \(id: start-1\) cannot declare input ports/)
   })
 
   test('rejects start node outputs with requiredInputs', () => {
@@ -217,7 +217,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Start node output port "startOut" \(id: start-out-1\) cannot declare requiredInputs/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Start node output port "startOut" \(id: start-out-1\) cannot declare requiredInputs/)
   })
 
   test('rejects start nodes without outputs', () => {
@@ -227,7 +227,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/must declare at least one output port/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/must declare at least one output port/)
   })
 
   test('rejects self-loops', () => {
@@ -243,7 +243,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [{ sourceNodeId: 'cycle-1', sourcePortId: 'cycle-out-1', targetNodeId: 'cycle-1', targetPortId: 'cycle-in-1' }],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Self-loop detected on node/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Self-loop detected on node/)
   })
 
   test('rejects cycles', () => {
@@ -266,7 +266,7 @@ describe('buildFlow flow-level validation', () => {
       ],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Cycle detected in flow graph/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Cycle detected in flow graph/)
   })
 
   test('rejects incompatible schemas across edges', () => {
@@ -279,7 +279,7 @@ describe('buildFlow flow-level validation', () => {
       edges: [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' }],
     }
 
-    expect(() => buildFlow(config, createRegistry())).toThrow(/Schema incompatibility between output port/)
+    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Schema incompatibility between output port/)
   })
 })
 
@@ -338,7 +338,7 @@ describe('buildFlow runtime execution', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
 
     const firstRun = await flow.run()
     const secondRun = await flow.run()
@@ -402,7 +402,7 @@ describe('buildFlow runtime execution', () => {
       edges: [],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     await flow.run()
 
     expect(didCaptureContext).toBe(true)
@@ -465,7 +465,7 @@ describe('buildFlow runtime execution', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const instance = await flow.run()
 
     const middle = instance.nodes.find((node) => node.id === 'middle-1')
@@ -504,7 +504,7 @@ describe('buildFlow runtime execution', () => {
       edges: [],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const abort = new AbortController()
     abort.abort()
 
@@ -542,7 +542,7 @@ describe('buildFlow runtime execution', () => {
       edges: [],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const firstRun = flow.run()
 
     expect(flow.getRunningStatus()).toBe(true)
@@ -578,7 +578,7 @@ describe('buildFlow runtime execution', () => {
       edges: [],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
 
     await expect(flow.run()).rejects.toThrow(/boom/)
     expect(flow.getRunningStatus()).toBe(false)
@@ -616,7 +616,7 @@ describe('buildFlow runtime execution', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const instance = await flow.run()
 
     const endA = instance.nodes.find((node) => node.id === 'end-a')
@@ -701,7 +701,7 @@ describe('buildFlow runtime execution', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const instance = await flow.run()
 
     const join = instance.nodes.find((node) => node.id === 'join-1')
