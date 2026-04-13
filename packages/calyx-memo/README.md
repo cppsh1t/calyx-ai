@@ -1,16 +1,16 @@
-# fish-memo
+# calyx-memo
 
 A lightweight tree-structured memory system for programming agents. Provides hierarchical storage with type/name/symbol queries, filtering, auto-expiration via tickers, deep cloning, and tree visualization.
 
 ## Installation
 
 ```bash
-bun add fish-memo
+bun add calyx-memo
 ```
 
 ## Core Concepts
 
-### FishMemoTree
+### MemoTree
 
 A tree node — the fundamental unit of the memory system. Each node contains:
 
@@ -23,11 +23,11 @@ A tree node — the fundamental unit of the memory system. Each node contains:
 | `description` | `string`              | Description                                                   |
 | `content`     | `string`              | Body content                                                  |
 | `data`        | `Record<string, any>` | Custom data payload (deep-cloned for isolation)               |
-| `subTrees`    | `FishMemoTree[]`      | Child nodes                                                   |
+| `subTrees`    | `MemoTree[]`          | Child nodes                                                   |
 | `createdAt`   | `string`              | Creation time, format `YYYY-MM-DD HH:mm:ss`                   |
 | `updatedAt`   | `string`              | Last updated time                                             |
 
-### FishMemo
+### Memo
 
 The operational instance that wraps a root tree. Provides querying, CRUD, filtering, ticker-based expiration, deep cloning, and visualization. All writes to `type`, `data`, and `subTrees` are deep-cloned to guarantee data isolation between nodes.
 
@@ -35,14 +35,14 @@ The operational instance that wraps a root tree. Provides querying, CRUD, filter
 
 ### Creation
 
-#### `createFishMemoTree(params)`
+#### `createMemoTree(params)`
 
 Creates a tree node. `id`, `createdAt`, and `updatedAt` are auto-generated. The passed `type`, `data`, and `subTrees` are deep-cloned.
 
 ```ts
-import { createFishMemoTree } from 'fish-memo'
+import { createMemoTree } from 'calyx-memo'
 
-const node = createFishMemoTree({
+const node = createMemoTree({
   name: 'my-task',
   type: ['task', 'pending'],
   symbol: 'T1',
@@ -53,14 +53,14 @@ const node = createFishMemoTree({
 })
 ```
 
-#### `createFishMemo(root)`
+#### `createMemo(root)`
 
-Wraps a root tree into a `FishMemo` instance.
+Wraps a root tree into a `Memo` instance.
 
 ```ts
-import { createFishMemo, createFishMemoTree } from 'fish-memo'
+import { createMemo, createMemoTree } from 'calyx-memo'
 
-const root = createFishMemoTree({
+const root = createMemoTree({
   name: 'project',
   type: ['root'],
   symbol: 'PR',
@@ -70,7 +70,7 @@ const root = createFishMemoTree({
   subTrees: [node],
 })
 
-const memo = createFishMemo(root)
+const memo = createMemo(root)
 ```
 
 ### Querying
@@ -82,7 +82,7 @@ All query methods search only the subtree, not the root itself (except `getSubTr
 Finds a node by ID. Also supports looking up the root node.
 
 ```ts
-const found = memo.getSubTreeById('some-id') // FishMemoTree | null
+const found = memo.getSubTreeById('some-id') // MemoTree | null
 ```
 
 #### `memo.getSubTreesByType(type)`
@@ -125,7 +125,7 @@ const highPriority = memo.getSubTreesByPredicate((node) => node.data.priority > 
 Adds a child to the specified parent. The `updatedAt` of all ancestors is automatically refreshed.
 
 ```ts
-const newTask = createFishMemoTree({
+const newTask = createMemoTree({
   name: 'task-3',
   type: ['task', 'pending'],
   symbol: 'T3',
@@ -207,7 +207,7 @@ memo.tickBy((node) => node.type.includes('running'))
 
 #### `memo.deepClone()`
 
-Returns a fully independent `FishMemo` instance that shares no references with the original. Useful for snapshots or branching experiments.
+Returns a fully independent `Memo` instance that shares no references with the original. Useful for snapshots or branching experiments.
 
 ```ts
 const snapshot = memo.deepClone()
@@ -243,10 +243,10 @@ Format: `{id}[name]<type1><type2>...(description)`
 ## Full Example
 
 ```ts
-import { createFishMemo, createFishMemoTree } from 'fish-memo'
+import { createMemo, createMemoTree } from 'calyx-memo'
 
 // 1. Create leaf nodes
-const task1 = createFishMemoTree({
+const task1 = createMemoTree({
   name: 'task-1',
   type: ['task', 'pending'],
   symbol: 'T1',
@@ -256,7 +256,7 @@ const task1 = createFishMemoTree({
   subTrees: [],
 })
 
-const task2 = createFishMemoTree({
+const task2 = createMemoTree({
   name: 'task-2',
   type: ['task', 'done'],
   symbol: 'T2',
@@ -267,7 +267,7 @@ const task2 = createFishMemoTree({
 })
 
 // 2. Create a parent node
-const plan = createFishMemoTree({
+const plan = createMemoTree({
   name: 'sprint-1',
   type: ['plan', 'running'],
   symbol: 'S1',
@@ -277,8 +277,8 @@ const plan = createFishMemoTree({
   subTrees: [task1, task2],
 })
 
-// 3. Create root and wrap as FishMemo
-const root = createFishMemoTree({
+// 3. Create root and wrap as Memo
+const root = createMemoTree({
   name: 'auth-service',
   type: ['root'],
   symbol: 'AS',
@@ -288,14 +288,14 @@ const root = createFishMemoTree({
   subTrees: [plan],
 })
 
-const memo = createFishMemo(root)
+const memo = createMemo(root)
 
 // 4. Query
 memo.getSubTreesByType('pending') // [task1]
 memo.getSubTreesBySymbol('T2') // [task2]
 
 // 5. Dynamically add a new task
-const task3 = createFishMemoTree({
+const task3 = createMemoTree({
   name: 'task-3',
   type: ['task', 'pending'],
   symbol: 'T3',

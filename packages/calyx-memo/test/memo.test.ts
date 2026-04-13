@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
-import { createFishMemo, createFishMemoTree } from '../src/index.ts'
-import type { FishMemo, FishMemoTree } from '../src/types.ts'
+import { createMemo, createMemoTree } from '../src/index.ts'
+import type { Memo, MemoTree } from '../src/types.ts'
 
 // --- Helper: build a reusable tree fixture ---
 
-let memo: FishMemo
-let rootNode: FishMemoTree
-let childA: FishMemoTree
-let childB: FishMemoTree
-let grandchildA1: FishMemoTree
-let grandchildA2: FishMemoTree
-let grandchildB1: FishMemoTree
+let memo: Memo
+let rootNode: MemoTree
+let childA: MemoTree
+let childB: MemoTree
+let grandchildA1: MemoTree
+let grandchildA2: MemoTree
+let grandchildB1: MemoTree
 
 beforeEach(() => {
-  grandchildA1 = createFishMemoTree({
+  grandchildA1 = createMemoTree({
     name: 'task-1',
     type: ['task', 'pending'],
     symbol: 'T1',
@@ -23,7 +23,7 @@ beforeEach(() => {
     subTrees: [],
   })
 
-  grandchildA2 = createFishMemoTree({
+  grandchildA2 = createMemoTree({
     name: 'task-2',
     type: ['task', 'done'],
     symbol: 'T2',
@@ -33,7 +33,7 @@ beforeEach(() => {
     subTrees: [],
   })
 
-  grandchildB1 = createFishMemoTree({
+  grandchildB1 = createMemoTree({
     name: 'bug-1',
     type: ['bug', 'pending'],
     symbol: 'B1',
@@ -43,7 +43,7 @@ beforeEach(() => {
     subTrees: [],
   })
 
-  childA = createFishMemoTree({
+  childA = createMemoTree({
     name: 'plan',
     type: ['plan', 'running'],
     symbol: 'PL',
@@ -53,7 +53,7 @@ beforeEach(() => {
     subTrees: [grandchildA1, grandchildA2],
   })
 
-  childB = createFishMemoTree({
+  childB = createMemoTree({
     name: 'notes',
     type: ['note', 'volatile'],
     symbol: 'NT',
@@ -63,7 +63,7 @@ beforeEach(() => {
     subTrees: [grandchildB1],
   })
 
-  rootNode = createFishMemoTree({
+  rootNode = createMemoTree({
     name: 'project',
     type: ['root', 'constant'],
     symbol: 'PR',
@@ -73,16 +73,16 @@ beforeEach(() => {
     subTrees: [childA, childB],
   })
 
-  memo = createFishMemo(rootNode)
+  memo = createMemo(rootNode)
 })
 
 // ============================================================
-// createFishMemoTree
+// createMemoTree
 // ============================================================
 
-describe('createFishMemoTree', () => {
+describe('createMemoTree', () => {
   test('creates a node with auto-generated id, createdAt, updatedAt', () => {
-    const node = createFishMemoTree({
+    const node = createMemoTree({
       name: 'test',
       type: ['a'],
       symbol: 'x',
@@ -100,7 +100,7 @@ describe('createFishMemoTree', () => {
 
   test('preserves all passed fields', () => {
     const data = { key: 'val' }
-    const sub = createFishMemoTree({
+    const sub = createMemoTree({
       name: 'sub',
       type: ['x'],
       symbol: 'S',
@@ -110,7 +110,7 @@ describe('createFishMemoTree', () => {
       subTrees: [],
     })
 
-    const node = createFishMemoTree({
+    const node = createMemoTree({
       name: 'top',
       type: ['a', 'b'],
       symbol: 'X',
@@ -132,7 +132,7 @@ describe('createFishMemoTree', () => {
 
   test('clones type array so it is not shared', () => {
     const typeArr = ['a', 'b']
-    const node = createFishMemoTree({
+    const node = createMemoTree({
       name: 'n',
       type: typeArr,
       symbol: 's',
@@ -147,8 +147,8 @@ describe('createFishMemoTree', () => {
   })
 
   test('clones subTrees array so it is not shared', () => {
-    const subTrees: FishMemoTree[] = []
-    const node = createFishMemoTree({
+    const subTrees: MemoTree[] = []
+    const node = createMemoTree({
       name: 'n',
       type: [],
       symbol: 's',
@@ -163,7 +163,7 @@ describe('createFishMemoTree', () => {
 
   test('deep clones data so nested objects are not shared', () => {
     const data = { nested: { value: 42 } }
-    const node = createFishMemoTree({
+    const node = createMemoTree({
       name: 'n',
       type: [],
       symbol: 's',
@@ -180,10 +180,10 @@ describe('createFishMemoTree', () => {
 })
 
 // ============================================================
-// createFishMemo — root
+// createMemo — root
 // ============================================================
 
-describe('createFishMemo', () => {
+describe('createMemo', () => {
   describe('root', () => {
     test('returns the root tree', () => {
       expect(memo.root).toBe(rootNode)
@@ -293,7 +293,7 @@ describe('getSubTreesByPredicate', () => {
 
 describe('addSubTree', () => {
   test('adds a child to the specified parent', () => {
-    const newChild = createFishMemoTree({
+    const newChild = createMemoTree({
       name: 'new-child',
       type: ['x'],
       symbol: 'NC',
@@ -319,7 +319,7 @@ describe('addSubTree', () => {
       // wait ~1.1s to cross second boundary
     }
 
-    const newChild = createFishMemoTree({
+    const newChild = createMemoTree({
       name: 'new-child',
       type: ['x'],
       symbol: 'NC',
@@ -338,7 +338,7 @@ describe('addSubTree', () => {
   test('is a no-op when parentId is not found', () => {
     const initialLength = rootNode.subTrees.length
 
-    const newChild = createFishMemoTree({
+    const newChild = createMemoTree({
       name: 'orphan',
       type: ['x'],
       symbol: 'OR',
@@ -386,7 +386,7 @@ describe('updateSubTree', () => {
   })
 
   test('clones subTrees array on update', () => {
-    const newSubTrees: FishMemoTree[] = [grandchildA1]
+    const newSubTrees: MemoTree[] = [grandchildA1]
     memo.updateSubTree(childA.id, { subTrees: newSubTrees })
 
     expect(childA.subTrees).toHaveLength(1)
@@ -557,7 +557,7 @@ describe('ticker', () => {
 // ============================================================
 
 describe('deepClone', () => {
-  test('returns a new FishMemo instance', () => {
+  test('returns a new Memo instance', () => {
     const clone = memo.deepClone()
     expect(clone).not.toBe(memo)
   })
@@ -575,7 +575,7 @@ describe('deepClone', () => {
 
     clone.addSubTree(
       clone.root.id,
-      createFishMemoTree({
+      createMemoTree({
         name: 'clone-only',
         type: ['x'],
         symbol: 'CO',
@@ -652,7 +652,7 @@ describe('formatToString', () => {
   })
 
   test('formats node without description without parentheses but with id', () => {
-    const leafNoDesc = createFishMemoTree({
+    const leafNoDesc = createMemoTree({
       name: 'no-desc',
       type: ['x'],
       symbol: 'ND',
@@ -662,7 +662,7 @@ describe('formatToString', () => {
       subTrees: [],
     })
 
-    const parent = createFishMemoTree({
+    const parent = createMemoTree({
       name: 'parent',
       type: [],
       symbol: 'P',
@@ -672,7 +672,7 @@ describe('formatToString', () => {
       subTrees: [leafNoDesc],
     })
 
-    const m = createFishMemo(parent)
+    const m = createMemo(parent)
     const result = m.formatToString(parent)
     const lines = result.split('\n')
 

@@ -1,4 +1,4 @@
-type FishMemoTree = {
+type MemoTree = {
   id: string
   name: string
   type: string[]
@@ -8,26 +8,26 @@ type FishMemoTree = {
   createdAt: string //YYYY-MM-DD HH:mm:ss
   updatedAt: string
   data: Record<string, any>
-  subTrees: FishMemoTree[]
+  subTrees: MemoTree[]
 }
 
-type FishMemoPredicate = Pick<FishMemoTree, 'id' | 'name' | 'type' | 'symbol'>
+type MemoPredicate = Pick<MemoTree, 'id' | 'name' | 'type' | 'symbol'>
 
-type FishMemo = {
-  root: FishMemoTree //read only
-  getSubTreeById: (id: string) => FishMemoTree | null
-  getSubTreesByType: (type: string) => FishMemoTree[]
-  getSubTreesByName: (name: string) => FishMemoTree[]
-  getSubTreesBySymbol: (symbol: string) => FishMemoTree[]
-  getSubTreesByPredicate: (predicate: (subTree: FishMemoTree) => boolean) => FishMemoTree[]
-  addSubTree: (parentId: string, subUnit: FishMemoTree) => void
-  updateSubTree: (id: string, updatedFields: Omit<Partial<FishMemoTree>, 'id'>) => void
+type Memo = {
+  root: MemoTree //read only
+  getSubTreeById: (id: string) => MemoTree | null
+  getSubTreesByType: (type: string) => MemoTree[]
+  getSubTreesByName: (name: string) => MemoTree[]
+  getSubTreesBySymbol: (symbol: string) => MemoTree[]
+  getSubTreesByPredicate: (predicate: (subTree: MemoTree) => boolean) => MemoTree[]
+  addSubTree: (parentId: string, subUnit: MemoTree) => void
+  updateSubTree: (id: string, updatedFields: Omit<Partial<MemoTree>, 'id'>) => void
   deleteSubTree: (id: string) => void
-  filterSubTree: (predicate: (subTree: FishMemoTree) => boolean) => FishMemoTree
+  filterSubTree: (predicate: (subTree: MemoTree) => boolean) => MemoTree
   tick: () => void
-  registerTicker: (ticker: (param: FishMemoTree) => boolean) => void
-  tickBy: (ticker: (param: FishMemoTree) => boolean) => void
-  deepClone: () => FishMemo
+  registerTicker: (ticker: (param: MemoTree) => boolean) => void
+  tickBy: (ticker: (param: MemoTree) => boolean) => void
+  deepClone: () => Memo
 
   /**
    * Formats a sub-tree as a string.
@@ -43,7 +43,7 @@ type FishMemo = {
          └─{id}[bug 1]<bug><pending>(the first bug note)
    * 
    */
-  formatToString: (subTree: FishMemoTree) => string
+  formatToString: (subTree: MemoTree) => string
 }
 
-export type { FishMemo, FishMemoPredicate, FishMemoTree }
+export type { Memo, MemoPredicate, MemoTree }
