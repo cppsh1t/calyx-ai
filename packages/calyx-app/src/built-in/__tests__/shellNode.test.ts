@@ -113,7 +113,7 @@ describe('shellNode flow integration', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const instance = await flow.run()
 
     const shellNodeInstance = instance.nodes.find((node) => node.id === 'shell-1')
@@ -160,7 +160,7 @@ describe('shellNode flow integration', () => {
       ],
     }
 
-    const flow = buildFlow(config, registry)
+    const flow = buildFlow(config, registry, undefined)
     const instance = await flow.run()
 
     const shellNodeInstance = instance.nodes.find((node) => node.id === 'shell-1')

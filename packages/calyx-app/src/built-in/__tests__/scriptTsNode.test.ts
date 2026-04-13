@@ -157,7 +157,7 @@ async function runScriptFlow(script: string, inputData: unknown, abort?: AbortCo
     ],
   }
 
-  const flow = buildFlow(config, registry)
+  const flow = buildFlow(config, registry, undefined)
   const instance = await flow.run(abort)
 
   const scriptNodeInstance = instance.nodes.find((node) => node.id === 'script-ts-1')
