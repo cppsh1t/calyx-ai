@@ -51,7 +51,8 @@
     "build:types": "tsc -p tsconfig.build.json",
     "check-types": "tsc -p tsconfig.app.json",
     "verify": "bun run build && bun run check-types",
-    "dev": "bun --watch src/index.ts"
+    "dev": "bun --watch src/index.ts",
+    "test": "bun test"
   },
   "devDependencies": {
     "@types/bun": "latest",
