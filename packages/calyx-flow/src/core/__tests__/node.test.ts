@@ -3,7 +3,6 @@ import { NodeRegistry } from '@/core/registry.ts'
 import type { NodeData, NodeDefinition, NodeExecutor, NodeInputPortDefinition, NodeOutputPortDefinition, NodeParameterDefinition, Option } from '@/types'
 import { None, Some } from '@/utils/structure.ts'
 import { describe, expect, test } from 'bun:test'
-import { isEmpty } from 'radash'
 import z from 'zod'
 
 const registryKey = 'demo/test'
@@ -31,7 +30,6 @@ function createInputDefinition(name: string, overrides: Partial<NodeInputPortDef
     name,
     description: `Input ${name}`,
     schema: z.string(),
-    postCompile: None,
     ...overrides,
   }
 }
@@ -54,7 +52,6 @@ function createOutputDefinition(
     schema: z.string(),
     requiredInputs: requiredInputs.length > 0 ? Some(requiredInputs) : None,
     executor,
-    postCompile: None,
     ...overrides,
   }
 }
@@ -141,7 +138,7 @@ describe('buildNodeParameterInstance', () => {
 })
 
 describe('buildNodeInputPortInstance', () => {
-  test('builds an input port instance with defaults when postCompile is absent', () => {
+  test('builds an input port instance with defaults', () => {
     const definition = createInputDefinition('inputA')
     const instance = buildNodeInputPortInstance(definition, createInputData('input-id-1', 'inputA'))
 
@@ -153,21 +150,6 @@ describe('buildNodeInputPortInstance', () => {
       used: false,
       value: None,
     })
-  })
-
-  test('applies postCompile to input port instances', () => {
-    const definition = createInputDefinition('inputA', {
-      postCompile: Some((origin) => ({
-        ...origin,
-        used: true,
-        value: Some('hydrated'),
-      })),
-    })
-
-    const instance = buildNodeInputPortInstance(definition, createInputData('input-id-1', 'inputA'))
-
-    expect(instance.used).toBe(true)
-    expect(instance.value).toEqual(Some('hydrated'))
   })
 
   test('rejects invalid input port data', () => {
@@ -183,24 +165,10 @@ describe('buildNodeInputPortInstance', () => {
       /Input port name mismatch: expected "inputA", got "inputB"/
     )
   })
-
-  test('rejects invalid input port instances returned by postCompile', () => {
-    const definition = createInputDefinition('inputA', {
-      postCompile: Some((origin) => {
-        const mutated = { ...origin }
-        Reflect.deleteProperty(mutated, 'id')
-        return mutated
-      }),
-    })
-
-    expect(() => buildNodeInputPortInstance(definition, createInputData('input-id-1', 'inputA'))).toThrow(
-      /Invalid input port instance after postCompile for input port "inputA":/
-    )
-  })
 })
 
 describe('buildNodeOutputPortInstance', () => {
-  test('builds an output port instance with defaults when postCompile is absent', () => {
+  test('builds an output port instance with defaults', () => {
     const definition = createOutputDefinition('outputA')
     const instance = buildNodeOutputPortInstance(definition, createOutputData('output-id-1', 'outputA'))
 
@@ -216,22 +184,6 @@ describe('buildNodeOutputPortInstance', () => {
     })
   })
 
-  test('applies postCompile to output port instances', () => {
-    const definition = createOutputDefinition('outputA', ['inputA'], {
-      postCompile: Some((origin) => ({
-        ...origin,
-        used: true,
-        value: Some('done'),
-      })),
-    })
-
-    const instance = buildNodeOutputPortInstance(definition, createOutputData('output-id-1', 'outputA'))
-
-    expect(instance.used).toBe(true)
-    expect(instance.value).toEqual(Some('done'))
-    expect(instance.requiredInputs).toEqual(Some(['inputA']))
-  })
-
   test('rejects invalid output port data', () => {
     const definition = createOutputDefinition('outputA')
 
@@ -245,44 +197,14 @@ describe('buildNodeOutputPortInstance', () => {
       /Output port name mismatch: expected "outputA", got "outputB"/
     )
   })
-
-  test('rejects invalid output port instances returned by postCompile', () => {
-    const definition = createOutputDefinition('outputA', ['inputA'], {
-      postCompile: Some((origin) => {
-        const mutated = { ...origin }
-        Reflect.deleteProperty(mutated, 'id')
-        return mutated
-      }),
-    })
-
-    expect(() => buildNodeOutputPortInstance(definition, createOutputData('output-id-1', 'outputA'))).toThrow(
-      /Invalid output port instance after postCompile for output port "outputA":/
-    )
-  })
 })
 
 describe('buildNodeInstance', () => {
   test('builds a valid full node instance', () => {
     const definition = createDefinition({
       parameters: Some([createParameterDefinition('threshold', z.coerce.number())]),
-      inputs: Some([
-        createInputDefinition('inputA', {
-          postCompile: Some((origin) => ({
-            ...origin,
-            used: true,
-            value: Some('hydrated-input'),
-          })),
-        }),
-      ]),
-      outputs: Some([
-        createOutputDefinition('outputA', ['inputA'], {
-          postCompile: Some((origin) => ({
-            ...origin,
-            used: true,
-            value: Some('hydrated-output'),
-          })),
-        }),
-      ]),
+      inputs: Some([createInputDefinition('inputA')]),
+      outputs: Some([createOutputDefinition('outputA', ['inputA'])]),
     })
     const registry = createRegistry(definition)
     const instance = buildNodeInstance(
@@ -309,15 +231,15 @@ describe('buildNodeInstance', () => {
     expect(instance.inputs.type).toBe('Some')
     if (instance.inputs.type === 'Some') {
       expect(instance.inputs.value).toHaveLength(1)
-      expect(instance.inputs.value[0]?.used).toBe(true)
-      expect(instance.inputs.value[0]?.value).toEqual(Some('hydrated-input'))
+      expect(instance.inputs.value[0]?.used).toBe(false)
+      expect(instance.inputs.value[0]?.value).toEqual(None)
     }
 
     expect(instance.outputs.type).toBe('Some')
     if (instance.outputs.type === 'Some') {
       expect(instance.outputs.value).toHaveLength(1)
-      expect(instance.outputs.value[0]?.used).toBe(true)
-      expect(instance.outputs.value[0]?.value).toEqual(Some('hydrated-output'))
+      expect(instance.outputs.value[0]?.used).toBe(false)
+      expect(instance.outputs.value[0]?.value).toEqual(None)
       expect(instance.outputs.value[0]?.requiredInputs).toEqual(Some(['inputA']))
       expect(instance.outputs.value[0]?.executor).toBe(executor)
     }
@@ -485,23 +407,6 @@ describe('buildNodeInstance', () => {
     expect(() => buildNodeInstance(registry, nodeData)).toThrow(/Input port data not found for input port "inputB" in node "Test Node"/)
   })
 
-  test('propagates invalid input postCompile results', () => {
-    const definition = createDefinition({
-      inputs: Some([
-        createInputDefinition('inputA', {
-          postCompile: Some((origin) => {
-            const mutated = { ...origin }
-            Reflect.deleteProperty(mutated, 'id')
-            return mutated
-          }),
-        }),
-      ]),
-    })
-    const registry = createRegistry(definition)
-
-    expect(() => buildNodeInstance(registry, createNodeData())).toThrow(/Invalid input port instance after postCompile for input port "inputA":/)
-  })
-
   test('rejects duplicate input port ids', () => {
     const definition = createDefinition({
       inputs: Some([createInputDefinition('inputA'), createInputDefinition('inputB')]),
@@ -543,23 +448,6 @@ describe('buildNodeInstance', () => {
     })
 
     expect(() => buildNodeInstance(registry, nodeData)).toThrow(/Output port data not found for output port "outputB" in node "Test Node"/)
-  })
-
-  test('propagates invalid output postCompile results', () => {
-    const definition = createDefinition({
-      outputs: Some([
-        createOutputDefinition('outputA', ['inputA'], {
-          postCompile: Some((origin) => {
-            const mutated = { ...origin }
-            Reflect.deleteProperty(mutated, 'id')
-            return mutated
-          }),
-        }),
-      ]),
-    })
-    const registry = createRegistry(definition)
-
-    expect(() => buildNodeInstance(registry, createNodeData())).toThrow(/Invalid output port instance after postCompile for output port "outputA":/)
   })
 
   test('rejects duplicate requiredInputs entries', () => {

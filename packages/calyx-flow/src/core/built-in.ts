@@ -1,5 +1,5 @@
 import type { NodeDefinition } from '@/types'
-import { None, Some, unwrap } from '@/utils/structure'
+import { Some, unwrap } from '@/utils/structure'
 import { z } from 'zod'
 
 const systemContextNode: NodeDefinition = {
@@ -66,7 +66,6 @@ Current time: {{time}}.
       name: 'context',
       description: 'The system context object.',
       schema: z.record(z.string(), z.unknown()),
-      postCompile: None,
     },
   ]),
   outputs: Some([
@@ -75,7 +74,6 @@ Current time: {{time}}.
       description: 'The generated system prompt based on the template and context.',
       schema: z.string(),
       requiredInputs: Some(['context']),
-      postCompile: None,
       executor: async (ctx) => {
         if (ctx.signal.aborted) return { continue: false, data: '' }
 

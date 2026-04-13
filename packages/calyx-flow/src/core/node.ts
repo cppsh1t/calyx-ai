@@ -17,14 +17,7 @@ import type {
   Option,
   TypeSome,
 } from '@/types'
-import {
-  NodeDataSchema,
-  NodeInputPortDataSchema,
-  NodeInputPortInstanceSchema,
-  NodeOutputPortDataSchema,
-  NodeOutputPortInstanceSchema,
-  NodeParameterDataSchema,
-} from '@/types/core/node'
+import { NodeDataSchema, NodeInputPortDataSchema, NodeOutputPortDataSchema, NodeParameterDataSchema } from '@/types/core/node'
 import { None, Some } from '@/utils/structure'
 import type { NodeRegistry } from './registry'
 
@@ -78,14 +71,6 @@ function buildNodeInputPortInstance(definition: NodeInputPortDefinition, data: u
     value: None,
   }
 
-  if (definition.postCompile.type === 'Some') {
-    instance = definition.postCompile.value(instance)
-    const instanceParseResult = NodeInputPortInstanceSchema.safeParse(instance)
-    if (!instanceParseResult.success) {
-      throw new Error(`Invalid input port instance after postCompile for input port "${definition.name}": ${instanceParseResult.error.message}`)
-    }
-  }
-
   return instance
 }
 
@@ -109,14 +94,6 @@ function buildNodeOutputPortInstance(definition: NodeOutputPortDefinition, data:
     value: None,
     requiredInputs: definition.requiredInputs,
     executor: definition.executor,
-  }
-
-  if (definition.postCompile.type === 'Some') {
-    instance = definition.postCompile.value(instance)
-    const instanceParseResult = NodeOutputPortInstanceSchema.safeParse(instance)
-    if (!instanceParseResult.success) {
-      throw new Error(`Invalid output port instance after postCompile for output port "${definition.name}": ${instanceParseResult.error.message}`)
-    }
   }
 
   return instance

@@ -10,10 +10,15 @@ type Position = z.infer<typeof PositionSchema>
 
 const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.string().min(1)])
 
-type NodeExecuteContext = { currentNode: NodeInstance, inputs: Option<NodeInputPortInstance[]>; parameters: Option<NodeParameterInstance[]>; signal: AbortSignal }
+type NodeExecuteContext = {
+  currentNode: NodeInstance
+  inputs: Option<NodeInputPortInstance[]>
+  parameters: Option<NodeParameterInstance[]>
+  signal: AbortSignal
+}
 type NodeExecuteResult<T = any> = {
   continue: boolean
-  data: T 
+  data: T
 }
 type NodeExecutor<T = any> = (ctx: NodeExecuteContext) => Promise<NodeExecuteResult<T>>
 
@@ -43,17 +48,12 @@ const NodeInputPortInstanceSchema = z.object({
   }),
 })
 
-const NodeInputPortDefinitionSchema = NodeInputPortInstanceSchema.pick({ name: true, description: true, schema: true }).extend({
-  postCompile: optionSchema(z.custom<NodeInputPortPostCompile>((val) => val === undefined || typeof val === 'function')).meta({
-    description: '[Definition] Post-compile hook for transforming input port instance',
-  }),
-})
+const NodeInputPortDefinitionSchema = NodeInputPortInstanceSchema.pick({ name: true, description: true, schema: true })
 const NodeInputPortDataSchema = NodeInputPortInstanceSchema.pick({ id: true, name: true })
 
 type NodeInputPortInstance = z.infer<typeof NodeInputPortInstanceSchema>
 type NodeInputPortDefinition = z.infer<typeof NodeInputPortDefinitionSchema>
 type NodeInputPortData = z.infer<typeof NodeInputPortDataSchema>
-type NodeInputPortPostCompile = (origin: NodeInputPortInstance) => NodeInputPortInstance
 
 const NodeOutputPortInstanceSchema = z.object({
   id: z.string().meta({
@@ -95,17 +95,12 @@ const NodeOutputPortDefinitionSchema = NodeOutputPortInstanceSchema.pick({
   schema: true,
   requiredInputs: true,
   executor: true,
-}).extend({
-  postCompile: optionSchema(z.custom<NodeOutputPortPostCompile>((val) => val === undefined || typeof val === 'function')).meta({
-    description: '[Definition] Post-compile hook for transforming output port instance',
-  }),
 })
 const NodeOutputPortDataSchema = NodeOutputPortInstanceSchema.pick({ id: true, name: true })
 
 type NodeOutputPortInstance = z.infer<typeof NodeOutputPortInstanceSchema>
 type NodeOutputPortDefinition = z.infer<typeof NodeOutputPortDefinitionSchema>
 type NodeOutputPortData = z.infer<typeof NodeOutputPortDataSchema>
-type NodeOutputPortPostCompile = (origin: NodeOutputPortInstance) => NodeOutputPortInstance
 
 const NodeParameterInstanceSchema = z.object({
   name: z.string().meta({
@@ -204,7 +199,7 @@ const EdgeSchema = z.object({
   sourceNodeId: z.string(),
   targetNodeId: z.string(),
   sourcePortId: z.string(),
-  targetPortId: z.string()
+  targetPortId: z.string(),
 })
 
 type Edge = z.infer<typeof EdgeSchema>
@@ -230,9 +225,13 @@ export type {
 }
 
 export {
+  EdgeSchema,
+  NodeDataSchema,
+  NodeDefinitionSchema,
   NodeInputPortDataSchema,
   NodeInputPortDefinitionSchema,
   NodeInputPortInstanceSchema,
+  NodeInstanceSchema,
   NodeOutputPortDataSchema,
   NodeOutputPortDefinitionSchema,
   NodeOutputPortInstanceSchema,
@@ -240,9 +239,5 @@ export {
   NodeParameterDefinitionSchema,
   NodeParameterInstanceSchema,
   NodeRegistryKeySchema,
-  NodeDataSchema,
-  NodeInstanceSchema,
-  NodeDefinitionSchema,
   PositionSchema,
-  EdgeSchema
 }
