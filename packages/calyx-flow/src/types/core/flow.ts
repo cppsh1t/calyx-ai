@@ -1,5 +1,5 @@
-import { EdgeSchema, NodeDataSchema, type Edge, type NodeInstance } from "./node"
-import { z } from "zod"
+import { z } from 'zod'
+import { EdgeSchema, NodeDataSchema, type Edge, type NodeData, type NodeInstance } from './node'
 
 type FlowInstance<T> = {
   id: string
@@ -9,13 +9,20 @@ type FlowInstance<T> = {
   meta: T
 }
 
-const FlowConfigSchema = z.object({
-  name: z.string(),
-  nodes: z.array(NodeDataSchema),
-  edges: z.array(EdgeSchema),
-})
+const FlowConfigSchema = <T extends z.ZodType>(metaSchema: T) =>
+  z.object({
+    name: z.string(),
+    nodes: z.array(NodeDataSchema),
+    edges: z.array(EdgeSchema),
+    meta: metaSchema,
+  })
 
-type FlowConfig = z.infer<typeof FlowConfigSchema>
+type FlowConfig<T> = {
+  name: string
+  nodes: NodeData[]
+  edges: Edge[]
+  meta: T
+}
 
 type Flow<T> = {
   getName: () => string
@@ -23,5 +30,5 @@ type Flow<T> = {
   run: (abort?: AbortController) => Promise<FlowInstance<T>>
 }
 
-export type {  Flow, FlowConfig, FlowInstance }
 export { FlowConfigSchema }
+export type { Flow, FlowConfig, FlowInstance }

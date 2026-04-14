@@ -15,6 +15,7 @@ import { None, Some } from '@/utils/structure'
 import { v4 as uuid } from 'uuid'
 import { buildNodeInstance } from './node'
 import type { NodeRegistry } from './registry'
+import type { ZodType } from 'zod'
 
 function getAvailableOutputs(node: NodeInstance): Option<NodeOutputPortInstance[]> {
   if (node.outputs.type === 'None') return None
@@ -138,8 +139,8 @@ function findStartNodes(nodes: NodeInstance[]): NodeInstance[] {
   return nodes.filter((node) => node.type.includes('start-node'))
 }
 
-function buildFlow<T>(flowConfig: FlowConfig, registry: NodeRegistry, meta: T, emitter?: NodeExecutorEmitter): Flow<T> {
-  const parseRes = FlowConfigSchema.safeParse(flowConfig)
+function buildFlow<T>(flowConfig: FlowConfig<T>, registry: NodeRegistry, metaSchema: ZodType, meta: T, emitter?: NodeExecutorEmitter): Flow<T> {
+  const parseRes = FlowConfigSchema(metaSchema).safeParse(flowConfig)
   if (!parseRes.success) {
     throw new Error(`FlowConfig validation failed: ${parseRes.error.message}`)
   }
