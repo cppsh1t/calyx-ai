@@ -6,6 +6,7 @@ export default defineConfig({
     core: 'src/core/index.ts',
     services: 'src/services/index.ts',
     types: 'src/types/index.ts',
+    ai: 'src/ai.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

@@ -28,6 +28,12 @@
       "require": "./dist/core.cjs",
       "default": "./dist/core.js"
     },
+    "./ai": {
+      "types": "./dist/ai.d.ts",
+      "import": "./dist/ai.js",
+      "require": "./dist/ai.cjs",
+      "default": "./dist/ai.js"
+    },
     "./services": {
       "types": "./dist/services.d.ts",
       "import": "./dist/services.js",
