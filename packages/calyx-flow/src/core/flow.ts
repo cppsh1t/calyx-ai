@@ -3,6 +3,7 @@ import {
   type Edge,
   type FlowConfig,
   type NodeExecuteContext,
+  type NodeExecutorEmitter,
   type NodeInputPortInstance,
   type NodeInstance,
   type NodeOutputPortInstance,
@@ -31,13 +32,15 @@ function makeExecutorContext(
   currentNode: NodeInstance,
   inputs: Option<NodeInputPortInstance[]>,
   parameters: Option<NodeParameterInstance[]>,
-  signal: AbortSignal
+  signal: AbortSignal,
+  emitter: NodeExecutorEmitter
 ): NodeExecuteContext {
   return {
     currentNode,
     inputs,
     parameters,
     signal,
+    emitter
   }
 }
 
@@ -56,7 +59,7 @@ function findNodeByInputPortId(portId: string, nodes: NodeInstance[]): Option<No
   return node ? Some(node) : None
 }
 
-async function checkNodeAndExecute(nodes: NodeInstance[], edges: Edge[], currentNode: NodeInstance, abort: AbortController) {
+async function checkNodeAndExecute(nodes: NodeInstance[], edges: Edge[], currentNode: NodeInstance, abort: AbortController, emitter: NodeExecutorEmitter) {
   const availableOutputsOption = getAvailableOutputs(currentNode)
   if (availableOutputsOption.type === 'None') return
   const availableOutputs = availableOutputsOption.value
@@ -67,13 +70,13 @@ async function checkNodeAndExecute(nodes: NodeInstance[], edges: Edge[], current
         if (abort.signal.aborted) return
         output.used = true
         const executor = output.executor
-        const ctx = makeExecutorContext(currentNode, currentNode.inputs, currentNode.parameters, abort.signal)
+        const ctx = makeExecutorContext(currentNode, currentNode.inputs, currentNode.parameters, abort.signal, emitter)
         currentNode.runningTimes += 1
         const result = await executor(ctx)
         currentNode.runningTimes -= 1
         if (!result.continue) return
         if (abort.signal.aborted) return
-        await setNodeOutput(nodes, edges, output, result.data, abort)
+        await setNodeOutput(nodes, edges, output, result.data, abort, emitter)
       })
     )
   } catch (error) {
@@ -82,7 +85,7 @@ async function checkNodeAndExecute(nodes: NodeInstance[], edges: Edge[], current
   }
 }
 
-async function setNodeOutput(nodes: NodeInstance[], edges: Edge[], nodeOutput: NodeOutputPortInstance, value: unknown, abort: AbortController) {
+async function setNodeOutput(nodes: NodeInstance[], edges: Edge[], nodeOutput: NodeOutputPortInstance, value: unknown, abort: AbortController, emitter: NodeExecutorEmitter) {
   const valParse = nodeOutput.schema.safeParse(value)
   if (!valParse.success) {
     throw new Error(`Output port "${nodeOutput.name}" (id: ${nodeOutput.id}) schema validation failed: ${valParse.error.message}`)
@@ -113,12 +116,12 @@ async function setNodeOutput(nodes: NodeInstance[], edges: Edge[], nodeOutput: N
           `Target input port "${targetInput.name}" (id: ${targetInput.id}) in node "${targetNode.name}" (id: ${targetNode.id}) has already been used/consumed`
         )
       }
-      await setNodeInput(nodes, edges, targetInput, valParse.data, abort)
+      await setNodeInput(nodes, edges, targetInput, valParse.data, abort, emitter)
     })
   )
 }
 
-async function setNodeInput(nodes: NodeInstance[], edges: Edge[], nodeInput: NodeInputPortInstance, value: unknown, abort: AbortController) {
+async function setNodeInput(nodes: NodeInstance[], edges: Edge[], nodeInput: NodeInputPortInstance, value: unknown, abort: AbortController, emitter: NodeExecutorEmitter) {
   const valParse = nodeInput.schema.safeParse(value)
   if (!valParse.success) {
     throw new Error(`Input port "${nodeInput.name}" (id: ${nodeInput.id}) schema validation failed: ${valParse.error.message}`)
@@ -128,19 +131,19 @@ async function setNodeInput(nodes: NodeInstance[], edges: Edge[], nodeInput: Nod
   const currentNode = findNodeByInputPortId(nodeInput.id, nodes)
   if (currentNode.type === 'None') return
   if (abort.signal.aborted) return
-  await checkNodeAndExecute(nodes, edges, currentNode.value, abort)
+  await checkNodeAndExecute(nodes, edges, currentNode.value, abort, emitter)
 }
 
 function findStartNodes(nodes: NodeInstance[]): NodeInstance[] {
   return nodes.filter((node) => node.type.includes('start-node'))
 }
 
-function buildFlow<T>(flowConfig: FlowConfig, registry: NodeRegistry, meta: T): Flow<T> {
+function buildFlow<T>(flowConfig: FlowConfig, registry: NodeRegistry, meta: T, emitter?: NodeExecutorEmitter): Flow<T> {
   const parseRes = FlowConfigSchema.safeParse(flowConfig)
   if (!parseRes.success) {
     throw new Error(`FlowConfig validation failed: ${parseRes.error.message}`)
   }
-
+  emitter ??= () => {}
   const validatedConfig = parseRes.data
 
   const validationNodes: NodeInstance[] = validatedConfig.nodes.map((nodeData) => buildNodeInstance(registry, nodeData))
@@ -181,7 +184,7 @@ function buildFlow<T>(flowConfig: FlowConfig, registry: NodeRegistry, meta: T): 
       const startNodes = findStartNodes(flowRaw.nodes)
       running = true
       try {
-        await Promise.all(startNodes.map((startNode) => checkNodeAndExecute(flowRaw.nodes, flowRaw.edges, startNode, abort)))
+        await Promise.all(startNodes.map((startNode) => checkNodeAndExecute(flowRaw.nodes, flowRaw.edges, startNode, abort, emitter)))
       } catch (error) {
         throw error
       } finally {

@@ -10,11 +10,14 @@ type Position = z.infer<typeof PositionSchema>
 
 const NodeRegistryKeySchema = z.templateLiteral([z.string().min(1), '/', z.string().min(1)])
 
+type NodeExecutorEmitter = (param: { type: string; payload: unknown }) => void
+
 type NodeExecuteContext = {
   currentNode: NodeInstance
   inputs: Option<NodeInputPortInstance[]>
   parameters: Option<NodeParameterInstance[]>
   signal: AbortSignal
+  emitter: NodeExecutorEmitter
 }
 type NodeExecuteResult<T = any> = {
   continue: boolean
@@ -222,6 +225,7 @@ export type {
   NodeParameterDefinition,
   NodeParameterInstance,
   Position,
+  NodeExecutorEmitter
 }
 
 export {
