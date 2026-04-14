@@ -5,6 +5,9 @@ import { None, Some } from '@/utils/structure.ts'
 import { describe, expect, test } from 'bun:test'
 import z from 'zod'
 
+const undefinedSchema = z.undefined()
+type MetaUndefined = undefined
+
 const noopExecutor: NodeExecutor = async () => ({ continue: true, data: 'done' })
 
 function createInputDefinition(name: string, schema: z.ZodType = z.string(), overrides: Partial<NodeInputPortDefinition> = {}): NodeInputPortDefinition {
@@ -94,9 +97,10 @@ function createRegistry(): NodeRegistry {
   return registry
 }
 
-function createValidFlowConfig(): FlowConfig {
+function createValidFlowConfig(): FlowConfig<MetaUndefined> {
   return {
     name: 'valid-flow',
+    meta: undefined,
     nodes: [
       createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
       createNodeData('middle-1', 'demo/middle', 'Middle Node', {
@@ -123,7 +127,7 @@ function createDeferred(): { promise: Promise<void>; resolve: () => void } {
 
 describe('buildFlow flow-level validation', () => {
   test('accepts a valid DAG flow', () => {
-    const flow = buildFlow(createValidFlowConfig(), createRegistry(), undefined)
+    const flow = buildFlow(createValidFlowConfig(), createRegistry(), undefinedSchema, undefined)
 
     expect(flow.getName()).toBe('valid-flow')
     expect(flow.getRunningStatus()).toBe(false)
@@ -136,40 +140,34 @@ describe('buildFlow flow-level validation', () => {
       outputs: Some([{ id: 'middle-out-1', name: 'middleOut' }]),
     })
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Duplicate node ids found in flow: "start-1"/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/Duplicate node ids found in flow: "start-1"/)
   })
 
   test('rejects edges that reference missing nodes', () => {
     const config = createValidFlowConfig()
     config.edges = [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'missing-node', targetPortId: 'middle-in-1' }]
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Edge references missing target node "missing-node"/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/Edge references missing target node "missing-node"/)
   })
 
   test('rejects source ports that are actually inputs', () => {
-    const config: FlowConfig = {
-      name: 'bad-source-port',
-      nodes: [
-        createNodeData('source-1', 'demo/input-only-start-port', 'Bad Source Node', { inputs: Some([{ id: 'bad-input-id', name: 'badIn' }]) }),
-        createNodeData('end-1', 'demo/end', 'End Node', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
-      ],
-      edges: [{ sourceNodeId: 'source-1', sourcePortId: 'bad-input-id', targetNodeId: 'end-1', targetPortId: 'end-in-1' }],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'bad-source-port', nodes: [
+      createNodeData('source-1', 'demo/input-only-start-port', 'Bad Source Node', { inputs: Some([{ id: 'bad-input-id', name: 'badIn' }]) }),
+      createNodeData('end-1', 'demo/end', 'End Node', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
+    ],
+    edges: [{ sourceNodeId: 'source-1', sourcePortId: 'bad-input-id', targetNodeId: 'end-1', targetPortId: 'end-in-1' }], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/source ports must be outputs/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/source ports must be outputs/)
   })
 
   test('rejects target ports that are actually outputs', () => {
-    const config: FlowConfig = {
-      name: 'bad-target-port',
-      nodes: [
-        createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
-        createNodeData('target-1', 'demo/output-only-target-port', 'Bad Target Node', { outputs: Some([{ id: 'bad-output-id', name: 'badOut' }]) }),
-      ],
-      edges: [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'target-1', targetPortId: 'bad-output-id' }],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'bad-target-port', nodes: [
+      createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
+      createNodeData('target-1', 'demo/output-only-target-port', 'Bad Target Node', { outputs: Some([{ id: 'bad-output-id', name: 'badOut' }]) }),
+    ],
+    edges: [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'target-1', targetPortId: 'bad-output-id' }], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/target ports must be inputs/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/target ports must be inputs/)
   })
 
   test('rejects multiple edges feeding the same input port', () => {
@@ -177,109 +175,92 @@ describe('buildFlow flow-level validation', () => {
     config.nodes.unshift(createNodeData('start-2', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-2', name: 'startOut' }]) }))
     config.edges.unshift({ sourceNodeId: 'start-2', sourcePortId: 'start-out-2', targetNodeId: 'middle-1', targetPortId: 'middle-in-1' })
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/is connected by multiple edges, but inputs are consume-once/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/is connected by multiple edges, but inputs are consume-once/)
   })
 
   test('rejects missing start nodes', () => {
-    const config: FlowConfig = {
-      name: 'no-start',
-      nodes: [createNodeData('end-1', 'demo/end', 'End Node', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) })],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'no-start', nodes: [createNodeData('end-1', 'demo/end', 'End Node', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) })],
+    edges: [], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Flow must contain at least one start node/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/Flow must contain at least one start node/)
   })
 
   test('rejects start nodes with inputs', () => {
-    const config: FlowConfig = {
-      name: 'start-with-inputs',
-      nodes: [
-        createNodeData('start-1', 'demo/start-with-input', 'Start With Input Node', {
-          inputs: Some([{ id: 'start-in-1', name: 'startIn' }]),
-          outputs: Some([{ id: 'start-out-1', name: 'startOut' }]),
-        }),
-      ],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'start-with-inputs', nodes: [
+      createNodeData('start-1', 'demo/start-with-input', 'Start With Input Node', {
+        inputs: Some([{ id: 'start-in-1', name: 'startIn' }]),
+        outputs: Some([{ id: 'start-out-1', name: 'startOut' }]),
+      }),
+    ],
+    edges: [], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Start node "Start With Input Node" \(id: start-1\) cannot declare input ports/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(
+      /Start node "Start With Input Node" \(id: start-1\) cannot declare input ports/
+    )
   })
 
   test('rejects start node outputs with requiredInputs', () => {
-    const config: FlowConfig = {
-      name: 'start-output-with-required-inputs',
-      nodes: [
-        createNodeData('start-1', 'demo/start-with-required-inputs', 'Start With Required Inputs Node', {
-          inputs: Some([{ id: 'start-in-1', name: 'startIn' }]),
-          outputs: Some([{ id: 'start-out-1', name: 'startOut' }]),
-        }),
-      ],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'start-output-with-required-inputs', nodes: [
+      createNodeData('start-1', 'demo/start-with-required-inputs', 'Start With Required Inputs Node', {
+        inputs: Some([{ id: 'start-in-1', name: 'startIn' }]),
+        outputs: Some([{ id: 'start-out-1', name: 'startOut' }]),
+      }),
+    ],
+    edges: [], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Start node output port "startOut" \(id: start-out-1\) cannot declare requiredInputs/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(
+      /Start node output port "startOut" \(id: start-out-1\) cannot declare requiredInputs/
+    )
   })
 
   test('rejects start nodes without outputs', () => {
-    const config: FlowConfig = {
-      name: 'empty-start',
-      nodes: [createNodeData('start-1', 'demo/no-output-start', 'Empty Start Node', { outputs: None })],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'empty-start', nodes: [createNodeData('start-1', 'demo/no-output-start', 'Empty Start Node', { outputs: None })],
+    edges: [], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/must declare at least one output port/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/must declare at least one output port/)
   })
 
   test('rejects self-loops', () => {
-    const config: FlowConfig = {
-      name: 'self-loop',
-      nodes: [
-        createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
-        createNodeData('cycle-1', 'demo/cycle', 'Cycle Node', {
-          inputs: Some([{ id: 'cycle-in-1', name: 'cycleIn' }]),
-          outputs: Some([{ id: 'cycle-out-1', name: 'cycleOut' }]),
-        }),
-      ],
-      edges: [{ sourceNodeId: 'cycle-1', sourcePortId: 'cycle-out-1', targetNodeId: 'cycle-1', targetPortId: 'cycle-in-1' }],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'self-loop', nodes: [
+      createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
+      createNodeData('cycle-1', 'demo/cycle', 'Cycle Node', {
+        inputs: Some([{ id: 'cycle-in-1', name: 'cycleIn' }]),
+        outputs: Some([{ id: 'cycle-out-1', name: 'cycleOut' }]),
+      }),
+    ],
+    edges: [{ sourceNodeId: 'cycle-1', sourcePortId: 'cycle-out-1', targetNodeId: 'cycle-1', targetPortId: 'cycle-in-1' }], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Self-loop detected on node/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/Self-loop detected on node/)
   })
 
   test('rejects cycles', () => {
-    const config: FlowConfig = {
-      name: 'cycle',
-      nodes: [
-        createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
-        createNodeData('cycle-1', 'demo/cycle', 'Cycle Node', {
-          inputs: Some([{ id: 'cycle-in-1', name: 'cycleIn' }]),
-          outputs: Some([{ id: 'cycle-out-1', name: 'cycleOut' }]),
-        }),
-        createNodeData('cycle-2', 'demo/cycle', 'Cycle Node', {
-          inputs: Some([{ id: 'cycle-in-2', name: 'cycleIn' }]),
-          outputs: Some([{ id: 'cycle-out-2', name: 'cycleOut' }]),
-        }),
-      ],
-      edges: [
-        { sourceNodeId: 'cycle-1', sourcePortId: 'cycle-out-1', targetNodeId: 'cycle-2', targetPortId: 'cycle-in-2' },
-        { sourceNodeId: 'cycle-2', sourcePortId: 'cycle-out-2', targetNodeId: 'cycle-1', targetPortId: 'cycle-in-1' },
-      ],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'cycle', nodes: [
+      createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
+      createNodeData('cycle-1', 'demo/cycle', 'Cycle Node', {
+        inputs: Some([{ id: 'cycle-in-1', name: 'cycleIn' }]),
+        outputs: Some([{ id: 'cycle-out-1', name: 'cycleOut' }]),
+      }),
+      createNodeData('cycle-2', 'demo/cycle', 'Cycle Node', {
+        inputs: Some([{ id: 'cycle-in-2', name: 'cycleIn' }]),
+        outputs: Some([{ id: 'cycle-out-2', name: 'cycleOut' }]),
+      }),
+    ],
+    edges: [
+      { sourceNodeId: 'cycle-1', sourcePortId: 'cycle-out-1', targetNodeId: 'cycle-2', targetPortId: 'cycle-in-2' },
+      { sourceNodeId: 'cycle-2', sourcePortId: 'cycle-out-2', targetNodeId: 'cycle-1', targetPortId: 'cycle-in-1' },
+    ], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Cycle detected in flow graph/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/Cycle detected in flow graph/)
   })
 
   test('rejects incompatible schemas across edges', () => {
-    const config: FlowConfig = {
-      name: 'schema-mismatch',
-      nodes: [
-        createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
-        createNodeData('end-1', 'demo/number-end', 'Number End Node', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
-      ],
-      edges: [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' }],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'schema-mismatch', nodes: [
+      createNodeData('start-1', 'demo/start', 'Start Node', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
+      createNodeData('end-1', 'demo/number-end', 'Number End Node', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
+    ],
+    edges: [{ sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' }], }
 
-    expect(() => buildFlow(config, createRegistry(), undefined)).toThrow(/Schema incompatibility between output port/)
+    expect(() => buildFlow(config, createRegistry(), undefinedSchema, undefined)).toThrow(/Schema incompatibility between output port/)
   })
 })
 
@@ -322,23 +303,20 @@ describe('buildFlow runtime execution', () => {
 
     registry.register('runtime/end', createNodeDefinition({ name: 'Runtime End', inputs: Some([createInputDefinition('endIn')]) }))
 
-    const config: FlowConfig = {
-      name: 'runtime-linear',
-      nodes: [
-        createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
-        createNodeData('middle-1', 'runtime/middle', 'Runtime Middle', {
-          inputs: Some([{ id: 'middle-in-1', name: 'middleIn' }]),
-          outputs: Some([{ id: 'middle-out-1', name: 'middleOut' }]),
-        }),
-        createNodeData('end-1', 'runtime/end', 'Runtime End', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
-      ],
-      edges: [
-        { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'middle-1', targetPortId: 'middle-in-1' },
-        { sourceNodeId: 'middle-1', sourcePortId: 'middle-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' },
-      ],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-linear', nodes: [
+      createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
+      createNodeData('middle-1', 'runtime/middle', 'Runtime Middle', {
+        inputs: Some([{ id: 'middle-in-1', name: 'middleIn' }]),
+        outputs: Some([{ id: 'middle-out-1', name: 'middleOut' }]),
+      }),
+      createNodeData('end-1', 'runtime/end', 'Runtime End', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
+    ],
+    edges: [
+      { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'middle-1', targetPortId: 'middle-in-1' },
+      { sourceNodeId: 'middle-1', sourcePortId: 'middle-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' },
+    ], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
 
     const firstRun = await flow.run()
     const secondRun = await flow.run()
@@ -391,18 +369,15 @@ describe('buildFlow runtime execution', () => {
       })
     )
 
-    const config: FlowConfig = {
-      name: 'runtime-context',
-      nodes: [
-        createNodeData('start-1', 'runtime/context-start', 'Context Start', {
-          parameters: Some([{ name: 'message', value: Some('hello') }]),
-          outputs: Some([{ id: 'start-out-1', name: 'startOut' }]),
-        }),
-      ],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-context', nodes: [
+      createNodeData('start-1', 'runtime/context-start', 'Context Start', {
+        parameters: Some([{ name: 'message', value: Some('hello') }]),
+        outputs: Some([{ id: 'start-out-1', name: 'startOut' }]),
+      }),
+    ],
+    edges: [], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     await flow.run()
 
     expect(didCaptureContext).toBe(true)
@@ -449,23 +424,20 @@ describe('buildFlow runtime execution', () => {
 
     registry.register('runtime/end', createNodeDefinition({ name: 'Runtime End', inputs: Some([createInputDefinition('endIn')]) }))
 
-    const config: FlowConfig = {
-      name: 'runtime-stop',
-      nodes: [
-        createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
-        createNodeData('middle-1', 'runtime/stopper', 'Runtime Stopper', {
-          inputs: Some([{ id: 'middle-in-1', name: 'middleIn' }]),
-          outputs: Some([{ id: 'middle-out-1', name: 'middleOut' }]),
-        }),
-        createNodeData('end-1', 'runtime/end', 'Runtime End', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
-      ],
-      edges: [
-        { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'middle-1', targetPortId: 'middle-in-1' },
-        { sourceNodeId: 'middle-1', sourcePortId: 'middle-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' },
-      ],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-stop', nodes: [
+      createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
+      createNodeData('middle-1', 'runtime/stopper', 'Runtime Stopper', {
+        inputs: Some([{ id: 'middle-in-1', name: 'middleIn' }]),
+        outputs: Some([{ id: 'middle-out-1', name: 'middleOut' }]),
+      }),
+      createNodeData('end-1', 'runtime/end', 'Runtime End', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
+    ],
+    edges: [
+      { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'middle-1', targetPortId: 'middle-in-1' },
+      { sourceNodeId: 'middle-1', sourcePortId: 'middle-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' },
+    ], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     const instance = await flow.run()
 
     const middle = instance.nodes.find((node) => node.id === 'middle-1')
@@ -498,13 +470,10 @@ describe('buildFlow runtime execution', () => {
       })
     )
 
-    const config: FlowConfig = {
-      name: 'runtime-abort-before-start',
-      nodes: [createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) })],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-abort-before-start', nodes: [createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) })],
+    edges: [], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     const abort = new AbortController()
     abort.abort()
 
@@ -536,13 +505,10 @@ describe('buildFlow runtime execution', () => {
       })
     )
 
-    const config: FlowConfig = {
-      name: 'runtime-reentry',
-      nodes: [createNodeData('start-1', 'runtime/slow-start', 'Slow Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) })],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-reentry', nodes: [createNodeData('start-1', 'runtime/slow-start', 'Slow Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) })],
+    edges: [], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     const firstRun = flow.run()
 
     expect(flow.getRunningStatus()).toBe(true)
@@ -572,13 +538,10 @@ describe('buildFlow runtime execution', () => {
       })
     )
 
-    const config: FlowConfig = {
-      name: 'runtime-error',
-      nodes: [createNodeData('start-1', 'runtime/failing-start', 'Failing Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) })],
-      edges: [],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-error', nodes: [createNodeData('start-1', 'runtime/failing-start', 'Failing Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) })],
+    edges: [], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
 
     await expect(flow.run()).rejects.toThrow(/boom/)
     expect(flow.getRunningStatus()).toBe(false)
@@ -603,20 +566,17 @@ describe('buildFlow runtime execution', () => {
     registry.register('runtime/end-a', createNodeDefinition({ name: 'End A', inputs: Some([createInputDefinition('endIn')]) }))
     registry.register('runtime/end-b', createNodeDefinition({ name: 'End B', inputs: Some([createInputDefinition('endIn')]) }))
 
-    const config: FlowConfig = {
-      name: 'runtime-fanout',
-      nodes: [
-        createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
-        createNodeData('end-a', 'runtime/end-a', 'End A', { inputs: Some([{ id: 'end-in-a', name: 'endIn' }]) }),
-        createNodeData('end-b', 'runtime/end-b', 'End B', { inputs: Some([{ id: 'end-in-b', name: 'endIn' }]) }),
-      ],
-      edges: [
-        { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'end-a', targetPortId: 'end-in-a' },
-        { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'end-b', targetPortId: 'end-in-b' },
-      ],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-fanout', nodes: [
+      createNodeData('start-1', 'runtime/start', 'Runtime Start', { outputs: Some([{ id: 'start-out-1', name: 'startOut' }]) }),
+      createNodeData('end-a', 'runtime/end-a', 'End A', { inputs: Some([{ id: 'end-in-a', name: 'endIn' }]) }),
+      createNodeData('end-b', 'runtime/end-b', 'End B', { inputs: Some([{ id: 'end-in-b', name: 'endIn' }]) }),
+    ],
+    edges: [
+      { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'end-a', targetPortId: 'end-in-a' },
+      { sourceNodeId: 'start-1', sourcePortId: 'start-out-1', targetNodeId: 'end-b', targetPortId: 'end-in-b' },
+    ], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     const instance = await flow.run()
 
     const endA = instance.nodes.find((node) => node.id === 'end-a')
@@ -680,28 +640,25 @@ describe('buildFlow runtime execution', () => {
 
     registry.register('runtime/end', createNodeDefinition({ name: 'Runtime End', inputs: Some([createInputDefinition('endIn')]) }))
 
-    const config: FlowConfig = {
-      name: 'runtime-join',
-      nodes: [
-        createNodeData('start-left', 'runtime/start-left', 'Start Left', { outputs: Some([{ id: 'left-out-1', name: 'leftOut' }]) }),
-        createNodeData('start-right', 'runtime/start-right', 'Start Right', { outputs: Some([{ id: 'right-out-1', name: 'rightOut' }]) }),
-        createNodeData('join-1', 'runtime/join', 'Join Node', {
-          inputs: Some([
-            { id: 'join-left-in-1', name: 'leftIn' },
-            { id: 'join-right-in-1', name: 'rightIn' },
-          ]),
-          outputs: Some([{ id: 'join-out-1', name: 'joinedOut' }]),
-        }),
-        createNodeData('end-1', 'runtime/end', 'Runtime End', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
-      ],
-      edges: [
-        { sourceNodeId: 'start-left', sourcePortId: 'left-out-1', targetNodeId: 'join-1', targetPortId: 'join-left-in-1' },
-        { sourceNodeId: 'start-right', sourcePortId: 'right-out-1', targetNodeId: 'join-1', targetPortId: 'join-right-in-1' },
-        { sourceNodeId: 'join-1', sourcePortId: 'join-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' },
-      ],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'runtime-join', nodes: [
+      createNodeData('start-left', 'runtime/start-left', 'Start Left', { outputs: Some([{ id: 'left-out-1', name: 'leftOut' }]) }),
+      createNodeData('start-right', 'runtime/start-right', 'Start Right', { outputs: Some([{ id: 'right-out-1', name: 'rightOut' }]) }),
+      createNodeData('join-1', 'runtime/join', 'Join Node', {
+        inputs: Some([
+          { id: 'join-left-in-1', name: 'leftIn' },
+          { id: 'join-right-in-1', name: 'rightIn' },
+        ]),
+        outputs: Some([{ id: 'join-out-1', name: 'joinedOut' }]),
+      }),
+      createNodeData('end-1', 'runtime/end', 'Runtime End', { inputs: Some([{ id: 'end-in-1', name: 'endIn' }]) }),
+    ],
+    edges: [
+      { sourceNodeId: 'start-left', sourcePortId: 'left-out-1', targetNodeId: 'join-1', targetPortId: 'join-left-in-1' },
+      { sourceNodeId: 'start-right', sourcePortId: 'right-out-1', targetNodeId: 'join-1', targetPortId: 'join-right-in-1' },
+      { sourceNodeId: 'join-1', sourcePortId: 'join-out-1', targetNodeId: 'end-1', targetPortId: 'end-in-1' },
+    ], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     const instance = await flow.run()
 
     const join = instance.nodes.find((node) => node.id === 'join-1')

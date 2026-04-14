@@ -6,6 +6,9 @@ import { None, Some, unwrap, unwrapOr } from '@/utils/structure.ts'
 import { describe, expect, test } from 'bun:test'
 import z from 'zod'
 
+const undefinedSchema = z.undefined()
+type MetaUndefined = undefined
+
 // --- Helpers ---
 
 const BUILTIN_KEY = 'built-in/SystemContext'
@@ -101,16 +104,13 @@ async function runSystemContextFlow(contextData: Record<string, unknown>, templa
   registry.register('test/context-provider', createContextStartDef(contextData))
   registry.register('test/prompt-receiver', createEndNodeDef())
 
-  const config: FlowConfig = {
-    name: 'test-system-context',
-    nodes: [createContextStartData(contextData), createSystemContextData(template), createEndNodeData()],
-    edges: [
-      { sourceNodeId: 'start-1', sourcePortId: 'start-context-out', targetNodeId: 'system-context-1', targetPortId: 'sc-context-in' },
-      { sourceNodeId: 'system-context-1', sourcePortId: 'sc-prompt-out', targetNodeId: 'end-1', targetPortId: 'end-prompt-in' },
-    ],
-  }
+  const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'test-system-context', nodes: [createContextStartData(contextData), createSystemContextData(template), createEndNodeData()],
+  edges: [
+    { sourceNodeId: 'start-1', sourcePortId: 'start-context-out', targetNodeId: 'system-context-1', targetPortId: 'sc-context-in' },
+    { sourceNodeId: 'system-context-1', sourcePortId: 'sc-prompt-out', targetNodeId: 'end-1', targetPortId: 'end-prompt-in' },
+  ], }
 
-  const flow = buildFlow(config, registry, undefined)
+  const flow = buildFlow(config, registry, undefinedSchema, undefined)
   const instance = await flow.run(abort)
 
   const systemContextNodeInst = instance.nodes.find((n) => n.id === 'system-context-1')
@@ -243,16 +243,13 @@ describe('systemContextNode flow execution', () => {
     registry.register('test/context-provider', createContextStartDef({ role: 'test' }))
     registry.register('test/prompt-receiver', createEndNodeDef())
 
-    const config: FlowConfig = {
-      name: 'test-fresh-state',
-      nodes: [createContextStartData({ role: 'test' }), createSystemContextData('You are a {{role}}.'), createEndNodeData()],
-      edges: [
-        { sourceNodeId: 'start-1', sourcePortId: 'start-context-out', targetNodeId: 'system-context-1', targetPortId: 'sc-context-in' },
-        { sourceNodeId: 'system-context-1', sourcePortId: 'sc-prompt-out', targetNodeId: 'end-1', targetPortId: 'end-prompt-in' },
-      ],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'test-fresh-state', nodes: [createContextStartData({ role: 'test' }), createSystemContextData('You are a {{role}}.'), createEndNodeData()],
+    edges: [
+      { sourceNodeId: 'start-1', sourcePortId: 'start-context-out', targetNodeId: 'system-context-1', targetPortId: 'sc-context-in' },
+      { sourceNodeId: 'system-context-1', sourcePortId: 'sc-prompt-out', targetNodeId: 'end-1', targetPortId: 'end-prompt-in' },
+    ], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     const run1 = await flow.run()
     const run2 = await flow.run()
 
@@ -275,16 +272,13 @@ describe('systemContextNode flow execution', () => {
     registry.register('test/context-provider', createContextStartDef({ role: 'should-not-run' }))
     registry.register('test/prompt-receiver', createEndNodeDef())
 
-    const config: FlowConfig = {
-      name: 'test-abort-before',
-      nodes: [createContextStartData({ role: 'should-not-run' }), createSystemContextData('You are a {{role}}.'), createEndNodeData()],
-      edges: [
-        { sourceNodeId: 'start-1', sourcePortId: 'start-context-out', targetNodeId: 'system-context-1', targetPortId: 'sc-context-in' },
-        { sourceNodeId: 'system-context-1', sourcePortId: 'sc-prompt-out', targetNodeId: 'end-1', targetPortId: 'end-prompt-in' },
-      ],
-    }
+    const config: FlowConfig<MetaUndefined> = { meta: undefined, name: 'test-abort-before', nodes: [createContextStartData({ role: 'should-not-run' }), createSystemContextData('You are a {{role}}.'), createEndNodeData()],
+    edges: [
+      { sourceNodeId: 'start-1', sourcePortId: 'start-context-out', targetNodeId: 'system-context-1', targetPortId: 'sc-context-in' },
+      { sourceNodeId: 'system-context-1', sourcePortId: 'sc-prompt-out', targetNodeId: 'end-1', targetPortId: 'end-prompt-in' },
+    ], }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, undefinedSchema, undefined)
     const abort = new AbortController()
     abort.abort()
 
