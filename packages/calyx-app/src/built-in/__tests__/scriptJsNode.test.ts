@@ -54,6 +54,7 @@ function createCurrentNodeInstance(script: string, inputData: unknown): NodeInst
 }
 
 async function executeScript(script: string, inputData: unknown, signal: AbortSignal = new AbortController().signal): Promise<NodeExecuteResult> {
+  const emitter: NodeExecuteContext['emitter'] = () => {}
   const context: NodeExecuteContext = {
     currentNode: createCurrentNodeInstance(script, inputData),
     parameters: Some([{ name: 'script', value: Some(script), description: 'The JavaScript code to execute', schema: z.string() }]),
@@ -61,6 +62,7 @@ async function executeScript(script: string, inputData: unknown, signal: AbortSi
       { id: 'script-input-1', name: 'input', description: 'The input data for the script', schema: z.unknown(), value: Some(inputData), used: false },
     ]),
     signal,
+    emitter,
   }
 
   return scriptOutputDefinition.executor(context)
@@ -148,16 +150,17 @@ async function runScriptFlow(script: string, inputData: unknown, abort?: AbortCo
   registry.register('test/script-start', createStartNodeDefinition(inputData))
   registry.register('test/script-result-receiver', createResultReceiverDefinition())
 
-  const config: FlowConfig = {
+  const config: FlowConfig<undefined> = {
     name: 'script-js-node-integration',
     nodes: [createStartNodeData(), createScriptNodeData(script), createReceiverNodeData()],
     edges: [
       { sourceNodeId: 'start-1', sourcePortId: 'start-input-out', targetNodeId: 'script-1', targetPortId: 'script-input-in' },
       { sourceNodeId: 'script-1', sourcePortId: 'script-output-out', targetNodeId: 'receiver-1', targetPortId: 'receiver-result-in' },
     ],
+    meta: undefined,
   }
 
-  const flow = buildFlow(config, registry, undefined)
+  const flow = buildFlow(config, registry, z.undefined(), undefined)
   const instance = await flow.run(abort)
 
   const scriptNodeInstance = instance.nodes.find((node) => node.id === 'script-1')

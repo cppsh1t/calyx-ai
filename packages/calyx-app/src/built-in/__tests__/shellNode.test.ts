@@ -103,7 +103,7 @@ describe('shellNode flow integration', () => {
     registry.register('test/shell-start', createStartNodeDefinition('Write-Output "hello-shell-node"', 2_000))
     registry.register('test/shell-result-receiver', createResultReceiverDefinition())
 
-    const config: FlowConfig = {
+    const config: FlowConfig<undefined> = {
       name: 'shell-node-integration',
       nodes: [createStartNodeData(), createShellNodeData('powershell'), createReceiverNodeData()],
       edges: [
@@ -111,9 +111,10 @@ describe('shellNode flow integration', () => {
         { sourceNodeId: 'start-1', sourcePortId: 'start-timeout-out', targetNodeId: 'shell-1', targetPortId: 'shell-timeout-in' },
         { sourceNodeId: 'shell-1', sourcePortId: 'shell-output-out', targetNodeId: 'receiver-1', targetPortId: 'receiver-result-in' },
       ],
+      meta: undefined,
     }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, z.undefined(), undefined)
     const instance = await flow.run()
 
     const shellNodeInstance = instance.nodes.find((node) => node.id === 'shell-1')
@@ -150,7 +151,7 @@ describe('shellNode flow integration', () => {
     registry.register('test/shell-start', createStartNodeDefinition('Start-Sleep -Milliseconds 300', 100))
     registry.register('test/shell-result-receiver', createResultReceiverDefinition())
 
-    const config: FlowConfig = {
+    const config: FlowConfig<undefined> = {
       name: 'shell-node-timeout',
       nodes: [createStartNodeData(), createShellNodeData('powershell'), createReceiverNodeData()],
       edges: [
@@ -158,9 +159,10 @@ describe('shellNode flow integration', () => {
         { sourceNodeId: 'start-1', sourcePortId: 'start-timeout-out', targetNodeId: 'shell-1', targetPortId: 'shell-timeout-in' },
         { sourceNodeId: 'shell-1', sourcePortId: 'shell-output-out', targetNodeId: 'receiver-1', targetPortId: 'receiver-result-in' },
       ],
+      meta: undefined,
     }
 
-    const flow = buildFlow(config, registry, undefined)
+    const flow = buildFlow(config, registry, z.undefined(), undefined)
     const instance = await flow.run()
 
     const shellNodeInstance = instance.nodes.find((node) => node.id === 'shell-1')
